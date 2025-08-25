@@ -9,6 +9,7 @@ export type BottomTabParamList = {
   Home: undefined;
   TransactionHistory: undefined;
   Settings: undefined;
+  DatabaseTest: undefined;
 };
 
 const Tab = createBottomTabNavigator<BottomTabParamList>();
@@ -26,6 +27,8 @@ const BottomTabNavigator: React.FC = () => {
             iconName = focused ? '📊' : '📊';
           } else if (route.name === 'Settings') {
             iconName = focused ? '⚙️' : '⚙️';
+          } else if (route.name === 'DatabaseTest') {
+            iconName = focused ? '🗄️' : '🗄️';
           } else {
             iconName = '❓';
           }

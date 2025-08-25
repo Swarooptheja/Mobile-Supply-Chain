@@ -10,7 +10,14 @@ import {
 import { useAuth } from '../context/AuthContext';
 
 const HomeScreen: React.FC = () => {
-  const { user } = useAuth();
+  const { user, responsibilities, defaultOrgId } = useAuth();
+
+  const renderResponsibilityCard = (responsibility: string, index: number) => (
+    <TouchableOpacity key={index} style={styles.responsibilityCard}>
+      <Text style={styles.responsibilityText}>{responsibility}</Text>
+      <Text style={styles.responsibilityArrow}>›</Text>
+    </TouchableOpacity>
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -23,57 +30,70 @@ const HomeScreen: React.FC = () => {
         {/* Welcome Section */}
         <View style={styles.welcomeSection}>
           <Text style={styles.welcomeText}>Welcome back,</Text>
-          <Text style={styles.userName}>{user?.name}</Text>
-          <Text style={styles.userEmail}>{user?.email}</Text>
+          <Text style={styles.userName}>{user?.name || user?.username}</Text>
+          <Text style={styles.userEmail}>{user?.username}</Text>
+          {user?.fullName && (
+            <Text style={styles.userFullName}>{user.fullName}</Text>
+          )}
         </View>
 
-        {/* Stats Cards */}
+        {/* Organization Info */}
+        {defaultOrgId && (
+          <View style={styles.orgSection}>
+            <Text style={styles.sectionTitle}>Organization</Text>
+            <View style={styles.orgCard}>
+              <Text style={styles.orgLabel}>Default Organization</Text>
+              <Text style={styles.orgValue}>{defaultOrgId}</Text>
+              {user?.defaultInvOrgName && (
+                <Text style={styles.orgName}>{user.defaultInvOrgName}</Text>
+              )}
+            </View>
+          </View>
+        )}
+
+        {/* User Stats */}
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>24</Text>
-            <Text style={styles.statLabel}>Total Projects</Text>
+            <Text style={styles.statNumber}>{responsibilities.length}</Text>
+            <Text style={styles.statLabel}>Responsibilities</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>12</Text>
-            <Text style={styles.statLabel}>Active Tasks</Text>
+            <Text style={styles.statNumber}>{user?.userId || 'N/A'}</Text>
+            <Text style={styles.statLabel}>User ID</Text>
           </View>
         </View>
 
-        <View style={styles.statsContainer}>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>8</Text>
-            <Text style={styles.statLabel}>Completed</Text>
+        {user?.personId && (
+          <View style={styles.statsContainer}>
+            <View style={styles.statCard}>
+              <Text style={styles.statNumber}>{user.personId}</Text>
+              <Text style={styles.statLabel}>Person ID</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={styles.statNumber}>{user.setOfBookId || 'N/A'}</Text>
+              <Text style={styles.statLabel}>Set of Books</Text>
+            </View>
           </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>4</Text>
-            <Text style={styles.statLabel}>Pending</Text>
-          </View>
-        </View>
+        )}
 
-        {/* Recent Activity */}
+        {/* Responsibilities Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recent Activity</Text>
-          <View style={styles.activityItem}>
-            <View style={styles.activityDot} />
-            <View style={styles.activityContent}>
-              <Text style={styles.activityText}>Project "Mobile App" updated</Text>
-              <Text style={styles.activityTime}>2 hours ago</Text>
+          <Text style={styles.sectionTitle}>Your Responsibilities</Text>
+          <Text style={styles.sectionSubtitle}>
+            Tap on any responsibility to access its features
+          </Text>
+          {responsibilities.length > 0 ? (
+            responsibilities.map((responsibility, index) =>
+              renderResponsibilityCard(responsibility, index)
+            )
+          ) : (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateText}>No responsibilities assigned</Text>
+              <Text style={styles.emptyStateSubtext}>
+                Contact your administrator to get access to features
+              </Text>
             </View>
-          </View>
-          <View style={styles.activityItem}>
-            <View style={styles.activityDot} />
-            <View style={styles.activityContent}>
-              <Text style={styles.activityText}>Task "UI Design" completed</Text>
-              <Text style={styles.activityTime}>1 day ago</Text>
-            </View>
-          </View>
-          <View style={styles.activityItem}>
-            <View style={styles.activityDot} />
-            <View style={styles.activityContent}>
-              <Text style={styles.activityText}>New team member added</Text>
-              <Text style={styles.activityTime}>3 days ago</Text>
-            </View>
-          </View>
+          )}
         </View>
 
         {/* Quick Actions */}
@@ -81,19 +101,36 @@ const HomeScreen: React.FC = () => {
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           <View style={styles.actionsContainer}>
             <TouchableOpacity style={styles.actionButton}>
-              <Text style={styles.actionButtonText}>New Project</Text>
+              <Text style={styles.actionButtonText}>View Profile</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.actionButton}>
-              <Text style={styles.actionButtonText}>Add Task</Text>
+              <Text style={styles.actionButtonText}>Settings</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.actionsContainer}>
             <TouchableOpacity style={styles.actionButton}>
-              <Text style={styles.actionButtonText}>View Reports</Text>
+              <Text style={styles.actionButtonText}>Help & Support</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.actionButton}>
-              <Text style={styles.actionButtonText}>Team Chat</Text>
+              <Text style={styles.actionButtonText}>About App</Text>
             </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* App Info */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>App Information</Text>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Version:</Text>
+            <Text style={styles.infoValue}>VRZ-V1.1.0</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Project:</Text>
+            <Text style={styles.infoValue}>EBS</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Environment:</Text>
+            <Text style={styles.infoValue}>20D</Text>
           </View>
         </View>
       </ScrollView>
@@ -141,6 +178,55 @@ const styles = StyleSheet.create({
   userEmail: {
     fontSize: 14,
     color: '#6c757d',
+    marginBottom: 2,
+  },
+  userFullName: {
+    fontSize: 16,
+    color: '#495057',
+    fontStyle: 'italic',
+  },
+  orgSection: {
+    backgroundColor: '#ffffff',
+    marginHorizontal: 20,
+    marginBottom: 16,
+    borderRadius: 12,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#212529',
+    marginBottom: 16,
+  },
+  orgCard: {
+    backgroundColor: '#f8f9fa',
+    padding: 16,
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#20B2AA',
+  },
+  orgLabel: {
+    fontSize: 12,
+    color: '#6c757d',
+    marginBottom: 4,
+  },
+  orgValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#212529',
+    marginBottom: 2,
+  },
+  orgName: {
+    fontSize: 14,
+    color: '#495057',
   },
   statsContainer: {
     flexDirection: 'row',
@@ -163,9 +249,9 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   statNumber: {
-    fontSize: 32,
+    fontSize: 24,
     fontWeight: 'bold',
-    color: '#007bff',
+    color: '#20B2AA',
     marginBottom: 8,
   },
   statLabel: {
@@ -176,8 +262,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     marginHorizontal: 20,
     marginBottom: 16,
-    padding: 20,
     borderRadius: 12,
+    padding: 20,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -187,35 +273,45 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#212529',
-    marginBottom: 16,
-  },
-  activityItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  activityDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#007bff',
-    marginRight: 12,
-  },
-  activityContent: {
-    flex: 1,
-  },
-  activityText: {
+  sectionSubtitle: {
     fontSize: 14,
-    color: '#212529',
-    marginBottom: 4,
-  },
-  activityTime: {
-    fontSize: 12,
     color: '#6c757d',
+    marginBottom: 16,
+  },
+  responsibilityCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+  },
+  responsibilityText: {
+    fontSize: 16,
+    color: '#212529',
+    fontWeight: '500',
+  },
+  responsibilityArrow: {
+    fontSize: 18,
+    color: '#6c757d',
+    fontWeight: 'bold',
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  emptyStateText: {
+    fontSize: 16,
+    color: '#6c757d',
+    marginBottom: 8,
+  },
+  emptyStateSubtext: {
+    fontSize: 14,
+    color: '#adb5bd',
+    textAlign: 'center',
   },
   actionsContainer: {
     flexDirection: 'row',
@@ -223,7 +319,7 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flex: 1,
-    backgroundColor: '#007bff',
+    backgroundColor: '#20B2AA',
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
@@ -234,6 +330,23 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 14,
     fontWeight: '600',
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f8f9fa',
+  },
+  infoLabel: {
+    fontSize: 14,
+    color: '#6c757d',
+  },
+  infoValue: {
+    fontSize: 14,
+    color: '#212529',
+    fontWeight: '500',
   },
 });
 
