@@ -207,18 +207,18 @@ const OrganizationScreen: React.FC = () => {
       );
 
       if (result.success) {
-        showSuccessToast('Success', 'Shipping table data loaded successfully');
+        // showSuccessToast('Success', 'Shipping table data loaded successfully');
         navigation.navigate('Dashboard', { orgId: selectedId });
       } else {
         showErrorToast('Error', result.error || 'Failed to load shipping table data');
       }
     } catch (error) {
-      console.warn('Failed to load shipping table data:', error);
+      console.error('Failed to load shipping table data:', error);
       showErrorToast('Error', 'Failed to load shipping table data');
     } finally {
       setLoading(false);
     }
-  }, [selectedId, navigation, showSuccessToast, showErrorToast, createTableFromTableTypeResponse, createTableFromApiResponse]);
+  }, [selectedId, navigation, showErrorToast, createTableFromTableTypeResponse, createTableFromApiResponse]);
 
   // Render organization item
   const renderItem = ({ item }: { item: OrganizationListItem }) => {
