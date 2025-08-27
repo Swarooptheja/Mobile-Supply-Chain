@@ -11,3 +11,99 @@ export const ORGANIZATION_QUERIES = {
 WHERE InventoryOrgName LIKE ? OR InventoryOrgCode LIKE ? OR BusinessUnitName LIKE ? \
 ORDER BY InventoryOrgName ASC LIMIT ? OFFSET ?`,
 };
+
+export const LOAD_TO_DOCK_QUERIES = {
+    GET_ALL_ITEMS: `
+        SELECT *
+        FROM ${TableNames.SHIPPING_TABLE} 
+        GROUP BY DeliveryId
+        ORDER BY ShipDate DESC
+    `,
+    
+    GET_ITEMS_PAGINATED: `
+        SELECT *
+        FROM ${TableNames.SHIPPING_TABLE} 
+        GROUP BY DeliveryId
+        ORDER BY ShipDate DESC
+        LIMIT ? OFFSET ?
+    `,
+    
+    GET_ITEMS_BY_DELIVERY_ID: `
+        SELECT 
+            ItemId,
+            ItemSku,
+            ItemDescription,
+            RequestedQuantity,
+            LoadedQuantity,
+            Unit,
+            HasPhotos,
+            HasVideo
+        FROM ${TableNames.SHIPPING_TABLE} 
+        WHERE DeliveryId = ?
+        ORDER BY ItemId
+    `,
+    
+    SEARCH_ITEMS: `
+        SELECT DISTINCT *
+        FROM ${TableNames.SHIPPING_TABLE} 
+        WHERE (DeliveryId LIKE ? OR DeliveryLineId LIKE ? OR CustomerName LIKE ?)
+        GROUP BY DeliveryId
+        ORDER BY ShipDate DESC
+    `,
+    
+    SEARCH_ITEMS_PAGINATED: `
+        SELECT DISTINCT *
+        FROM ${TableNames.SHIPPING_TABLE} 
+        WHERE (DeliveryId LIKE ? OR DeliveryLineId LIKE ? OR CustomerName LIKE ?)
+        GROUP BY DeliveryId
+        ORDER BY ShipDate DESC
+        LIMIT ? OFFSET ?
+    `,
+    
+    SEARCH_BY_BARCODE: `
+        SELECT DISTINCT *
+        FROM ${TableNames.SHIPPING_TABLE} 
+        WHERE (DeliveryId = ? OR DeliveryLineId = ? OR CustomerName = ?)
+        GROUP BY DeliveryId
+        ORDER BY ShipDate DESC
+    `,
+    
+    UPDATE_LOADED_QUANTITY: `
+        UPDATE ${TableNames.SHIPPING_TABLE} 
+        SET LoadedQuantity = ?, LastModified = datetime('now')
+        WHERE DeliveryId = ? AND ItemId = ? AND ResponsibilityId = 'SHIP_CONFIRM'
+    `,
+    
+    UPDATE_MEDIA_STATUS: `
+        UPDATE ${TableNames.SHIPPING_TABLE} 
+        SET HasPhotos = ?, HasVideo = ?, LastModified = datetime('now')
+        WHERE DeliveryId = ? AND ItemId = ? AND ResponsibilityId = 'SHIP_CONFIRM'
+    `,
+    
+    INSERT_TRANSACTION_HISTORY: `
+        INSERT INTO transaction_history (
+            MobileTransactionId, DeliveryId, DeliveryLineId, ShipDate, 
+            Quantity, PartialAction, ResponsibilityId, UserId, 
+            TrackingNumber, FreightCost, ShipMethod, GrossWeight, 
+            Status, CreatedAt, RetryCount
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now'), 0)
+    `,
+    
+    GET_PENDING_TRANSACTIONS: `
+        SELECT * FROM transaction_history 
+        WHERE Status = 'pending' AND RetryCount < 3
+        ORDER BY CreatedAt ASC
+    `,
+    
+    UPDATE_TRANSACTION_STATUS: `
+        UPDATE transaction_history 
+        SET Status = ?, ErrorMessage = ?, UpdatedAt = datetime('now')
+        WHERE Id = ?
+    `,
+    
+    INCREMENT_RETRY_COUNT: `
+        UPDATE transaction_history 
+        SET RetryCount = RetryCount + 1, UpdatedAt = datetime('now')
+        WHERE Id = ?
+    `
+};

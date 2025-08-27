@@ -42,6 +42,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
   return (
     <View style={styles.container}>
+      <Text style={styles.searchIcon}>🔍</Text>
       <TextInput
         value={value}
         onChangeText={onChangeText}
@@ -71,10 +72,19 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 8,
+    height: 48,
+    justifyContent: 'center',
+  },
+  searchIcon: {
+    fontSize: 16,
+    color: '#9CA3AF',
+    marginRight: 8,
   },
   input: {
     flex: 1,
-    paddingVertical: 2,
+    paddingVertical: 0,
+    fontSize: 14,
+    height: 32,
   },
   clear: {
     color: '#6b7280',

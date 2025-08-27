@@ -1,15 +1,14 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text } from 'react-native';
-import HomeScreen from '../screen/HomeScreen';
+import OrganizationScreen from '../screen/OrganizationScreen';
 import TransactionHistoryScreen from '../screen/TransactionHistoryScreen';
 import SettingsScreen from '../screen/SettingsScreen';
 
 export type BottomTabParamList = {
-  Home: undefined;
+  Organization: undefined;
   TransactionHistory: undefined;
   Settings: undefined;
-  DatabaseTest: undefined;
 };
 
 const Tab = createBottomTabNavigator<BottomTabParamList>();
@@ -21,14 +20,12 @@ const BottomTabNavigator: React.FC = () => {
         tabBarIcon: ({ focused, color, size }) => {
           let iconName: string;
 
-          if (route.name === 'Home') {
-            iconName = focused ? '🏠' : '🏠';
+          if (route.name === 'Organization') {
+            iconName = focused ? '🏢' : '🏢';
           } else if (route.name === 'TransactionHistory') {
-            iconName = focused ? '📊' : '📊';
+            iconName = focused ? '📈' : '📈';
           } else if (route.name === 'Settings') {
             iconName = focused ? '⚙️' : '⚙️';
-          } else if (route.name === 'DatabaseTest') {
-            iconName = focused ? '🗄️' : '🗄️';
           } else {
             iconName = '❓';
           }
@@ -54,10 +51,10 @@ const BottomTabNavigator: React.FC = () => {
       })}
     >
       <Tab.Screen
-        name="Home"
-        component={HomeScreen}
+        name="Organization"
+        component={OrganizationScreen}
         options={{
-          tabBarLabel: 'Home',
+          tabBarLabel: 'Organization',
         }}
       />
       <Tab.Screen

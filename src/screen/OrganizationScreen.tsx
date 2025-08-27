@@ -208,7 +208,7 @@ const OrganizationScreen: React.FC = () => {
 
       if (result.success) {
         // showSuccessToast('Success', 'Shipping table data loaded successfully');
-        navigation.navigate('Dashboard', { orgId: selectedId });
+        navigation.navigate('Dashboard');
       } else {
         showErrorToast('Error', result.error || 'Failed to load shipping table data');
       }

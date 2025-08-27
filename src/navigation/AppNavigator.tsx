@@ -4,12 +4,16 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { useAuth } from '../context';
 import { LoginScreen } from '../screen';
 import OrganizationScreen from '../screen/OrganizationScreen';
+import DashboardScreen from '../screen/DashboardScreen';
+import LoadToDockNavigator from './LoadToDockNavigator';
 import BottomTabNavigator from './BottomTabNavigator';
 
 export type RootStackParamList = {
   Login: undefined;
-  Dashboard: { orgId?: string } | undefined;
   Organization: undefined;
+  Dashboard: undefined;
+  LoadToDock: undefined;
+  MainTabs: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -29,7 +33,9 @@ const AppNavigator: React.FC = () => {
         {isAuthenticated ? (
           <>
             <Stack.Screen name="Organization" component={OrganizationScreen} />
-            <Stack.Screen name="Dashboard" component={BottomTabNavigator} />
+            <Stack.Screen name="Dashboard" component={DashboardScreen} />
+            <Stack.Screen name="LoadToDock" component={LoadToDockNavigator} />
+            <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
           </>
         ) : (
           <Stack.Screen name="Login" component={LoginScreen} />
