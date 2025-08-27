@@ -54,7 +54,7 @@ const HomeScreen: React.FC = () => {
         {/* User Stats */}
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{responsibilities.length}</Text>
+            <Text style={styles.statNumber}>{Array.isArray(responsibilities) ? responsibilities.length : 0}</Text>
             <Text style={styles.statLabel}>Responsibilities</Text>
           </View>
           <View style={styles.statCard}>
@@ -82,8 +82,8 @@ const HomeScreen: React.FC = () => {
           <Text style={styles.sectionSubtitle}>
             Tap on any responsibility to access its features
           </Text>
-          {responsibilities.length > 0 ? (
-            responsibilities.map((responsibility, index) =>
+          {Array.isArray(responsibilities) && responsibilities.length > 0 ? (
+            responsibilities.map((responsibility: string, index: number) =>
               renderResponsibilityCard(responsibility, index)
             )
           ) : (

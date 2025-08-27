@@ -29,21 +29,26 @@ export interface ILoginResponse {
     USER_ID: string;
     TIMESTAMP?: string;
     TIMEZONE_OFFSET?: string;
-    FULL_NAME?: string;
-    PERSON_ID?: string;
-    RESPONSIBILITY?: string;
-    SET_OF_BOOK_ID?: string;
-    DEFAULT_ORG_ID?: string;
-    DEFAULT_INV_ORG_NAME?: string;
-    RESPONSIBILITY_ID?: string;
+    FULL_NAME: string;
+    PERSON_ID: string;
+    RESPONSIBILITY: string;
+    SET_OF_BOOK_ID: string;
+    DEFAULT_ORG_ID: string;
+    DEFAULT_OU_NAME: string;
+    DEFAULT_INV_ORG_ID: string;
+    DEFAULT_INV_ORG_NAME: string;
+    DEFAULT_INV_ORG_CODE: string;
+    RESPONSIBILITY_ID: string;
+    RESP_APPLICATION_ID: string;
+    ERROR: string;
   }>;
 }
 
 export interface IAuthContext {
-  user: IUser | null;
-  isAuthenticated: boolean;
+  user?: IUser | null;
+  isAuthenticated?: boolean;
   login: (credentials: ILoginCredentials) => Promise<void>;
-  logout: () => void;
-  responsibilities: string[];
-  defaultOrgId: string | null;
+  logout?: () => void;
+  responsibilities?: string[];
+  defaultOrgId?: string | null;
 }

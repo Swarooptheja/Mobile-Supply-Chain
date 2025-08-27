@@ -5,7 +5,6 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
@@ -13,28 +12,33 @@ import {
   Dimensions,
   ImageBackground,
 } from 'react-native';
+import Button from '../components/Button';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../utils/toastUtils';
 
 const { height } = Dimensions.get('window');
 
 const LoginScreen: React.FC = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('manideep j');
+  const [password, setPassword] = useState('Propel@123');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
+  const { showErrorToast } = useToast();
 
   const handleLogin = async (): Promise<void> => {
     if (!username.trim() || !password.trim()) {
-      Alert.alert('Error', 'Please fill in all fields');
+      showErrorToast('Validation Error', 'Please fill in all fields');
       return;
     }
 
     setIsLoading(true);
     try {
       await login({ username: username.trim(), password });
+      // Navigation will happen automatically based on authentication state
     } catch (error) {
-      Alert.alert('Login Failed', error instanceof Error ? error.message : 'An error occurred');
+      // Error handling is now done in AuthContext with toast notifications
+      console.error('Login error in LoginScreen:', error);
     } finally {
       setIsLoading(false);
     }
@@ -95,18 +99,17 @@ const LoginScreen: React.FC = () => {
             <View style={styles.separator} />
 
             {/* Login Button */}
-            <TouchableOpacity
-              style={[styles.loginButton, isLoading && styles.buttonDisabled]}
+            <Button
+              title="Login"
               onPress={handleLogin}
+              loading={isLoading}
               disabled={isLoading}
-              activeOpacity={0.8}
-            >
-              {isLoading ? (
-                <ActivityIndicator color="#ffffff" size="small" />
-              ) : (
-                <Text style={styles.loginButtonText}>Login</Text>
-              )}
-            </TouchableOpacity>
+              fullWidth
+              size="lg"
+              colorScheme="teal"
+              variant="solid"
+              accessibilityLabel="Login"
+            />
           </KeyboardAvoidingView>
         </View>
 

@@ -22,6 +22,12 @@ export const API_CONFIG = {
   },
 };
 
+
+export const API_VERSION = {
+  EBS_20D: 'EBS/20D',
+  EBS_23B: 'EBS/23B',
+}
+
 // Current environment - change this to switch between environments
 export const CURRENT_ENVIRONMENT: keyof typeof API_CONFIG = 'development';
 
@@ -33,16 +39,15 @@ export const getCurrentApiConfig = () => {
 // Build API URL helper
 export const buildApiUrl = (endpoint: string): string => {
   const config = getCurrentApiConfig();
-  return `${config.hostname}/${config.project}/${config.version}/${endpoint}`;
+  return `${config.hostname}/${endpoint}`;
 };
 
 // API Endpoints
 export const API_ENDPOINTS = {
-  LOGIN: 'login',
-  // Add more endpoints as needed
-  // USER_PROFILE: 'user/profile',
-  // ORGANIZATIONS: 'organizations',
-  // RESPONSIBILITIES: 'responsibilities',
+  LOGIN: `${API_VERSION.EBS_20D}/login`,
+  INVENTORY_ORGS: `${API_VERSION.EBS_20D}/getInventoryOrganizations`,
+  INVENTORY_ORGS_METADATA: `${API_VERSION.EBS_20D}/getInventoryOrganizations/metadata`,
+  SALES_ORDERS_SHIPPING: `${API_VERSION.EBS_23B}/getSalesOrdersForShippingTable`,
 };
 
 // API Headers
