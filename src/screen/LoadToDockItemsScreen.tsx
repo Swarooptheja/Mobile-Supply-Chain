@@ -1,29 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   SafeAreaView,
+  ScrollView,
   StatusBar,
   StyleSheet,
-  View,
   Text,
-  ScrollView,
-  TouchableOpacity,
   TextInput,
-  Alert
+  TouchableOpacity,
+  View
 } from 'react-native';
 import AppHeader from '../components/AppHeader';
+import BarcodeScanner from '../components/BarcodeScanner';
 import Button from '../components/Button';
+import ScanButton from '../components/ScanButton';
 import SearchBar from '../components/SearchBar';
-import { ILoadToDockItem, ILoadToDockItemDetail } from '../types/loadToDock.interface';
 import { loadToDockService } from '../services/loadToDockService';
-
-interface LoadToDockItemsScreenProps {
-  route: {
-    params: {
-      deliveryItem: ILoadToDockItem;
-    };
-  };
-  navigation: any;
-}
+import { ILoadToDockItemDetail, LoadToDockItemsScreenProps } from '../types/loadToDock.interface';
+import { useToast } from '../utils/toastUtils';
 
 const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, navigation }) => {
   const { deliveryItem } = route.params;
@@ -33,91 +26,104 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
   const [filteredItems, setFilteredItems] = useState<ILoadToDockItemDetail[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [canLoadToDock, setCanLoadToDock] = useState(false);
+  const [isScannerVisible, setIsScannerVisible] = useState(false);
+  const { showErrorToast, showSuccessToast } = useToast();
+  const showErrorToastRef = useRef(showErrorToast);
 
-  // Mock data for demonstration
-  const mockItems: ILoadToDockItemDetail[] = [
-    {
-      itemId: '1.1',
-      itemSku: 'AS10002345',
-      itemDescription: 'Lithium Battery',
-      requestedQuantity: 1,
-      loadedQuantity: 1,
-      unit: 'Ea',
-      hasPhotos: true,
-      hasVideo: true
-    },
-    {
-      itemId: '2.1',
-      itemSku: 'AS10002347',
-      itemDescription: 'Mother Board',
-      requestedQuantity: 2,
-      loadedQuantity: 0,
-      unit: 'Ea',
-      hasPhotos: false,
-      hasVideo: false
-    },
-    {
-      itemId: '3.1',
-      itemSku: 'AS10002350',
-      itemDescription: 'Power Supply',
-      requestedQuantity: 1,
-      loadedQuantity: 0,
-      unit: 'Ea',
-      hasPhotos: false,
-      hasVideo: false
-    }
-  ];
+  // Update ref when showErrorToast changes
+  useEffect(() => {
+    showErrorToastRef.current = showErrorToast;
+  }, [showErrorToast]);
 
   useEffect(() => {
+    const loadItems = async () => {
+      setIsLoading(true);
+        try {
+          const data = await loadToDockService.getItemsByDeliveryId(deliveryItem.deliveryId);
+          setItems(data);
+          setFilteredItems(data);
+        } catch (serviceError) {
+          showErrorToastRef.current('Service Warning', 'Service not available, using fallback data');
+        } finally {
+        setIsLoading(false);
+      }
+    };
+
     loadItems();
-  }, []);
+  }, [deliveryItem.deliveryId]); // Only depend on deliveryItem.deliveryId
 
   useEffect(() => {
-    // Filter items based on search query
-    if (searchQuery.trim() === '') {
-      setFilteredItems(items);
-    } else {
-      const filtered = items.filter(item =>
-        item.itemSku.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.itemDescription.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setFilteredItems(filtered);
-    }
-  }, [searchQuery, items]);
+    // Search items from database based on search query
+    const searchItems = async () => {
+      if (!searchQuery.trim()) {
+        setFilteredItems(items);
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        const searchResults = await loadToDockService.searchItemsByDeliveryId(
+          deliveryItem.deliveryId,
+          searchQuery
+        );
+        setFilteredItems(searchResults);
+      } catch (error) {
+        console.error('Error searching items:', error);
+        showErrorToastRef.current('Search Error', 'Failed to search items');;
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    // Debounce search to avoid too many database calls
+    const timeoutId = setTimeout(() => {
+      searchItems();
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, deliveryItem.deliveryId, items]);
 
   useEffect(() => {
     // Check if all requirements are satisfied
     const allItemsHaveMedia = items.every(item => item.hasPhotos && item.hasVideo);
-    const allItemsHaveQuantities = items.every(item => item.loadedQuantity > 0);
+    const allItemsHaveQuantities = items.every(item => Number(item.QtyPicked) > 0);
     const vehicleEntered = vehicleNumber.trim().length > 0;
     
     setCanLoadToDock(allItemsHaveMedia && allItemsHaveQuantities && vehicleEntered);
   }, [items, vehicleNumber]);
 
-  const loadItems = async () => {
-    setIsLoading(true);
+  const handleScanItem = () => {
+    setIsScannerVisible(true);
+  };
+
+  const handleBarcodeScanned = async (barcode: string) => {
     try {
-      // Try to load from service first, fallback to mock data
-      try {
-        const data = await loadToDockService.getItemsByDeliveryId(deliveryItem.deliveryId);
-        setItems(data);
-        setFilteredItems(data);
-      } catch (serviceError) {
-        console.warn('Service not available, using mock data:', serviceError);
-        setItems(mockItems);
-        setFilteredItems(mockItems);
+      // Search for the scanned item in the database
+      const searchResults = await loadToDockService.scanItemsByDeliveryId(
+        deliveryItem.deliveryId,
+        barcode
+      );
+      
+      if (searchResults.length) {
+        const scannedItem = searchResults[0];
+        showSuccessToast('Item Found', `Scanned: ${barcode}`);
+        
+        // Redirect to the item details screen
+        navigation.navigate('LoadToDockItemDetails', {
+          deliveryItem,
+          itemDetail: scannedItem
+        });
+      } else {
+        showErrorToast('Item Not Found', `No item found with barcode: ${barcode}`);
       }
     } catch (error) {
-      console.error('Error loading items:', error);
-      Alert.alert('Error', 'Failed to load items');
-    } finally {
-      setIsLoading(false);
+      console.error('Error searching scanned item:', error);
+      showErrorToast('Scan Error', 'Failed to process scanned barcode');
     }
   };
 
-  const handleScanItem = () => {
-    // TODO: Implement barcode scanning functionality
-    Alert.alert('Scan Item', 'Barcode scanning functionality will be implemented here');
+  const handleScannerClose = () => {
+    setIsScannerVisible(false);
   };
 
   const handleItemPress = (item: ILoadToDockItemDetail) => {
@@ -130,18 +136,18 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
   const handleLoadToDock = async () => {
     try {
       if (!canLoadToDock) {
-        Alert.alert('Cannot Load to Dock', 'Please ensure all requirements are met');
+        showErrorToast('Cannot Load to Dock', 'Please ensure all requirements are met');
         return;
       }
 
       // TODO: Implement Load to Dock functionality
-      Alert.alert('Success', 'Items loaded to dock successfully!');
+      showSuccessToast('Success', 'Items loaded to dock successfully!');
       
       // Navigate back to list page
       navigation.goBack();
     } catch (error) {
       console.error('Error loading to dock:', error);
-      Alert.alert('Error', 'Failed to load items to dock');
+      showErrorToast('Error', 'Failed to load items to dock');
     }
   };
 
@@ -149,9 +155,18 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
     navigation.navigate('Dashboard');
   };
 
+  const updateItemQuantity = (itemNumber: string, newQuantity: number) => {
+    const updatedItems = items.map(i => 
+      i.ItemNumber === itemNumber 
+        ? { ...i, QtyPicked: newQuantity.toString() }
+        : i
+    );
+    setItems(updatedItems);
+  };
+
   const renderItem = (item: ILoadToDockItemDetail, index: number) => (
     <TouchableOpacity
-      key={item.itemId}
+      key={item.ItemNumber}
       style={[
         styles.itemCard,
         item.hasPhotos && item.hasVideo && styles.completedItemCard
@@ -160,42 +175,35 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
       activeOpacity={0.7}
     >
       <View style={styles.itemHeader}>
-        <Text style={styles.itemId}>{item.itemId} . {item.itemSku}</Text>
+        <Text style={styles.itemId}>{index + 1}. {item.ItemNumber}</Text>
         <TouchableOpacity style={styles.arrowButton}>
           <Text style={styles.arrowIcon}>›</Text>
         </TouchableOpacity>
       </View>
       
-      <Text style={styles.itemDescription}>{item.itemDescription}</Text>
+      <Text style={styles.itemDescription}>{item.ItemDesc}</Text>
       
       <View style={styles.quantityRow}>
-        <Text style={styles.quantityLabel}>Requested Qty: {item.requestedQuantity} {item.unit}</Text>
+        <Text style={styles.quantityLabel}>Requested: {item.QtyRequested} {item.ItemUom}</Text>
       </View>
       
       <View style={styles.loadedQuantityRow}>
-        <Text style={styles.quantityLabel}>Loaded Qty: </Text>
+        <Text style={styles.quantityLabel}>Loaded: </Text>
         <TextInput
           style={styles.quantityInput}
-          value={item.loadedQuantity.toString()}
+          value={item.QtyPicked}
           onChangeText={(text) => {
             const newQuantity = parseInt(text) || 0;
-            if (newQuantity > item.requestedQuantity) {
-              Alert.alert('Error', 'Loaded quantity cannot exceed requested quantity');
+            if (newQuantity > Number(item.QtyRequested)) {
+              showErrorToast('Error', 'Loaded quantity cannot exceed requested quantity');
               return;
             }
-            
-            const updatedItems = items.map(i => 
-              i.itemId === item.itemId 
-                ? { ...i, loadedQuantity: newQuantity }
-                : i
-            );
-            setItems(updatedItems);
+            updateItemQuantity(item.ItemNumber, newQuantity);
           }}
           keyboardType="numeric"
           placeholder="0"
-          style={styles.quantityInput}
         />
-        <Text style={styles.quantityLabel}> of {item.requestedQuantity} {item.unit}</Text>
+        <Text style={styles.quantityLabel}> of {item.QtyRequested} {item.ItemUom}</Text>
       </View>
       
       <View style={styles.mediaStatus}>
@@ -226,8 +234,8 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
         }
       />
 
-      {/* Pick Slip Details */}
-      <View style={styles.detailsCard}>
+      {/* Compact Details Section */}
+      <View style={styles.compactDetailsSection}>
         <View style={styles.detailsRow}>
           <View style={styles.leftDetails}>
             <Text style={styles.detailLabel}>SO# {deliveryItem.salesOrderNumber}</Text>
@@ -240,34 +248,37 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
         </View>
       </View>
 
-      {/* Vehicle Input */}
-      <View style={styles.vehicleCard}>
-        <Text style={styles.vehicleLabel}>Vehicle#</Text>
-        <TextInput
-          style={styles.vehicleInput}
-          value={vehicleNumber}
-          onChangeText={setVehicleNumber}
-          placeholder="Enter Vehicle Number"
-          placeholderTextColor="#9ca3af"
-        />
-      </View>
-
-      {/* Search and Scan */}
-      <View style={styles.searchSection}>
-        <View style={styles.searchBarContainer}>
-          <SearchBar
-            placeholder="Scan Item"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
+      {/* Enhanced Input Section */}
+      <View style={styles.inputSection}>
+        <View style={styles.vehicleInputContainer}>
+          <Text style={styles.vehicleLabel}>Vehicle#</Text>
+          <TextInput
+            style={styles.vehicleInput}
+            value={vehicleNumber}
+            onChangeText={setVehicleNumber}
+            placeholder="Enter Vehicle Number"
+            placeholderTextColor="#9ca3af"
           />
         </View>
-        <TouchableOpacity
-          style={styles.scanButton}
-          onPress={handleScanItem}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.scanButtonText}>📷</Text>
-        </TouchableOpacity>
+        
+        <View style={styles.searchContainer}>
+          <View style={styles.searchBarWrapper}>
+            <SearchBar
+              placeholder="Search items"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+          </View>
+          <ScanButton
+            onPress={handleScanItem}
+            size={48}
+            iconColor="#ffffff"
+            backgroundColor="#1e3a8a"
+            borderColor="#1e3a8a"
+            hintText="Scan"
+            hintTextColor="#6b7280"
+          />
+        </View>
       </View>
 
       {/* Items List */}
@@ -279,7 +290,7 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
         
         <ScrollView 
           style={styles.itemsList}
-          showsVerticalScrollIndicator={true}
+          showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.itemsListContent}
         >
           {isLoading ? (
@@ -289,7 +300,7 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
           ) : filteredItems.length === 0 ? (
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>No items found</Text>
-              <Text style={styles.emptySubtext}>Try adjusting your search</Text>
+              <Text style={styles.emptySubtext}>Try adjusting your search or scan a barcode</Text>
             </View>
           ) : (
             filteredItems.map((item, index) => renderItem(item, index))
@@ -302,14 +313,28 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
         <Button
           title="LOAD TO DOCK"
           onPress={handleLoadToDock}
-          style={[
-            styles.loadToDockButton,
-            !canLoadToDock && styles.disabledButton
-          ]}
+          style={canLoadToDock ? styles.loadToDockButton : styles.disabledButton}
           textStyle={styles.loadToDockButtonText}
           disabled={!canLoadToDock}
         />
       </View>
+
+      {/* Barcode Scanner Modal */}
+      <BarcodeScanner
+        visible={isScannerVisible}
+        onClose={handleScannerClose}
+        onBarcodeScanned={handleBarcodeScanned}
+        showManualInput={true}
+        scanBarcode={true}
+        showFrame={true}
+        barcodeFrameSize={{ width: 280, height: 140 }}
+        laserColor="#00ff00"
+        frameColor="#1e3a8a"
+        onError={(error) => {
+          console.error('Scanner error:', error);
+          showErrorToastRef.current('Scanner Error', error);
+        }}
+      />
     </SafeAreaView>
   );
 };
@@ -340,16 +365,18 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: '#ffffff',
   },
-  detailsCard: {
+  compactDetailsSection: {
     backgroundColor: '#ffffff',
-    margin: 20,
-    padding: 16,
-    borderRadius: 12,
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 8,
+    padding: 12,
+    borderRadius: 8,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
   },
   detailsRow: {
     flexDirection: 'row',
@@ -363,82 +390,63 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   detailLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#6b7280',
     fontWeight: '500',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   detailValue: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#1f2937',
     fontWeight: '600',
   },
-  vehicleCard: {
-    backgroundColor: '#ffffff',
-    marginHorizontal: 20,
-    marginBottom: 20,
-    padding: 16,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+  inputSection: {
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+  vehicleInputContainer: {
+    marginBottom: 12,
   },
   vehicleLabel: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#374151',
     fontWeight: '600',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   vehicleInput: {
     borderWidth: 1,
     borderColor: '#d1d5db',
     borderRadius: 8,
     padding: 12,
-    fontSize: 16,
+    fontSize: 14,
     color: '#1f2937',
     backgroundColor: '#ffffff',
   },
-  searchSection: {
+  searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingBottom: 16,
+    gap: 12,
   },
-  searchBarContainer: {
+  searchBarWrapper: {
     flex: 1,
-    marginRight: 12,
-  },
-  scanButton: {
-    width: 48,
-    height: 48,
-    backgroundColor: '#1e3a8a',
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  scanButtonText: {
-    fontSize: 20,
-    color: '#ffffff',
   },
   itemsSection: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
     color: '#1f2937',
   },
   itemCount: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#6b7280',
     fontWeight: '500',
   },
@@ -450,85 +458,85 @@ const styles = StyleSheet.create({
   },
   itemCard: {
     backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
   },
   completedItemCard: {
-    borderLeftWidth: 4,
+    borderLeftWidth: 3,
     borderLeftColor: '#10b981',
   },
   itemHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   itemId: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
     color: '#1f2937',
   },
   arrowButton: {
-    width: 24,
-    height: 24,
+    width: 20,
+    height: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },
   arrowIcon: {
-    fontSize: 18,
+    fontSize: 16,
     color: '#9ca3af',
     fontWeight: 'bold',
   },
   itemDescription: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#374151',
     fontWeight: '500',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   quantityRow: {
-    marginBottom: 8,
+    marginBottom: 6,
   },
   loadedQuantityRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   quantityLabel: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#6b7280',
     fontWeight: '500',
   },
   quantityInput: {
     borderWidth: 1,
     borderColor: '#1e3a8a',
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    fontSize: 14,
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    fontSize: 12,
     color: '#1f2937',
     backgroundColor: '#ffffff',
-    minWidth: 50,
+    minWidth: 40,
     textAlign: 'center',
     marginHorizontal: 4,
   },
   mediaStatus: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
   },
   statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   statusText: {
-    fontSize: 12,
+    fontSize: 10,
     color: '#6b7280',
     fontWeight: '500',
   },
@@ -561,14 +569,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   bottomButtonContainer: {
-    padding: 20,
-    backgroundColor: '#ffffff',
+    padding: 16,
     borderTopWidth: 1,
     borderTopColor: '#e5e7eb',
   },
   loadToDockButton: {
     backgroundColor: '#1e3a8a',
-    paddingVertical: 16,
+    paddingVertical: 14,
     borderRadius: 8,
   },
   disabledButton: {

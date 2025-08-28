@@ -5,14 +5,13 @@ import {
   StyleSheet,
   View,
   Text,
-  TouchableOpacity,
-  Alert,
-  ScrollView
+  TouchableOpacity
 } from 'react-native';
 import AppHeader from '../components/AppHeader';
 import Button from '../components/Button';
 import { ILoadToDockItem, ILoadToDockItemDetail } from '../types/loadToDock.interface';
 import { loadToDockService } from '../services/loadToDockService';
+import { useToast } from '../utils/toastUtils';
 
 interface LoadToDockItemDetailsScreenProps {
   route: {
@@ -29,9 +28,10 @@ type TabType = 'photos' | 'video';
 const LoadToDockItemDetailsScreen: React.FC<LoadToDockItemDetailsScreenProps> = ({ route, navigation }) => {
   const { deliveryItem, itemDetail } = route.params;
   const [activeTab, setActiveTab] = useState<TabType>('photos');
-  const [hasPhotos, setHasPhotos] = useState(itemDetail.hasPhotos);
-  const [hasVideo, setHasVideo] = useState(itemDetail.hasVideo);
+  const [hasPhotos, setHasPhotos] = useState(itemDetail.hasPhotos || false);
+  const [hasVideo, setHasVideo] = useState(itemDetail.hasVideo || false);
   const [canSave, setCanSave] = useState(false);
+  const { showErrorToast, showSuccessToast, showInfoToast } = useToast();
 
   useEffect(() => {
     // Check if we can save (either photos or video is captured)
@@ -40,44 +40,44 @@ const LoadToDockItemDetailsScreen: React.FC<LoadToDockItemDetailsScreenProps> = 
 
   const handleTakePhoto = () => {
     // TODO: Implement camera functionality
-    Alert.alert('Take Photo', 'Camera functionality will be implemented here');
+    showInfoToast('Take Photo', 'Camera functionality will be implemented here');
     setHasPhotos(true);
   };
 
   const handleChooseFromGallery = () => {
     // TODO: Implement gallery selection
-    Alert.alert('Choose from Gallery', 'Gallery selection will be implemented here');
+    showInfoToast('Choose from Gallery', 'Gallery selection will be implemented here');
     setHasPhotos(true);
   };
 
   const handleTakeVideo = () => {
     // TODO: Implement video recording
-    Alert.alert('Take Video', 'Video recording will be implemented here');
+    showInfoToast('Take Video', 'Video recording will be implemented here');
     setHasVideo(true);
   };
 
   const handleSave = async () => {
     try {
       if (!canSave) {
-        Alert.alert('Cannot Save', 'Please capture at least photos or video');
+        showErrorToast('Cannot Save', 'Please capture at least photos or video');
         return;
       }
 
       // Update media status in database
       await loadToDockService.updateMediaStatus(
         deliveryItem.deliveryId,
-        itemDetail.itemId,
-        hasPhotos,
-        hasVideo
+        itemDetail.ItemId,
+        hasPhotos || false,
+        hasVideo || false
       );
 
-      Alert.alert('Success', 'Media captured and saved successfully!');
+      showSuccessToast('Success', 'Media captured and saved successfully!');
       
       // Navigate back to items page
       navigation.goBack();
     } catch (error) {
       console.error('Error saving media:', error);
-      Alert.alert('Error', 'Failed to save media');
+      showErrorToast('Error', 'Failed to save media');
     }
   };
 
@@ -154,15 +154,15 @@ const LoadToDockItemDetailsScreen: React.FC<LoadToDockItemDetailsScreenProps> = 
 
       {/* Item Details */}
       <View style={styles.itemDetailsCard}>
-        <Text style={styles.itemIdentifier}>{itemDetail.itemId} . {itemDetail.itemSku}</Text>
-        <Text style={styles.itemDescription}>{itemDetail.itemDescription}</Text>
+        <Text style={styles.itemIdentifier}>{itemDetail.ItemId} . {itemDetail.ItemNumber}</Text>
+        <Text style={styles.itemDescription}>{itemDetail.ItemDesc}</Text>
         
         <View style={styles.quantitySection}>
-          <Text style={styles.quantityLabel}>Requested Qty: {itemDetail.requestedQuantity} {itemDetail.unit}</Text>
+          <Text style={styles.quantityLabel}>Requested Qty: {itemDetail.QtyRequested} {itemDetail.ItemUom}</Text>
           <View style={styles.loadedQuantityRow}>
             <Text style={styles.quantityLabel}>Loaded Qty: </Text>
-            <Text style={styles.quantityValue}>{itemDetail.loadedQuantity}</Text>
-            <Text style={styles.quantityLabel}> of {itemDetail.requestedQuantity} {itemDetail.unit}</Text>
+            <Text style={styles.quantityValue}>{itemDetail.QtyPicked}</Text>
+            <Text style={styles.quantityLabel}> of {itemDetail.QtyRequested} {itemDetail.ItemUom}</Text>
           </View>
         </View>
       </View>
@@ -212,7 +212,7 @@ const LoadToDockItemDetailsScreen: React.FC<LoadToDockItemDetailsScreenProps> = 
         <Button
           title="SAVE"
           onPress={handleSave}
-          style={!canSave ? [styles.saveButton, styles.disabledButton] : styles.saveButton}
+          style={canSave ? styles.saveButton : styles.disabledButton}
           textStyle={styles.saveButtonText}
           disabled={!canSave}
         />

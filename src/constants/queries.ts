@@ -29,20 +29,24 @@ export const LOAD_TO_DOCK_QUERIES = {
     `,
     
     GET_ITEMS_BY_DELIVERY_ID: `
-        SELECT 
-            ItemId,
-            ItemSku,
-            ItemDescription,
-            RequestedQuantity,
-            LoadedQuantity,
-            Unit,
-            HasPhotos,
-            HasVideo
+        SELECT *
         FROM ${TableNames.SHIPPING_TABLE} 
         WHERE DeliveryId = ?
-        ORDER BY ItemId
     `,
     
+    SEARCH_ITEMS_BY_ITEM_NUMBER_AND_DESC: `
+        SELECT *
+        FROM ${TableNames.SHIPPING_TABLE} 
+        WHERE DeliveryId = ? 
+        AND (ItemNumber LIKE ? OR ItemDesc LIKE ?)
+    `,
+    
+    SCAN_ITEMS_BY_ITEM_NUMBER: `
+    SELECT *
+    FROM ${TableNames.SHIPPING_TABLE} 
+    WHERE DeliveryId = ? 
+    AND ItemNumber = ?
+`,
     SEARCH_ITEMS: `
         SELECT DISTINCT *
         FROM ${TableNames.SHIPPING_TABLE} 

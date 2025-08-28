@@ -10,14 +10,80 @@ export interface ILoadToDockItem {
 }
 
 export interface ILoadToDockItemDetail {
-  itemId: string;
-  itemSku: string;
-  itemDescription: string;
-  requestedQuantity: number;
-  loadedQuantity: number;
-  unit: string;
-  hasPhotos: boolean;
-  hasVideo: boolean;
+  DeliveryLineId: string;
+  DeliveryId: string;
+  PackFlag: string;
+  UserLocation: string;
+  HoldFlag: string;
+  ShipFromCompanyName: string;
+  ShipFromPhoneNum: string;
+  ShipFromContactDetails: string;
+  ShipToContactName: string;
+  ShipToCompanyName: string;
+  ShipToPhoneNum: string;
+  ShipToEmail: string;
+  FromAddress1: string;
+  FromAddress2: string;
+  FromAddress3: string;
+  FromTownOrCity: string;
+  FromState: string;
+  FromZip: string;
+  FromCountry: string;
+  ToAddress1: string;
+  ToAddress2: string;
+  ToAddress3: string;
+  ToCity: string;
+  ToState: string;
+  ToZip: string;
+  ToCountry: string;
+  ToteCage: string;
+  Lane: string;
+  DemandType: string;
+  CustomerName: string;
+  OrderType: string;
+  SalesOrderNum: string;
+  SalesOrderLineNum: string;
+  SOHeaderId: string;
+  SOLineId: string;
+  ItemId: string;
+  ItemNumber: string;
+  ItemDesc: string;
+  QtyRequested: string;
+  QtyPicked: string;
+  QtyShipped: string;
+  QtyReceived: string;
+  QtyDelivered: string;
+  QtyCancelled: string;
+  QtyBackOrdered: string;
+  ItemUom: string;
+  SubinventoryCode: string;
+  Locator: string;
+  ShipFromLocation: string;
+  ShipToLocation: string;
+  TrackingNumber: string;
+  PackedLpnNumber: string;
+  Container: string;
+  DeliveryDate: string;
+  PartialAction: string;
+  ShipDate: string;
+  Attribute1: string;
+  Attribute2: string;
+  Attribute3: string;
+  LastUpdateDate: string;
+  Status: string;
+  Flag: string;
+  IsSerialControlled: string;
+  SerialTypeCode: string;
+  HAZDesc: string;
+  LabelFileName: string;
+  IsHazardControlled: string;
+  CurrencyCode: string;
+  Dimensions: string;
+  GrossWeight: string;
+  SyncStatus: string;
+  PickSlipNumber: string;
+  hasPhotos?: boolean;
+  hasVideo?: boolean;
 }
 
 export interface ILoadToDockTransaction {
@@ -59,4 +125,13 @@ export interface ITransactionHistoryItem {
   timestamp: string;
   errorMessage?: string;
   retryCount: number;
+}
+
+export interface LoadToDockItemsScreenProps {
+  route: {
+    params: {
+      deliveryItem: ILoadToDockItem;
+    };
+  };
+  navigation: any;
 }

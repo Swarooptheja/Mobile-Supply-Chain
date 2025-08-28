@@ -58,19 +58,61 @@ class LoadToDockService {
     try {
       const result = await simpleDatabaseService.executeQuery(LOAD_TO_DOCK_QUERIES.GET_ITEMS_BY_DELIVERY_ID, [deliveryId]);
       const items = getDataFromResultSet(result);
-      return items.map((row: any) => ({
-        itemId: row.ItemId || 'N/A',
-        itemSku: row.ItemSku || 'N/A',
-        itemDescription: row.ItemDescription || 'N/A',
-        requestedQuantity: row.RequestedQuantity || 0,
-        loadedQuantity: row.LoadedQuantity || 0,
-        unit: row.Unit || 'Ea',
-        hasPhotos: Boolean(row.HasPhotos),
-        hasVideo: Boolean(row.HasVideo)
-      }));
+
+      return items.map((item)=>{
+        return ({
+          ...item,
+          hasPhotos: Boolean(item.HasPhotos),
+          hasVideo: Boolean(item.HasVideo)
+        })
+      })
     } catch (error) {
       console.error('Error fetching items for delivery:', error);
       throw new Error('Failed to fetch delivery items');
+    }
+  }
+
+  /**
+   * Search items within a specific delivery by search term
+   */
+  async searchItemsByDeliveryId(deliveryId: string, searchTerm: string): Promise<ILoadToDockItemDetail[]> {
+    try {
+      const searchPattern = `%${searchTerm}%`;
+      const result = await simpleDatabaseService.executeQuery(LOAD_TO_DOCK_QUERIES.SEARCH_ITEMS_BY_ITEM_NUMBER_AND_DESC, [deliveryId, searchPattern, searchPattern]);
+      const items = getDataFromResultSet(result);
+
+      return items.map((item)=>{
+        return ({
+          ...item,
+          hasPhotos: Boolean(item.HasPhotos),
+          hasVideo: Boolean(item.HasVideo)
+        })
+      })
+    } catch (error) {
+      console.error('Error searching items within delivery:', error);
+      throw new Error('Failed to search delivery items');
+    }
+  }
+
+  /**
+   * Scan items within a specific delivery by barcode
+   */
+  async scanItemsByDeliveryId(deliveryId: string, barcode: string): Promise<ILoadToDockItemDetail[]> {
+    try {
+      // const searchPattern = `%${barcode}%`;
+      const result = await simpleDatabaseService.executeQuery(LOAD_TO_DOCK_QUERIES.SCAN_ITEMS_BY_ITEM_NUMBER, [deliveryId, barcode]);
+      const items = getDataFromResultSet(result);
+
+      return items.map((item)=>{
+        return ({
+          ...item,
+          hasPhotos: Boolean(item.HasPhotos),
+          hasVideo: Boolean(item.HasVideo)
+        })
+      })
+    } catch (error) {
+      console.error('Error searching items within delivery:', error);
+      throw new Error('Failed to search delivery items');
     }
   }
 
