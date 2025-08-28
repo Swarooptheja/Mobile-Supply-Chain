@@ -135,3 +135,15 @@ export interface LoadToDockItemsScreenProps {
   };
   navigation: any;
 }
+
+export interface LoadToDockItemDetailsScreenProps {
+  route: {
+    params: {
+      deliveryItem: ILoadToDockItem;
+      itemDetail: ILoadToDockItemDetail;
+    };
+  };
+  navigation: any;
+}
+
+export type TabType = 'photos' | 'video';

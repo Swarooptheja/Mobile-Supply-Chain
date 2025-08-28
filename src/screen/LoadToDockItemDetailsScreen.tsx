@@ -1,29 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   SafeAreaView,
   StatusBar,
   StyleSheet,
-  View,
   Text,
-  TouchableOpacity
+  TouchableOpacity,
+  View
 } from 'react-native';
 import AppHeader from '../components/AppHeader';
 import Button from '../components/Button';
-import { ILoadToDockItem, ILoadToDockItemDetail } from '../types/loadToDock.interface';
 import { loadToDockService } from '../services/loadToDockService';
+import { LoadToDockItemDetailsScreenProps, TabType } from '../types/loadToDock.interface';
 import { useToast } from '../utils/toastUtils';
 
-interface LoadToDockItemDetailsScreenProps {
-  route: {
-    params: {
-      deliveryItem: ILoadToDockItem;
-      itemDetail: ILoadToDockItemDetail;
-    };
-  };
-  navigation: any;
-}
 
-type TabType = 'photos' | 'video';
+
 
 const LoadToDockItemDetailsScreen: React.FC<LoadToDockItemDetailsScreenProps> = ({ route, navigation }) => {
   const { deliveryItem, itemDetail } = route.params;
