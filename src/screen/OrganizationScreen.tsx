@@ -1,9 +1,10 @@
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import { createOrganizationScreenStyles } from '../styles/OrganizationScreen.styles';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import { fetchOrganizationsPaged } from '../services/organizationService';
 import { getInventoryOrganizationsApi, getInventoryOrganizationsMetadataApi } from '../services/api';
@@ -16,8 +17,9 @@ import { ShippingTableService } from '../services/shippingTableService';
 import { useToast } from '../utils/toastUtils';
 
 import AppHeader from '../components/AppHeader';
-import SearchBar from '../components/SearchBar';
+import { SearchBar } from '../components';
 import { Button } from '../components/Button';
+import { loadToDockService } from '../services/loadToDockService';
 
 const FlatListSeparator: React.FC = () => {
   const theme = useTheme();
@@ -39,7 +41,7 @@ const OrganizationScreen: React.FC = () => {
   const { defaultOrgId } = useAuth();
   const theme = useTheme();
   const { refreshData, refreshing } = useOrganizationRefresh();
-  const { showSuccessToast, showErrorToast } = useToast();
+  const { showErrorToast } = useToast();
 
   // State management
   const [searchText, setSearchText] = useState('');
@@ -183,15 +185,6 @@ const OrganizationScreen: React.FC = () => {
     }
   }, [refreshData, refreshOrganizationsFromAPI, searchText]);
 
-  // Handle search clear
-  const handleSearchClear = useCallback(() => {
-    setSearchText('');
-    setPage(0);
-    setHasMore(true);
-    setSelectedId(null);
-    loadOrganizationsRef.current('', 0, false);
-  }, []);
-
   // Navigation
   const onConfirm = useCallback(async () => {
     if (!selectedId) return;
@@ -205,6 +198,8 @@ const OrganizationScreen: React.FC = () => {
         createTableFromTableTypeResponse,
         createTableFromApiResponse
       );
+
+      await loadToDockService.createMediaStorageTable();
 
       if (result.success) {
         // showSuccessToast('Success', 'Shipping table data loaded successfully');
@@ -254,7 +249,7 @@ const OrganizationScreen: React.FC = () => {
     );
   };
 
-  const styles = makeStyles(theme);
+  const styles = createOrganizationScreenStyles(theme);
   
   return (
     <View style={styles.container}>
@@ -265,7 +260,6 @@ const OrganizationScreen: React.FC = () => {
           <SearchBar
             value={searchText}
             onChangeText={setSearchText}
-            onClear={handleSearchClear}
             placeholder="Search organizations..."
           />
         </View>
@@ -319,120 +313,7 @@ const OrganizationScreen: React.FC = () => {
   );
 };
 
-const makeStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-    paddingHorizontal: 0,
-    paddingTop: 0,
-    paddingBottom: 88,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 16,
-  },
-  searchContainer: { 
-    marginTop: 12, 
-    marginBottom: 8 
-  },
-  listContent: {
-    paddingBottom: 16,
-  },
-  item: {
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-  },
-  itemHeader: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    justifyContent: 'space-between' 
-  },
-  itemHeaderLeft: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    flex: 1, 
-    marginRight: 8 
-  },
-  itemName: { 
-    fontSize: 16, 
-    fontWeight: '600', 
-    color: theme.colors.textPrimary, 
-    flex: 1, 
-    marginLeft: 0 
-  },
-  itemSubtitle: {
-    marginTop: 4,
-    fontSize: 13,
-    color: theme.colors.textSecondary,
-    marginLeft: 30,
-  },
-  selected: {
-    color: theme.colors.primary,
-  },
-  radioOuter: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: theme.colors.radioBorder,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  radioOuterSelected: {
-    borderColor: theme.colors.primary,
-  },
-  radioInner: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: theme.colors.primary,
-  },
-  codePill: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    backgroundColor: theme.colors.pillBg,
-    borderRadius: 999,
-    alignSelf: 'flex-start',
-    marginLeft: 8,
-    flexShrink: 0,
-  },
-  codePillSelected: { 
-    backgroundColor: theme.colors.pillBgSelected 
-  },
-  codePillText: { 
-    color: theme.colors.pillText, 
-    fontSize: 12, 
-    fontWeight: '600' 
-  },
-  codePillTextSelected: { 
-    color: theme.colors.pillTextSelected 
-  },
 
-  stickyFooter: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    bottom: 16,
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 50,
-  },
-  emptyStateText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: theme.colors.textPrimary,
-    marginBottom: 10,
-  },
-  emptyStateSubtext: {
-    fontSize: 14,
-    color: theme.colors.textSecondary,
-    textAlign: 'center',
-  },
-});
 
 export default OrganizationScreen;
 

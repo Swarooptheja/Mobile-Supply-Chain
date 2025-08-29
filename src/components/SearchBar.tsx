@@ -1,48 +1,31 @@
-import React, { useEffect, useRef } from 'react';
-import { View, TextInput, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import React from 'react';
+import { View, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { CommonIcon } from './index';
 
-type SearchBarProps = {
+interface ISearchBarProps {
   value: string;
   onChangeText: (text: string) => void;
-  onDebouncedChange?: (text: string) => void;
-  onClear?: () => void;
-  debounceMs?: number;
   placeholder?: string;
   autoFocus?: boolean;
-};
+}
 
-const SearchBar: React.FC<SearchBarProps> = ({
+export const SearchBar: React.FC<ISearchBarProps> = ({
   value,
   onChangeText,
-  onDebouncedChange,
-  onClear,
-  debounceMs = 300,
-  placeholder = 'Search',
-  autoFocus,
+  placeholder = 'Search...',
+  autoFocus = false,
 }) => {
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    if (!onDebouncedChange) return;
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => onDebouncedChange(value.trim()), debounceMs);
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, [value, onDebouncedChange, debounceMs]);
-
   const handleClear = () => {
     onChangeText('');
-    if (onClear) {
-      onClear();
-    } else if (onDebouncedChange) {
-      onDebouncedChange('');
-    }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.searchIcon}>🔍</Text>
+      <CommonIcon 
+        icon="search"
+        size={20} 
+        color="#9CA3AF"
+      />
       <TextInput
         value={value}
         onChangeText={onChangeText}
@@ -55,7 +38,11 @@ const SearchBar: React.FC<SearchBarProps> = ({
       />
       {!!value && (
         <TouchableOpacity onPress={handleClear} accessibilityRole="button" accessibilityLabel="Clear search">
-          <Text style={styles.clear}>✕</Text>
+          <CommonIcon 
+            icon="close"
+            size={16} 
+            color="#9CA3AF"
+          />
         </TouchableOpacity>
       )}
     </View>
@@ -92,7 +79,5 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 });
-
-export default SearchBar;
 
 

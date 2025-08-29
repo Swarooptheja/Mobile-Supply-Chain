@@ -18,31 +18,6 @@ export const validateMetadata = (metadata: IApiResponseMetadata[]): boolean => {
 };
 
 /**
- * Validate data array against metadata
- */
-export const validateDataAgainstMetadata = (
-  data: any[],
-  metadata: IApiResponseMetadata[]
-): boolean => {
-  if (!Array.isArray(data) || data.length === 0) {
-    return false;
-  }
-
-  const expectedColumns = metadata.map(col => col.name);
-  
-  return data.every(row => {
-    if (typeof row !== 'object' || row === null) {
-      return false;
-    }
-    
-    // Check if all expected columns exist in the row
-    return expectedColumns.every(columnName => 
-      Object.prototype.hasOwnProperty.call(row, columnName)
-    );
-  });
-};
-
-/**
  * Sanitize metadata for SQLite compatibility
  */
 export const sanitizeMetadata = (metadata: IApiResponseMetadata[]): IApiResponseMetadata[] => {

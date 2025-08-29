@@ -4,12 +4,12 @@ import {
   StatusBar,
   StyleSheet,
   View,
-  Text,
   TouchableOpacity,
   Alert,
 } from 'react-native';
+import { CommonIcon } from '../components';
 import AppHeader from '../components/AppHeader';
-import SearchBar from '../components/SearchBar';
+import { SearchBar } from '../components';
 import InfiniteScrollList from '../components/InfiniteScrollList';
 import LoadToDockItem from '../components/LoadToDockItem';
 import BarcodeScanner from '../components/BarcodeScanner';
@@ -186,7 +186,11 @@ const LoadToDockListScreen: React.FC<LoadToDockListScreenProps> = ({ navigation 
         title="Load to Dock"
         leftElement={
           <TouchableOpacity onPress={handleBackToDashboard} style={styles.backButton}>
-            <Text style={styles.backIcon}>←</Text>
+              <CommonIcon 
+                icon="back"
+                size={24} 
+                color="#ffffff"
+              />
           </TouchableOpacity>
         }
         rightElement={headerRightElement}
@@ -254,6 +258,7 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: 20,
   },
   backIcon: {
     fontSize: 24,
@@ -274,8 +279,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     borderBottomWidth: 1,
     borderBottomColor: '#e9ecef',
-    gap: 12,
-    position: 'relative',
+    gap: 16,
+    minHeight: 64, // Ensure consistent height for alignment
   },
   searchBarContainer: {
     flex: 1,

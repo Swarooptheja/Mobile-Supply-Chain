@@ -190,6 +190,45 @@ class LoadToDockService {
   }
 
   /**
+   * Store media content with base64 data
+   */
+  async storeMediaContent(deliveryId: string, itemId: string, mediaItems: any[]): Promise<void> {
+    try {
+      // First, delete existing media for this item
+      await simpleDatabaseService.executeQuery(LOAD_TO_DOCK_QUERIES.DELETE_MEDIA_BY_ITEM, [deliveryId, itemId]);
+      
+      // Insert new media items
+      for (const media of mediaItems) {
+        await simpleDatabaseService.executeQuery(LOAD_TO_DOCK_QUERIES.INSERT_MEDIA, [
+          deliveryId,
+          itemId,
+          media.type,
+          media.base64,
+          media.size || 0,
+          media.duration || null,
+          media.timestamp || Date.now()
+        ]);
+      }
+    } catch (error) {
+      console.error('Error storing media content:', error);
+      throw new Error('Failed to store media content');
+    }
+  }
+
+  /**
+   * Get media content for an item
+   */
+  async getMediaContent(deliveryId: string, itemId: string): Promise<any[]> {
+    try {
+      const result = await simpleDatabaseService.executeQuery(LOAD_TO_DOCK_QUERIES.GET_MEDIA_BY_ITEM, [deliveryId, itemId]);
+      return getDataFromResultSet(result);
+    } catch (error) {
+      console.error('Error fetching media content:', error);
+      throw new Error('Failed to fetch media content');
+    }
+  }
+
+  /**
    * Create ship confirm transaction
    */
   async createShipConfirmTransaction(transaction: ILoadToDockTransaction): Promise<ITransactionResponse[]> {
@@ -299,6 +338,15 @@ class LoadToDockService {
     } catch (error) {
       console.error('Error incrementing retry count:', error);
       throw new Error('Failed to increment retry count');
+    }
+  }
+
+  async createMediaStorageTable(): Promise<void> {
+    try {
+      await simpleDatabaseService.executeQuery(LOAD_TO_DOCK_QUERIES.CREATE_MEDIA_TABLE);
+    } catch (error) {
+      console.error('Error creating media storage table:', error);
+      throw new Error('Failed to create media storage table');
     }
   }
 }

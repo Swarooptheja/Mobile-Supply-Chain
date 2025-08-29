@@ -1,5 +1,6 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { TouchableOpacity, StyleSheet } from 'react-native';
+import { CommonIcon } from './index';
 
 interface IRefreshButtonProps {
   onPress: () => void;
@@ -30,7 +31,11 @@ const RefreshButton: React.FC<IRefreshButtonProps> = ({
       onPress={onPress}
       activeOpacity={0.7}
     >
-      <Text style={[styles.buttonText, { color }]}>↻</Text>
+      <CommonIcon 
+        icon="refresh"
+        size={size * 0.45} 
+        color={color}
+      />
     </TouchableOpacity>
   );
 };
@@ -42,10 +47,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  buttonText: {
-    fontSize: 18,
-    fontWeight: 'bold',
   },
 });
 

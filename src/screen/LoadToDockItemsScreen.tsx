@@ -9,11 +9,10 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import { CommonIcon, ScanButton, SearchBar } from '../components';
 import AppHeader from '../components/AppHeader';
 import BarcodeScanner from '../components/BarcodeScanner';
 import Button from '../components/Button';
-import ScanButton from '../components/ScanButton';
-import SearchBar from '../components/SearchBar';
 import { loadToDockService } from '../services/loadToDockService';
 import { ILoadToDockItemDetail, LoadToDockItemsScreenProps } from '../types/loadToDock.interface';
 import { useToast } from '../utils/toastUtils';
@@ -177,7 +176,11 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
       <View style={styles.itemHeader}>
         <Text style={styles.itemId}>{index + 1}. {item.ItemNumber}</Text>
         <TouchableOpacity style={styles.arrowButton}>
-          <Text style={styles.arrowIcon}>›</Text>
+          <CommonIcon 
+                icon="arrowRight"
+                size={16} 
+                color="#6b7280"
+              />
         </TouchableOpacity>
       </View>
       
@@ -224,12 +227,22 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
         title={`Pick Slip #${deliveryItem.deliveryId}`}
         leftElement={
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Text style={styles.backIcon}>←</Text>
+            {/* <IconComponent name="arrow-left" size={24} color="#ffffff" />
+             */}
+             <CommonIcon 
+                icon="back"
+                size={24} 
+                color="#ffffff"
+              />
           </TouchableOpacity>
         }
         rightElement={
           <TouchableOpacity onPress={handleBackToDashboard} style={styles.homeButton}>
-            <Text style={styles.homeIcon}>🏠</Text>
+            <CommonIcon 
+                icon="home"
+                size={20} 
+                color="#ffffff"
+              />
           </TouchableOpacity>
         }
       />
@@ -240,6 +253,7 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
           <View style={styles.leftDetails}>
             <Text style={styles.detailLabel}>SO# {deliveryItem.salesOrderNumber}</Text>
             <Text style={styles.detailValue}>{deliveryItem.customerName}</Text>
+            <Text style={styles.detailLabel}>Total Items: {deliveryItem.itemCount || items.length}</Text>
           </View>
           <View style={styles.rightDetails}>
             <Text style={styles.detailLabel}>Date</Text>
@@ -283,10 +297,12 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
 
       {/* Items List */}
       <View style={styles.itemsSection}>
-        <View style={styles.sectionHeader}>
+        {/* <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Items to Load</Text>
-          <Text style={styles.itemCount}>{filteredItems.length} items</Text>
-        </View>
+          <Text style={styles.itemCount}>
+            {filteredItems.length} of {deliveryItem.itemCount || items.length} items
+          </Text>
+        </View> */}
         
         <ScrollView 
           style={styles.itemsList}
@@ -360,6 +376,8 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   homeIcon: {
     fontSize: 20,
@@ -478,7 +496,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   itemId: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: '#1f2937',
   },
@@ -494,7 +512,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   itemDescription: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#374151',
     fontWeight: '500',
     marginBottom: 8,
@@ -508,7 +526,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   quantityLabel: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#6b7280',
     fontWeight: '500',
   },
@@ -518,7 +536,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     paddingHorizontal: 6,
     paddingVertical: 2,
-    fontSize: 12,
+    fontSize: 13,
     color: '#1f2937',
     backgroundColor: '#ffffff',
     minWidth: 40,
@@ -536,7 +554,7 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   statusText: {
-    fontSize: 10,
+    fontSize: 13,
     color: '#6b7280',
     fontWeight: '500',
   },

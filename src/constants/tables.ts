@@ -5,6 +5,7 @@ export enum TableNames {
   ORGANIZATIONS = 'organizations',
   SETTINGS = 'settings',
   SHIPPING_TABLE = 'shipping_table',
+  MEDIA_STORAGE = 'media_storage',
 }
 
 export const TABLE_SCHEMAS = {
@@ -31,5 +32,9 @@ export const TABLE_SCHEMAS = {
   [TableNames.SHIPPING_TABLE]: {
     name: TableNames.SHIPPING_TABLE,
     description: 'Sales orders for shipping table data',
+  },
+  [TableNames.MEDIA_STORAGE]: {
+    name: TableNames.MEDIA_STORAGE,
+    description: 'Media storage for photos and videos with base64 content',
   },
 } as const;

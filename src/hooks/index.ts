@@ -3,3 +3,5 @@ export { useRefreshData, useOrganizationRefresh, useDashboardRefresh } from './u
 export { useNavigationDrawer } from './useNavigationDrawer';
 export { useInfiniteScroll } from './useInfiniteScroll';
 export { useBarcodeScanner } from './useBarcodeScanner';
+export { useMediaCapture } from './useMediaCapture';
+export { useAttractiveNotifications } from './useAttractiveNotifications';

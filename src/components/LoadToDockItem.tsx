@@ -32,7 +32,9 @@ const LoadToDockItem: React.FC<LoadToDockItemProps> = memo(({ item, index, onPre
         <View style={styles.deliveryIdContainer}>
           <Text style={styles.deliveryId}>{item.deliveryId}</Text>
           <View style={styles.itemCountBadge}>
-            <Text style={styles.itemCountText}>{item.itemCount} Items</Text>
+            <Text style={styles.itemCountText}>
+              {item.itemCount || 0} Items
+            </Text>
           </View>
         </View>
         <View style={styles.statusIndicator}>
@@ -47,15 +49,15 @@ const LoadToDockItem: React.FC<LoadToDockItemProps> = memo(({ item, index, onPre
         <View style={styles.leftContent}>
           <Text style={styles.label}>SO# {item.salesOrderNumber}</Text>
           <Text style={styles.value}>{item.customerName}</Text>
-          <Text style={styles.label}>Trip#</Text>
-          <Text style={styles.value}>{item.tripNumber}</Text>
+          <Text style={styles.value}>{item.date}</Text>
+          <Text style={styles.value}>{item.dock}</Text>
         </View>
         
         <View style={styles.rightContent}>
-          <Text style={styles.label}>Date</Text>
-          <Text style={styles.value}>{item.date}</Text>
-          <Text style={styles.label}>Dock</Text>
-          <Text style={styles.value}>{item.dock}</Text>
+          <Text style={styles.label}>Trip#</Text>
+          <Text style={styles.value}>{item.tripNumber}</Text>
+          {/* <Text style={styles.label}>Date</Text> */}
+          {/* <Text style={styles.label}>Dock</Text> */}
         </View>
       </View>
     </TouchableOpacity>
@@ -136,13 +138,13 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   label: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#6b7280',
     fontWeight: '500',
     marginBottom: 2,
   },
   value: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#1f2937',
     fontWeight: '600',
     marginBottom: 8,

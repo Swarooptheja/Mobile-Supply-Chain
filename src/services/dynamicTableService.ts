@@ -115,10 +115,6 @@ class DynamicTableService implements IDynamicTableService {
         throw new Error('Invalid metadata provided');
       }
 
-      if (data && data.length > 0 && !validateDataAgainstMetadata(data, metadata)) {
-        throw new Error('Data does not match metadata schema');
-      }
-
       // Sanitize metadata for SQLite compatibility
       const sanitizedMetadata = sanitizeMetadata(metadata);
       
@@ -154,11 +150,6 @@ class DynamicTableService implements IDynamicTableService {
 
       // Log the result
       logTableCreationResult(result, tableName as any);
-      
-      // Log table summary in development
-      if (__DEV__) {
-        console.log('Table Summary:', generateTableSummary(tableName, sanitizedMetadata, data));
-      }
 
       return result;
     } catch (error) {

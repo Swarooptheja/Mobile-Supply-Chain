@@ -1,5 +1,6 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { TouchableOpacity, StyleSheet } from 'react-native';
+import { CommonIcon } from './index';
 
 interface IMenuButtonProps {
   onPress: () => void;
@@ -30,7 +31,11 @@ const MenuButton: React.FC<IMenuButtonProps> = ({
       onPress={onPress}
       activeOpacity={0.7}
     >
-      <Text style={[styles.buttonText, { color }]}>⋮</Text>
+      <CommonIcon 
+        icon="more"
+        size={size * 0.45} 
+        color={color}
+      />
     </TouchableOpacity>
   );
 };
@@ -42,10 +47,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  buttonText: {
-    fontSize: 18,
-    fontWeight: 'bold',
   },
 });
 

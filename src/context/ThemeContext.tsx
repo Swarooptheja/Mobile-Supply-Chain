@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useMemo } from 'react';
+import React, { createContext, useContext, useMemo, useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 
 export type Theme = {
@@ -60,11 +60,45 @@ const ThemeContext = createContext<Theme>(lightTheme);
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const scheme = useColorScheme();
   const theme = useMemo(() => (scheme === 'dark' ? darkTheme : lightTheme), [scheme]);
+  
+  // Apply theme to document root for CSS variables
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      const root = document.documentElement;
+      root.setAttribute('data-theme', scheme === 'dark' ? 'dark' : 'light');
+      
+      // Apply CSS custom properties
+      Object.entries(theme.colors).forEach(([key, value]) => {
+        root.style.setProperty(`--color-${key}`, value);
+      });
+    }
+  }, [theme, scheme]);
+
   return <ThemeContext.Provider value={theme}>{children}</ThemeContext.Provider>;
 };
 
 export function useTheme(): Theme {
   return useContext(ThemeContext);
+}
+
+// Helper function to get current theme mode
+export function useThemeMode(): 'light' | 'dark' {
+  const scheme = useColorScheme();
+  return scheme === 'dark' ? 'dark' : 'light';
+}
+
+// Helper function to toggle theme manually (if needed)
+export function useThemeToggle() {
+  const { scheme } = useColorScheme();
+  const currentScheme = useColorScheme();
+  
+  const toggleTheme = () => {
+    // This would need to be implemented with a custom theme state
+    // since useColorScheme is read-only
+    console.log('Theme toggle not implemented - useColorScheme is read-only');
+  };
+  
+  return { currentScheme, toggleTheme };
 }
 
 

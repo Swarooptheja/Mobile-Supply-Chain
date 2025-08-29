@@ -146,4 +146,4 @@ export interface LoadToDockItemDetailsScreenProps {
   navigation: any;
 }
 
-export type TabType = 'photos' | 'video';
+export type TabType = string;

@@ -14,17 +14,21 @@ ORDER BY InventoryOrgName ASC LIMIT ? OFFSET ?`,
 
 export const LOAD_TO_DOCK_QUERIES = {
     GET_ALL_ITEMS: `
-        SELECT *
-        FROM ${TableNames.SHIPPING_TABLE} 
-        GROUP BY DeliveryId
-        ORDER BY ShipDate DESC
+        SELECT 
+            s.*,
+            (SELECT COUNT(*) FROM ${TableNames.SHIPPING_TABLE} WHERE DeliveryId = s.DeliveryId) as ItemCount
+        FROM ${TableNames.SHIPPING_TABLE} s
+        GROUP BY s.DeliveryId
+        ORDER BY s.ShipDate DESC
     `,
     
     GET_ITEMS_PAGINATED: `
-        SELECT *
-        FROM ${TableNames.SHIPPING_TABLE} 
-        GROUP BY DeliveryId
-        ORDER BY ShipDate DESC
+        SELECT 
+            s.*,
+            (SELECT COUNT(*) FROM ${TableNames.SHIPPING_TABLE} WHERE DeliveryId = s.DeliveryId) as ItemCount
+        FROM ${TableNames.SHIPPING_TABLE} s
+        GROUP BY s.DeliveryId
+        ORDER BY s.ShipDate DESC
         LIMIT ? OFFSET ?
     `,
     
@@ -48,28 +52,34 @@ export const LOAD_TO_DOCK_QUERIES = {
     AND ItemNumber = ?
 `,
     SEARCH_ITEMS: `
-        SELECT DISTINCT *
-        FROM ${TableNames.SHIPPING_TABLE} 
-        WHERE (DeliveryId LIKE ? OR DeliveryLineId LIKE ? OR CustomerName LIKE ?)
-        GROUP BY DeliveryId
-        ORDER BY ShipDate DESC
+        SELECT DISTINCT
+            s.*,
+            (SELECT COUNT(*) FROM ${TableNames.SHIPPING_TABLE} WHERE DeliveryId = s.DeliveryId) as ItemCount
+        FROM ${TableNames.SHIPPING_TABLE} s
+        WHERE (s.DeliveryId LIKE ? OR s.DeliveryLineId LIKE ? OR s.CustomerName LIKE ?)
+        GROUP BY s.DeliveryId
+        ORDER BY s.ShipDate DESC
     `,
     
     SEARCH_ITEMS_PAGINATED: `
-        SELECT DISTINCT *
-        FROM ${TableNames.SHIPPING_TABLE} 
-        WHERE (DeliveryId LIKE ? OR DeliveryLineId LIKE ? OR CustomerName LIKE ?)
-        GROUP BY DeliveryId
-        ORDER BY ShipDate DESC
+        SELECT DISTINCT
+            s.*,
+            (SELECT COUNT(*) FROM ${TableNames.SHIPPING_TABLE} WHERE DeliveryId = s.DeliveryId) as ItemCount
+        FROM ${TableNames.SHIPPING_TABLE} s
+        WHERE (s.DeliveryId LIKE ? OR s.DeliveryLineId LIKE ? OR s.CustomerName LIKE ?)
+        GROUP BY s.DeliveryId
+        ORDER BY s.ShipDate DESC
         LIMIT ? OFFSET ?
     `,
     
     SEARCH_BY_BARCODE: `
-        SELECT DISTINCT *
-        FROM ${TableNames.SHIPPING_TABLE} 
-        WHERE (DeliveryId = ? OR DeliveryLineId = ? OR CustomerName = ?)
-        GROUP BY DeliveryId
-        ORDER BY ShipDate DESC
+        SELECT DISTINCT
+            s.*,
+            (SELECT COUNT(*) FROM ${TableNames.SHIPPING_TABLE} WHERE DeliveryId = s.DeliveryId) as ItemCount
+        FROM ${TableNames.SHIPPING_TABLE} s
+        WHERE (s.DeliveryId = ? OR s.DeliveryLineId = ? OR s.CustomerName = ?)
+        GROUP BY s.DeliveryId
+        ORDER BY s.ShipDate DESC
     `,
     
     UPDATE_LOADED_QUANTITY: `
@@ -109,5 +119,38 @@ export const LOAD_TO_DOCK_QUERIES = {
         UPDATE transaction_history 
         SET RetryCount = RetryCount + 1, UpdatedAt = datetime('now')
         WHERE Id = ?
+    `,
+    
+    // Media storage queries
+    CREATE_MEDIA_TABLE: `
+        CREATE TABLE IF NOT EXISTS ${TableNames.MEDIA_STORAGE} (
+            Id INTEGER PRIMARY KEY AUTOINCREMENT,
+            DeliveryId TEXT NOT NULL,
+            ItemId TEXT NOT NULL,
+            MediaType TEXT NOT NULL CHECK(MediaType IN ('photo', 'video')),
+            Base64Content TEXT NOT NULL,
+            FileSize INTEGER,
+            Duration REAL,
+            Timestamp INTEGER,
+            CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(DeliveryId, ItemId, MediaType, Timestamp)
+        )
+    `,
+    
+    INSERT_MEDIA: `
+        INSERT INTO ${TableNames.MEDIA_STORAGE} 
+        (DeliveryId, ItemId, MediaType, Base64Content, FileSize, Duration, Timestamp)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    `,
+    
+    GET_MEDIA_BY_ITEM: `
+        SELECT * FROM ${TableNames.MEDIA_STORAGE} 
+        WHERE DeliveryId = ? AND ItemId = ?
+        ORDER BY Timestamp DESC
+    `,
+    
+    DELETE_MEDIA_BY_ITEM: `
+        DELETE FROM ${TableNames.MEDIA_STORAGE} 
+        WHERE DeliveryId = ? AND ItemId = ?
     `
 };

@@ -52,3 +52,4 @@ export interface IAuthContext {
   responsibilities?: string[];
   defaultOrgId?: string | null;
 }
+

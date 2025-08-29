@@ -1,5 +1,6 @@
 import React from 'react';
-import { TouchableOpacity, Text, View, StyleSheet } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
+import { CommonIcon } from './index';
 
 interface IScanButtonProps {
   onPress: () => void;
@@ -9,21 +10,19 @@ interface IScanButtonProps {
   borderColor?: string;
   hintText?: string;
   hintTextColor?: string;
-  style?: any;
 }
 
-const ScanButton: React.FC<IScanButtonProps> = ({
+export const ScanButton: React.FC<IScanButtonProps> = ({
   onPress,
   size = 48,
-  iconColor = '#10b981',
-  backgroundColor = '#ffffff',
-  borderColor = '#10b981',
-  hintText = 'Scan',
+  iconColor = '#ffffff',
+  backgroundColor = '#1e3a8a',
+  borderColor = '#1e3a8a',
+  hintText = 'Scan Barcode',
   hintTextColor = '#6b7280',
-  style
 }) => {
   return (
-    <View style={[styles.container, { width: size, height: size }, style]}>
+    <View style={styles.container}>
       <TouchableOpacity
         style={[
           styles.button,
@@ -32,49 +31,50 @@ const ScanButton: React.FC<IScanButtonProps> = ({
             height: size,
             backgroundColor,
             borderColor,
-          }
+          },
         ]}
         onPress={onPress}
-        activeOpacity={0.7}
+        activeOpacity={0.8}
       >
-        <Text style={[styles.buttonText, { color: iconColor }]}>📊</Text>
+        <CommonIcon 
+          icon="qrCode"
+          size={size * 0.4} 
+          color={iconColor}
+        />
       </TouchableOpacity>
-      <Text style={[styles.hintText, { color: hintTextColor }]}>{hintText}</Text>
+      {/* <Text style={[styles.hintText, { color: hintTextColor }]}>{hintText}</Text> */}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    justifyContent: 'center',
     alignItems: 'center',
-    position: 'relative',
+    justifyContent: 'center',
+    height: 48, // Exact same height as search bar for perfect alignment
+    width: 48, // Match the button size
   },
   button: {
-    borderRadius: 8,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 4,
     },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  buttonText: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
   },
   hintText: {
-    fontSize: 12,
+    fontSize: 10,
     textAlign: 'center',
-    position: 'absolute',
-    bottom: -20,
+    marginTop: 4,
+    fontWeight: '600',
     width: '100%',
+    position: 'absolute',
+    bottom: -20, // Position text below the button area
   },
 });
-
-export default ScanButton;

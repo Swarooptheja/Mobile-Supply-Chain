@@ -41,7 +41,7 @@ const InfiniteScrollList = <T extends any>({
   ListHeaderComponent,
   contentContainerStyle,
   style,
-  showsVerticalScrollIndicator = true,
+  showsVerticalScrollIndicator = false,
   onEndReachedThreshold = 0.1
 }: InfiniteScrollListProps<T>) => {
   const isEndReachedRef = useRef(false);

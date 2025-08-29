@@ -1,5 +1,6 @@
 import React from 'react';
-import { TouchableOpacity, View, StyleSheet } from 'react-native';
+import { TouchableOpacity, StyleSheet } from 'react-native';
+import IconComponent from './icons/IconComponent';
 
 interface HamburgerMenuProps {
   onPress: () => void;
@@ -8,11 +9,7 @@ interface HamburgerMenuProps {
 const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ onPress }) => {
   return (
     <TouchableOpacity style={styles.container} onPress={onPress}>
-      <View style={styles.hamburgerIcon}>
-        <View style={styles.hamburgerLine} />
-        <View style={styles.hamburgerLine} />
-        <View style={styles.hamburgerLine} />
-      </View>
+      <IconComponent name="menu" size={24} color="#ffffff" />
     </TouchableOpacity>
   );
 };
@@ -20,16 +17,6 @@ const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ onPress }) => {
 const styles = StyleSheet.create({
   container: {
     padding: 8,
-  },
-  hamburgerIcon: {
-    width: 24,
-    height: 18,
-    justifyContent: 'space-between',
-  },
-  hamburgerLine: {
-    height: 3,
-    backgroundColor: '#ffffff',
-    borderRadius: 2,
   },
 });
 
