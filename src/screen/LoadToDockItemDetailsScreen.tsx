@@ -1,19 +1,18 @@
-import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   SafeAreaView,
   StatusBar,
   StyleSheet,
-  TouchableOpacity,
   View,
   Alert
 } from 'react-native';
 import AppHeader from '../components/AppHeader';
 import Button from '../components/Button';
-import { MediaCapture, ItemDetailsCard, DynamicTabs, IconComponent, CommonIcon } from '../components';
+import { MediaCapture, ItemDetailsCard, DynamicTabs, CommonIcon, HeaderButton } from '../components';
 import { loadToDockService } from '../services/loadToDockService';
 import { LoadToDockItemDetailsScreenProps, TabType } from '../types/loadToDock.interface';
 import { IMediaItem } from '../types/media.interface';
-import { useToast } from '../utils/toastUtils';
+import { useAttractiveNotification } from '../context/AttractiveNotificationContext';
 
 const LoadToDockItemDetailsScreen: React.FC<LoadToDockItemDetailsScreenProps> = ({ route, navigation }) => {
   const { deliveryItem, itemDetail } = route.params;
@@ -22,17 +21,9 @@ const LoadToDockItemDetailsScreen: React.FC<LoadToDockItemDetailsScreenProps> = 
   const [hasPhotos, setHasPhotos] = useState(false);
   const [hasVideo, setHasVideo] = useState(false);
   const [canSave, setCanSave] = useState(false);
-  const { showErrorToast, showSuccessToast } = useToast();
+  const { showError, showSuccess } = useAttractiveNotification();
   
-  // Store toast functions in refs to avoid dependency issues
-  const showErrorToastRef = useRef(showErrorToast);
-  const showSuccessToastRef = useRef(showSuccessToast);
-  
-  // Update refs when toast functions change
-  useEffect(() => {
-    showErrorToastRef.current = showErrorToast;
-    showSuccessToastRef.current = showSuccessToast;
-  }, [showErrorToast, showSuccessToast]);
+
   
   // Memoize filtered media arrays to prevent unnecessary re-renders
   const photoMedia = useMemo(() => capturedMedia.filter(media => media.type === 'photo'), [capturedMedia]);
@@ -90,15 +81,15 @@ const LoadToDockItemDetailsScreen: React.FC<LoadToDockItemDetailsScreenProps> = 
         hasVideo
       );
 
-      showSuccessToastRef.current('Success', 'Media captured and saved successfully!');
+      showSuccess('Success', 'Media captured and saved successfully!');
       
       // Navigate back to items page
       navigation.goBack();
     } catch (error) {
       console.error('Error saving media:', error);
-      showErrorToastRef.current('Error', 'Failed to save media');
+      showError('Error', 'Failed to save media');
     }
-  }, [canSave, deliveryItem.deliveryId, itemDetail.ItemId, capturedMedia, navigation, hasPhotos, hasVideo]);
+  }, [canSave, deliveryItem.deliveryId, itemDetail.ItemId, capturedMedia, navigation, hasPhotos, hasVideo, showSuccess, showError]);
 
   const handleBackToItems = useCallback(() => {
     navigation.goBack();
@@ -166,24 +157,18 @@ const LoadToDockItemDetailsScreen: React.FC<LoadToDockItemDetailsScreenProps> = 
       <AppHeader 
         title={`Pick Slip #${itemDetail.ItemNumber}`}
         leftElement={
-          <TouchableOpacity onPress={handleBackToItems} style={styles.backButton}>
-            {/* <IconComponent name="arrow-left" size={24} color="#ffffff" /> */}
-            <CommonIcon 
-                icon="back"
-                size={24} 
-                color="#ffffff"
-              />
-          </TouchableOpacity>
+          <HeaderButton
+            icon="back"
+            onPress={handleBackToItems}
+            backgroundColor="rgba(255, 255, 255, 0.2)"
+          />
         }
         rightElement={
-          <TouchableOpacity onPress={handleNavigateToDashboard} style={styles.homeButton}>
-            {/* <IconComponent name="home" size={20} color="#ffffff" /> */}
-            <CommonIcon 
-                icon="home"
-                size={20} 
-                color="#ffffff"
-              />
-          </TouchableOpacity>
+          <HeaderButton
+            icon="home"
+            onPress={handleNavigateToDashboard}
+            backgroundColor="rgba(255, 255, 255, 0.2)"
+          />
         }
       />
 
@@ -223,20 +208,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  homeButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   tabContent: {
     flex: 1,

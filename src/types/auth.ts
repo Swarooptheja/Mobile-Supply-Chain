@@ -47,7 +47,7 @@ export interface ILoginResponse {
 export interface IAuthContext {
   user?: IUser | null;
   isAuthenticated?: boolean;
-  login: (credentials: ILoginCredentials) => Promise<void>;
+  login: (credentials: ILoginCredentials, onSuccess?: () => void) => Promise<void>;
   logout?: () => void;
   responsibilities?: string[];
   defaultOrgId?: string | null;

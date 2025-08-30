@@ -2,10 +2,9 @@ import React from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import AppHeader from '../components/AppHeader';
-import HamburgerMenu from '../components/HamburgerMenu';
 import NavigationDrawer from '../components/NavigationDrawer';
 import { useNavigationDrawer } from '../hooks';
-import { CommonIcon } from '../components';
+import { CommonIcon, HeaderButton } from '../components';
 
 interface DashboardScreenProps {
   navigation: any;
@@ -28,7 +27,12 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
     <SafeAreaView style={styles.container}>
       <AppHeader 
         title="Dashboard" 
-        leftElement={<HamburgerMenu onPress={openDrawer} />}
+        leftElement={
+          <HeaderButton
+            icon="menu"
+            onPress={openDrawer}
+          />
+        }
       />
       
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>

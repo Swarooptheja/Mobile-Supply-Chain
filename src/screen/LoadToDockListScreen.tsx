@@ -4,35 +4,35 @@ import {
   StatusBar,
   StyleSheet,
   View,
-  TouchableOpacity,
   Alert,
 } from 'react-native';
-import { CommonIcon } from '../components';
+import { HeaderButton } from '../components';
 import AppHeader from '../components/AppHeader';
 import { SearchBar } from '../components';
 import InfiniteScrollList from '../components/InfiniteScrollList';
 import LoadToDockItem from '../components/LoadToDockItem';
 import BarcodeScanner from '../components/BarcodeScanner';
 import SortAndFilter from '../components/SortAndFilter';
-import { RefreshButton, MenuButton, ScanButton } from '../components';
+import { ScanButton } from '../components';
 import { ILoadToDockItem } from '../types/loadToDock.interface';
 import { loadToDockService } from '../services/loadToDockService';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 import { useSortAndFilter } from '../hooks/useSortAndFilter';
-import { useToast } from '../utils/toastUtils';
+import { useAttractiveNotification } from '../context/AttractiveNotificationContext';
 import { getSortOptions, getFilterOptions } from '../constants/sortFilterOptions';
+import { useResponsive } from '../hooks/useResponsive';
+import { BUSINESS_CONFIG } from '../config';
 
 interface LoadToDockListScreenProps {
   navigation: any;
 }
 
-const PAGE_SIZE = 20; // Optimal page size for performance
-
 const LoadToDockListScreen: React.FC<LoadToDockListScreenProps> = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSortFilterModal, setShowSortFilterModal] = useState(false);
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
-  const { showErrorToast } = useToast();
+  const { showError } = useAttractiveNotification();
+  const { headerButtonSpacing } = useResponsive();
 
   // Sort and filter hook
   const {
@@ -53,7 +53,7 @@ const LoadToDockListScreen: React.FC<LoadToDockListScreenProps> = ({ navigation 
     refresh,
     reset
   } = useInfiniteScroll({
-    pageSize: PAGE_SIZE,
+    pageSize: BUSINESS_CONFIG.PAGINATION.LOAD_TO_DOCK_PAGE_SIZE,
     onLoadMore: useCallback(async (page: number, pageSize: number) => {
       if (searchQuery.trim()) {
         return await loadToDockService.searchLoadToDockItemsPaginated(searchQuery, page, pageSize);
@@ -79,7 +79,7 @@ const LoadToDockListScreen: React.FC<LoadToDockListScreenProps> = ({ navigation 
       // Debounce search to avoid too many API calls
       const timeoutId = setTimeout(() => {
         refresh();
-      }, 300);
+      }, BUSINESS_CONFIG.PAGINATION.LOAD_TO_DOCK_SEARCH_DEBOUNCE_MS);
       
       return () => clearTimeout(timeoutId);
     }
@@ -112,10 +112,10 @@ const LoadToDockListScreen: React.FC<LoadToDockListScreenProps> = ({ navigation 
         navigation.navigate('LoadToDockItems', { deliveryItem: matchedItem });
             
       } else {
-        showErrorToast('No Match Found', `No delivery items found for barcode: ${barcode}`);
+        showError('No Match Found', `No delivery items found for barcode: ${barcode}`);
       }
     } catch (error) {
-      showErrorToast('Error', 'Failed to search for barcode in database');
+      showError('Error', 'Failed to search for barcode in database');
     }
   };
 
@@ -171,9 +171,15 @@ const LoadToDockListScreen: React.FC<LoadToDockListScreenProps> = ({ navigation 
 
   // Header right elements with refresh and three-dot menu
   const headerRightElement = (
-    <View style={styles.headerRightContainer}>
-      <RefreshButton onPress={handleRefreshData} />
-      <MenuButton onPress={() => setShowSortFilterModal(true)} />
+    <View style={[styles.headerRightContainer, { gap: headerButtonSpacing }]}>
+      <HeaderButton
+        icon="refresh"
+        onPress={handleRefreshData}
+      />
+      <HeaderButton
+        icon="more"
+        onPress={() => setShowSortFilterModal(true)}
+      />
     </View>
   );
 
@@ -185,13 +191,10 @@ const LoadToDockListScreen: React.FC<LoadToDockListScreenProps> = ({ navigation 
       <AppHeader 
         title="Load to Dock"
         leftElement={
-          <TouchableOpacity onPress={handleBackToDashboard} style={styles.backButton}>
-              <CommonIcon 
-                icon="back"
-                size={24} 
-                color="#ffffff"
-              />
-          </TouchableOpacity>
+          <HeaderButton
+            icon="back"
+            onPress={handleBackToDashboard}
+          />
         }
         rightElement={headerRightElement}
       />
@@ -253,24 +256,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8f9fa',
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 20,
-  },
-  backIcon: {
-    fontSize: 24,
-    color: '#ffffff',
-    fontWeight: 'bold',
-  },
   headerRightContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
   },
-
   searchSection: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -287,7 +276,6 @@ const styles = StyleSheet.create({
     height: 48,
     justifyContent: 'center',
   },
-
   contentSection: {
     flex: 1,
     paddingHorizontal: 20,

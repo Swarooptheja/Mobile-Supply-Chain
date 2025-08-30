@@ -3,7 +3,7 @@ import { loginApi, getInventoryOrganizationsApi, getInventoryOrganizationsMetada
 import { IAuthContext, ILoginCredentials } from '../types/auth';
 import { useDynamicTables } from '../hooks';
 import { TableNames } from '../constants/tables';
-import { useAttractiveNotifications } from '../hooks';
+import { useAttractiveNotification } from '../context/AttractiveNotificationContext';
 import { simpleDatabaseService } from '../services/simpleDatabase';
 import { getDataFromResultSet } from '../../services/sharedService';
 import { LOGIN_QUERIES } from '../constants/queries';
@@ -17,18 +17,18 @@ interface IAuthProviderProps {
 export const AuthProvider: React.FC<IAuthProviderProps> = ({ children }) => {
   
   const { createTableFromApiResponse } = useDynamicTables();
-  const { showLoginSuccess, showLoginError } = useAttractiveNotifications();
+  const { showSuccess, showError } = useAttractiveNotification();
   const [defaultOrgId, setDefaultOrgId] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
  
-  const login = async (credentials: ILoginCredentials): Promise<void> => {
+  const login = async (credentials: ILoginCredentials, onSuccess?: () => void): Promise<void> => {
     try {
       const response = await loginApi(credentials);
       
       // Create login table from API response metadata and data
       if (response.metadata && response.data.length) {
         if(response.data[0].STATUS === "0"){
-          showLoginError('Login failed');
+          showError('Login Failed', 'Invalid credentials');
           return;
         }
         const tableResult = await createTableFromApiResponse(
@@ -39,7 +39,7 @@ export const AuthProvider: React.FC<IAuthProviderProps> = ({ children }) => {
         
         if (!tableResult.success) {
           // Show attractive notification for API failures
-          showLoginError(tableResult.error || 'Login failed');
+          showError('Login Failed', tableResult.error || 'Failed to create login table');
           throw new Error(`Failed to create login table: ${tableResult.error}`);
         }
 
@@ -47,14 +47,14 @@ export const AuthProvider: React.FC<IAuthProviderProps> = ({ children }) => {
         
         // Add safety check for the query result
         if (!defaultOrgData) {
-          showLoginError('Default Organization ID not found');
+          showError('Login Failed', 'Default Organization ID not found');
           return;
         };
         
         const orgDataArray = getDataFromResultSet(defaultOrgData);
         
         if (!orgDataArray || !orgDataArray.length) {
-          showLoginError('No organization data found');
+          showError('Login Failed', 'No organization data found');
           return;
         };
         
@@ -62,7 +62,7 @@ export const AuthProvider: React.FC<IAuthProviderProps> = ({ children }) => {
         setDefaultOrgId(resolvedOrgId ?? null);
 
         if(!resolvedOrgId) {
-          showLoginError('Default Organization ID not found');
+          showError('Login Failed', 'Default Organization ID not found');
           return;
         };
         
@@ -85,8 +85,18 @@ export const AuthProvider: React.FC<IAuthProviderProps> = ({ children }) => {
         }
 
         // Show attractive success notification
-        showLoginSuccess(credentials.username);
+        showSuccess(`Hello ${credentials.username}, you've successfully logged in.`);
+        
+        // Add a small delay to ensure the notification is visible before navigation
+        await new Promise<void>(resolve => setTimeout(resolve, 2000));
+        
+        // Set authentication state after showing notification
         setIsAuthenticated(true);
+        
+        // Call the success callback if provided (for navigation)
+        if (onSuccess) {
+          onSuccess();
+        }
       }
 
 
@@ -95,7 +105,7 @@ export const AuthProvider: React.FC<IAuthProviderProps> = ({ children }) => {
       
       // Show appropriate attractive notification based on error type
       if (error instanceof Error) {
-        showLoginError(error.message);
+        showError('Login Failed', error.message);
         
         // Provide user-friendly error messages
         if (error.message.includes('Failed to connect')) {
@@ -110,7 +120,7 @@ export const AuthProvider: React.FC<IAuthProviderProps> = ({ children }) => {
           throw new Error('Login failed. Please try again.');
         }
       } else {
-        showLoginError('An unexpected error occurred. Please try again.');
+        showError('Login Failed', 'An unexpected error occurred. Please try again.');
         throw new Error('An unexpected error occurred. Please try again.');
       }
     }

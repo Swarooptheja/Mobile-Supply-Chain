@@ -18,7 +18,7 @@ const AttractiveNotification: React.FC<IAttractiveNotificationProps> = ({
   type,
   title,
   message,
-  duration = 4000,
+  duration = 1500,
   onHide,
 }) => {
   const translateY = useRef(new Animated.Value(-200)).current;

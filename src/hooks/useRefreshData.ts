@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { useToast } from '../utils/toastUtils';
+import { useAttractiveNotification } from '../context/AttractiveNotificationContext';
 
 export interface RefreshOptions {
   successMessage?: string;
@@ -11,7 +11,7 @@ export interface RefreshOptions {
 
 export const useRefreshData = (options: RefreshOptions = {}) => {
   const [refreshing, setRefreshing] = useState(false);
-  const { showSuccessToast, showErrorToast } = useToast();
+  const { showSuccess, showError } = useAttractiveNotification();
 
   const refreshData = useCallback(async (
     refreshFunction: () => Promise<void>,
@@ -25,7 +25,7 @@ export const useRefreshData = (options: RefreshOptions = {}) => {
       await refreshFunction();
       
       if (finalOptions.showToast !== false) {
-        showSuccessToast(
+        showSuccess(
           'Success', 
           finalOptions.successMessage || 'Data refreshed successfully'
         );
@@ -40,14 +40,14 @@ export const useRefreshData = (options: RefreshOptions = {}) => {
         : (finalOptions.errorMessage || 'Refresh failed');
       
       if (finalOptions.showToast !== false) {
-        showErrorToast('Refresh Failed', errorMessage);
+        showError('Refresh Failed', errorMessage);
       }
       
       finalOptions.onError?.(error instanceof Error ? error : new Error(errorMessage));
     } finally {
       setRefreshing(false);
     }
-  }, [options, showSuccessToast, showErrorToast]);
+  }, [options, showSuccess, showError]);
 
   return {
     refreshing,

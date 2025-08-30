@@ -1,6 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
+import { useResponsive } from '../hooks/useResponsive';
+import { headerStyles, headerColors, headerSpacing } from '../styles/header.styles';
 
 interface AppHeaderProps {
 	title?: string;
@@ -10,52 +13,56 @@ interface AppHeaderProps {
 
 const AppHeader: React.FC<AppHeaderProps> = ({ title, leftElement, rightElement }) => {
 	const theme = useTheme();
-	const styles = createStyles(theme);
+	const insets = useSafeAreaInsets();
+	const { headerHeight } = useResponsive();
+	const styles = createStyles(insets, headerHeight);
 
 	return (
-		<View style={styles.container}>
-			{!!leftElement && <View style={styles.left}>{leftElement}</View>}
-			<Text style={styles.title} numberOfLines={1}>{title || ''}</Text>
-			{!!rightElement && <View style={styles.right}>{rightElement}</View>}
+		<View style={[headerStyles.headerContainer, styles.container]}>
+			<View style={[headerStyles.headerContent, styles.headerContent]}>
+				<View style={[headerStyles.headerButtonContainer, styles.leftContainer]}>
+					{leftElement}
+				</View>
+				<View style={[headerStyles.headerTitleContainer, styles.titleContainer]}>
+					<Text style={[headerStyles.headerTitle, styles.title]} numberOfLines={1}>
+						{title || ''}
+					</Text>
+				</View>
+				<View style={[headerStyles.headerButtonContainer, styles.rightContainer]}>
+					{rightElement}
+				</View>
+			</View>
 		</View>
 	);
 };
 
-const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
+const createStyles = (insets: any, headerHeight: number) => StyleSheet.create({
 	container: {
-		height: 60,
-		backgroundColor: theme.colors.primary,
-		color: '#ffffff',
-		flexDirection: 'row',
+		paddingTop: insets.top > 0 ? insets.top + 8 : 20, // Reduced padding for compact look
+	},
+	headerContent: {
+		minHeight: Math.max(56, headerHeight * 0.7), // Reduced height for better proportions
+	},
+	leftContainer: {
+		flex: 0, // Fixed width for left container
+		alignItems: 'flex-start',
+		justifyContent: 'center',
+		minWidth: headerSpacing.buttonSize, // Use consistent button size
+	},
+	titleContainer: {
+		flex: 1, // Take remaining space
 		alignItems: 'center',
 		justifyContent: 'center',
-		paddingHorizontal: 20,
-		// Add shadow for consistency
-		shadowColor: '#000',
-		shadowOffset: {
-			width: 0,
-			height: 2,
-		},
-		shadowOpacity: 0.1,
-		shadowRadius: 4,
-		elevation: 3,
+		paddingHorizontal: 8, // Minimal padding
 	},
-	left: {
-		position: 'absolute',
-		left: 16,
-		zIndex: 1,
+	rightContainer: {
+		flex: 0, // Fixed width for right container
+		alignItems: 'flex-end',
+		justifyContent: 'center',
+		minWidth: headerSpacing.buttonSize, // Use consistent button size
 	},
 	title: {
-		color: '#ffffff',
-		fontSize: 20,
-		fontWeight: 'bold',
-		textAlign: 'center',
-		flex: 1,
-	},
-	right: {
-		position: 'absolute',
-		right: 16,
-		zIndex: 1,
+		fontSize: Math.max(18, Math.min(22, headerHeight * 0.35)), // Responsive font size
 	},
 });
 

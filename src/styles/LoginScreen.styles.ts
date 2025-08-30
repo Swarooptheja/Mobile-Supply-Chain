@@ -1,7 +1,16 @@
 import { StyleSheet, Dimensions } from 'react-native';
 import { Theme } from '../context/ThemeContext';
 
-const { width } = Dimensions.get('window');
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+
+// Helper functions for responsive sizing
+const scale = (size: number) => (size * screenWidth) / 375;
+const verticalScale = (size: number) => (size * screenHeight) / 812;
+const moderateScale = (size: number, factor: number = 0.5) => size + (scale(size) - size) * factor;
+
+// Device size detection
+const isSmallDevice = screenWidth <= 375;
+const isTablet = screenWidth > 768;
 
 // Create styles function that accepts theme
 export const createLoginScreenStyles = (theme: Theme) => StyleSheet.create({
@@ -16,54 +25,58 @@ export const createLoginScreenStyles = (theme: Theme) => StyleSheet.create({
     flex: 1,
   },
   
-  // Content Container - Using same background approach as OrganizationScreen
+  // Content Container - Responsive padding and spacing
   content: {
     flex: 1,
     backgroundColor: theme.colors.background,
-    paddingTop: 25,
-    paddingBottom: 25,
+    paddingTop: verticalScale(20),
+    paddingBottom: verticalScale(25),
+    paddingHorizontal: scale(20),
+    justifyContent: 'space-between', // Better distribution of space
   },
   
-  // Login Card
+  // Login Card - Responsive sizing and positioning
   card: {
     backgroundColor: theme.colors.background,
-    borderRadius: 16,
-    paddingHorizontal: 24,
-    paddingVertical: 24,
-    width: width * 0.9,
-    maxWidth: 400,
+    borderRadius: scale(16),
+    paddingHorizontal: scale(24),
+    paddingVertical: verticalScale(32),
+    width: isTablet ? Math.min(screenWidth * 0.6, 500) : screenWidth * 0.9,
+    maxWidth: isTablet ? 500 : 400,
     alignSelf: 'center',
     borderWidth: 1,
     borderColor: theme.colors.border,
-    marginBottom: 80,
+    marginBottom: verticalScale(40), // Reduced margin for better spacing
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 4,
+      height: scale(4),
     },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
+    shadowRadius: scale(8),
     elevation: 4,
+    // Responsive margins for different screen sizes
+    marginHorizontal: isSmallDevice ? scale(16) : scale(20),
   },
   
   cardTitle: {
-    fontSize: 24,
+    fontSize: moderateScale(24),
     fontWeight: 'bold',
     color: theme.colors.textPrimary,
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: verticalScale(32), // Increased margin for better visual separation
   },
   
-  // Input Container
+  // Input Container - Responsive spacing
   inputContainer: {
-    marginBottom: 18,
+    marginBottom: verticalScale(24), // Increased spacing between inputs
   },
   
   inputLabel: {
-    fontSize: 15,
+    fontSize: moderateScale(15),
     fontWeight: '600',
     color: theme.colors.textPrimary,
-    marginBottom: 8,
+    marginBottom: verticalScale(10), // Slightly increased for better readability
   },
   
   inputField: {
@@ -72,49 +85,64 @@ export const createLoginScreenStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.colors.background,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    borderRadius: scale(8),
+    paddingHorizontal: scale(16), // Increased horizontal padding
+    paddingVertical: verticalScale(12), // Increased vertical padding
+    minHeight: verticalScale(48), // Slightly increased for better touch targets
+    // Ensure consistent appearance for both username and password fields
+    justifyContent: 'space-between',
   },
   
   input: {
     flex: 1,
-    fontSize: 15,
+    fontSize: moderateScale(15),
     color: theme.colors.textPrimary,
-    paddingVertical: 2,
+    paddingVertical: verticalScale(4), // Increased for better text positioning
     fontWeight: '500',
+    // Ensure consistent text input styling
+    minHeight: verticalScale(20),
+    textAlignVertical: 'center',
   },
   
   eyeIcon: {
-    paddingHorizontal: 4,
-    paddingVertical: 2,
+    paddingHorizontal: scale(8), // Increased padding
+    paddingVertical: verticalScale(8), // Increased padding
+    minWidth: scale(44), // Ensure touch target is large enough
+    minHeight: verticalScale(44),
+    justifyContent: 'center',
+    alignItems: 'center',
+    // Ensure the eye icon doesn't affect input field layout
+    marginLeft: scale(8),
   },
   
   errorText: {
     color: '#EF4444',
-    fontSize: 11,
-    marginTop: 4,
-    marginLeft: 4,
+    fontSize: moderateScale(11),
+    marginTop: verticalScale(4),
+    marginLeft: scale(4),
     fontWeight: '500',
   },
   
-  // Login Button
+  // Login Button - Responsive sizing
   loginButton: {
-    marginTop: 20,
-    height: 48,
+    marginTop: verticalScale(32), // Increased margin for better separation
+    height: verticalScale(52), // Slightly increased height
+    minHeight: verticalScale(44), // Ensure touch target is large enough
   },
 
   loginButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
   },
   
-  // Bottom Section
+  // Bottom Section - Responsive positioning and spacing
   bottom: {
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: scale(20),
     flex: 1,
     justifyContent: 'flex-end',
+    paddingBottom: verticalScale(30), // Increased bottom padding
+    paddingTop: verticalScale(20), // Added top padding for better spacing
   },
   
   // Company Section
@@ -127,9 +155,12 @@ export const createLoginScreenStyles = (theme: Theme) => StyleSheet.create({
   },
   
   logoImage: {
-    width: 120,
-    height: 120,
-    marginBottom: 15,
+    width: isTablet ? scale(160) : scale(120),
+    height: isTablet ? scale(160) : scale(120),
+    marginBottom: verticalScale(20), // Increased margin for better spacing
+    // Ensure logo doesn't get too large on very small screens
+    maxWidth: Math.min(screenWidth * 0.3, 160),
+    maxHeight: Math.min(screenHeight * 0.2, 160),
   },
   
   brand: {
@@ -137,9 +168,9 @@ export const createLoginScreenStyles = (theme: Theme) => StyleSheet.create({
   },
   
   brandText: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
-    marginBottom: 3,
+    marginBottom: verticalScale(3),
   },
   
   brandPrimary: {
@@ -151,18 +182,44 @@ export const createLoginScreenStyles = (theme: Theme) => StyleSheet.create({
   },
   
   tagline: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: '#FF8C00',
     fontWeight: '600',
   },
   
   // Version Text
   version: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: theme.colors.textSecondary,
     textAlign: 'center',
-    marginBottom: 30,
+    marginBottom: verticalScale(30),
     fontWeight: '500',
+  },
+
+
+
+  // Small device adjustments
+  smallDeviceCard: {
+    paddingHorizontal: scale(16),
+    paddingVertical: verticalScale(16),
+    marginHorizontal: scale(8),
+  },
+
+  smallDeviceTitle: {
+    fontSize: moderateScale(20),
+    marginBottom: verticalScale(16),
+  },
+
+  // Tablet adjustments
+  tabletCard: {
+    paddingHorizontal: scale(32),
+    paddingVertical: verticalScale(32),
+    marginHorizontal: scale(40),
+  },
+
+  tabletTitle: {
+    fontSize: moderateScale(28),
+    marginBottom: verticalScale(32),
   },
 });
 

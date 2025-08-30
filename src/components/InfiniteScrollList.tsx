@@ -8,6 +8,7 @@ import {
   RefreshControl,
   ListRenderItemInfo
 } from 'react-native';
+import { BUSINESS_CONFIG } from '../config';
 
 interface InfiniteScrollListProps<T> {
   data: T[];
@@ -127,9 +128,9 @@ const InfiniteScrollList = <T extends any>({
       style={[styles.container, style]}
       showsVerticalScrollIndicator={showsVerticalScrollIndicator}
       removeClippedSubviews={true}
-      maxToRenderPerBatch={10}
-      windowSize={10}
-      initialNumToRender={10}
+      maxToRenderPerBatch={BUSINESS_CONFIG.FLATLIST.DEFAULT.MAX_TO_RENDER_PER_BATCH}
+      windowSize={BUSINESS_CONFIG.FLATLIST.DEFAULT.WINDOW_SIZE}
+      initialNumToRender={BUSINESS_CONFIG.FLATLIST.DEFAULT.INITIAL_NUM_TO_RENDER}
       getItemLayout={undefined}
       maintainVisibleContentPosition={{
         minIndexForVisible: 0,

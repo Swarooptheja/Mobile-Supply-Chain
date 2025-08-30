@@ -1,6 +1,7 @@
 import React from 'react';
-import { TouchableOpacity, StyleSheet } from 'react-native';
+import { TouchableOpacity } from 'react-native';
 import { CommonIcon } from './index';
+import { headerStyles, headerColors } from '../styles/header.styles';
 
 interface IRefreshButtonProps {
   onPress: () => void;
@@ -13,14 +14,14 @@ interface IRefreshButtonProps {
 const RefreshButton: React.FC<IRefreshButtonProps> = ({
   onPress,
   size = 40,
-  color = '#ffffff',
-  backgroundColor = 'rgba(255, 255, 255, 0.1)',
+  color = headerColors.icon, // Use consistent header icon color
+  backgroundColor = 'transparent', // Transparent background for better header consistency
   style
 }) => {
   return (
     <TouchableOpacity
       style={[
-        styles.button,
+        headerStyles.headerIconButton,
         {
           width: size,
           height: size,
@@ -39,15 +40,5 @@ const RefreshButton: React.FC<IRefreshButtonProps> = ({
     </TouchableOpacity>
   );
 };
-
-const styles = StyleSheet.create({
-  button: {
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-});
 
 export default RefreshButton;

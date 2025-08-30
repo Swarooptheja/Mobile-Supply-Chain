@@ -23,7 +23,7 @@ export const SearchBar: React.FC<ISearchBarProps> = ({
     <View style={styles.container}>
       <CommonIcon 
         icon="search"
-        size={20} 
+        size={25} 
         color="#9CA3AF"
       />
       <TextInput

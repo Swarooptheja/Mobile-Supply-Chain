@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -9,13 +9,13 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import { CommonIcon, ScanButton, SearchBar } from '../components';
+import { CommonIcon, ScanButton, SearchBar, HeaderButton } from '../components';
 import AppHeader from '../components/AppHeader';
 import BarcodeScanner from '../components/BarcodeScanner';
 import Button from '../components/Button';
 import { loadToDockService } from '../services/loadToDockService';
 import { ILoadToDockItemDetail, LoadToDockItemsScreenProps } from '../types/loadToDock.interface';
-import { useToast } from '../utils/toastUtils';
+import { useAttractiveNotification } from '../context/AttractiveNotificationContext';
 
 const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, navigation }) => {
   const { deliveryItem } = route.params;
@@ -26,13 +26,7 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
   const [isLoading, setIsLoading] = useState(false);
   const [canLoadToDock, setCanLoadToDock] = useState(false);
   const [isScannerVisible, setIsScannerVisible] = useState(false);
-  const { showErrorToast, showSuccessToast } = useToast();
-  const showErrorToastRef = useRef(showErrorToast);
-
-  // Update ref when showErrorToast changes
-  useEffect(() => {
-    showErrorToastRef.current = showErrorToast;
-  }, [showErrorToast]);
+  const { showError, showSuccess } = useAttractiveNotification();
 
   useEffect(() => {
     const loadItems = async () => {
@@ -42,14 +36,14 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
           setItems(data);
           setFilteredItems(data);
         } catch (serviceError) {
-          showErrorToastRef.current('Service Warning', 'Service not available, using fallback data');
+          showError('Service Warning', 'Service not available, using fallback data');
         } finally {
         setIsLoading(false);
       }
     };
 
     loadItems();
-  }, [deliveryItem.deliveryId]); // Only depend on deliveryItem.deliveryId
+  }, [deliveryItem.deliveryId, showError]); // Only depend on deliveryItem.deliveryId
 
   useEffect(() => {
     // Search items from database based on search query
@@ -68,7 +62,7 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
         setFilteredItems(searchResults);
       } catch (error) {
         console.error('Error searching items:', error);
-        showErrorToastRef.current('Search Error', 'Failed to search items');;
+        showError('Search Error', 'Failed to search items');
       } finally {
         setIsLoading(false);
       }
@@ -80,7 +74,7 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [searchQuery, deliveryItem.deliveryId, items]);
+  }, [searchQuery, deliveryItem.deliveryId, items, showError]);
 
   useEffect(() => {
     // Check if all requirements are satisfied
@@ -105,7 +99,7 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
       
       if (searchResults.length) {
         const scannedItem = searchResults[0];
-        showSuccessToast('Item Found', `Scanned: ${barcode}`);
+        showSuccess('Item Found', `Scanned: ${barcode}`);
         
         // Redirect to the item details screen
         navigation.navigate('LoadToDockItemDetails', {
@@ -113,11 +107,11 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
           itemDetail: scannedItem
         });
       } else {
-        showErrorToast('Item Not Found', `No item found with barcode: ${barcode}`);
+        showError('Item Not Found', `No item found with barcode: ${barcode}`);
       }
     } catch (error) {
       console.error('Error searching scanned item:', error);
-      showErrorToast('Scan Error', 'Failed to process scanned barcode');
+      showError('Scan Error', 'Failed to process scanned barcode');
     }
   };
 
@@ -135,18 +129,18 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
   const handleLoadToDock = async () => {
     try {
       if (!canLoadToDock) {
-        showErrorToast('Cannot Load to Dock', 'Please ensure all requirements are met');
+        showError('Cannot Load to Dock', 'Please ensure all requirements are met');
         return;
       }
 
       // TODO: Implement Load to Dock functionality
-      showSuccessToast('Success', 'Items loaded to dock successfully!');
+      showSuccess('Success', 'Items loaded to dock successfully!');
       
       // Navigate back to list page
       navigation.goBack();
     } catch (error) {
       console.error('Error loading to dock:', error);
-      showErrorToast('Error', 'Failed to load items to dock');
+      showError('Error', 'Failed to load items to dock');
     }
   };
 
@@ -198,7 +192,7 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
           onChangeText={(text) => {
             const newQuantity = parseInt(text) || 0;
             if (newQuantity > Number(item.QtyRequested)) {
-              showErrorToast('Error', 'Loaded quantity cannot exceed requested quantity');
+              showError('Error', 'Loaded quantity cannot exceed requested quantity');
               return;
             }
             updateItemQuantity(item.ItemNumber, newQuantity);
@@ -226,24 +220,18 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
       <AppHeader 
         title={`Pick Slip #${deliveryItem.deliveryId}`}
         leftElement={
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            {/* <IconComponent name="arrow-left" size={24} color="#ffffff" />
-             */}
-             <CommonIcon 
-                icon="back"
-                size={24} 
-                color="#ffffff"
-              />
-          </TouchableOpacity>
+          <HeaderButton
+            icon="back"
+            onPress={() => navigation.goBack()}
+            backgroundColor="rgba(255, 255, 255, 0.2)"
+          />
         }
         rightElement={
-          <TouchableOpacity onPress={handleBackToDashboard} style={styles.homeButton}>
-            <CommonIcon 
-                icon="home"
-                size={20} 
-                color="#ffffff"
-              />
-          </TouchableOpacity>
+          <HeaderButton
+            icon="home"
+            onPress={handleBackToDashboard}
+            backgroundColor="rgba(255, 255, 255, 0.2)"
+          />
         }
       />
 
@@ -348,7 +336,7 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
         frameColor="#1e3a8a"
         onError={(error) => {
           console.error('Scanner error:', error);
-          showErrorToastRef.current('Scanner Error', error);
+          showError('Scanner Error', error);
         }}
       />
     </SafeAreaView>
@@ -359,29 +347,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  backIcon: {
-    fontSize: 24,
-    color: '#ffffff',
-    fontWeight: 'bold',
-  },
-  homeButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  homeIcon: {
-    fontSize: 20,
-    color: '#ffffff',
   },
   compactDetailsSection: {
     backgroundColor: '#ffffff',

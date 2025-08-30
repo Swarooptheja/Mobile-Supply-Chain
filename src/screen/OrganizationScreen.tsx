@@ -1,293 +1,154 @@
-import { useNavigation } from '@react-navigation/native';
-import type { StackNavigationProp } from '@react-navigation/stack';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
-import { useTheme } from '../context/ThemeContext';
-import { useAuth } from '../context/AuthContext';
-import { createOrganizationScreenStyles } from '../styles/OrganizationScreen.styles';
-import type { RootStackParamList } from '../navigation/AppNavigator';
-import { fetchOrganizationsPaged } from '../services/organizationService';
-import { getInventoryOrganizationsApi, getInventoryOrganizationsMetadataApi } from '../services/api';
-import { useDynamicTables } from '../hooks';
-import { TableNames } from '../constants/tables';
-import type { OrganizationListItem } from '../types/organization.interface';
+import React, { useMemo } from 'react';
+import { Dimensions, SafeAreaView, Text, View } from 'react-native';
 import { PullToRefreshFlatList } from '../components/PullToRefreshWrapper';
-import { useOrganizationRefresh } from '../hooks';
-import { ShippingTableService } from '../services/shippingTableService';
-import { useToast } from '../utils/toastUtils';
+import { BUSINESS_CONFIG } from '../config';
+import { TableNames } from '../constants/tables';
+import { useAttractiveNotification } from '../context/AttractiveNotificationContext';
+import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
+import { useDynamicTables, useOrganizations, useOrganizationSelection } from '../hooks';
+import { getInventoryOrganizationsApi, getInventoryOrganizationsMetadataApi } from '../services/api';
+import { createOrganizationScreenStyles } from '../styles/OrganizationScreen.styles';
 
+import { OrganizationEmptyState, OrganizationItem, OrganizationListFooter, SearchBar } from '../components';
 import AppHeader from '../components/AppHeader';
-import { SearchBar } from '../components';
 import { Button } from '../components/Button';
-import { loadToDockService } from '../services/loadToDockService';
-
-const FlatListSeparator: React.FC = () => {
-  const theme = useTheme();
-  return <View style={{ height: 1, backgroundColor: theme.colors.separator }} />;
-};
-
-const ListFooter: React.FC<{ loading: boolean }> = ({ loading }) => {
-  const theme = useTheme();
-  return (
-    <View style={{ paddingVertical: 16, alignItems: 'center', justifyContent: 'center' }}>
-      {loading ? <ActivityIndicator size="small" color={theme.colors.textSecondary} /> : null}
-    </View>
-  );
-};
 
 const OrganizationScreen: React.FC = () => {
-  const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'Organization'>>();
-  const { createTableFromApiResponse, createTableFromTableTypeResponse } = useDynamicTables();
   const { defaultOrgId } = useAuth();
   const theme = useTheme();
-  const { refreshData, refreshing } = useOrganizationRefresh();
-  const { showErrorToast } = useToast();
-
-  // State management
-  const [searchText, setSearchText] = useState('');
-  const [organizations, setOrganizations] = useState<OrganizationListItem[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [page, setPage] = useState(0);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const { createTableFromApiResponse } = useDynamicTables();
+  const { showError, showSuccess } = useAttractiveNotification();
   
-  const limit = 30;
-  const mountedRef = useRef(true);
-  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Device size detection for responsive design
+  const { width: screenWidth } = Dimensions.get('window');
+  const isSmallDevice = screenWidth <= 375;
+  const isTablet = screenWidth > 768;
 
-  // Navigation setup
-  useEffect(() => {
-    mountedRef.current = true;
-    navigation.setOptions({ headerShown: false });
-    return () => {
-      mountedRef.current = false;
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
-    };
-  }, [navigation]);
-
-  // API refresh function
-  const refreshOrganizationsFromAPI = useCallback(async () => {
-    if (!defaultOrgId) {
-      throw new Error('Default organization ID not available. Please login again.');
-    }
-    
-    const [orgMetadata, orgDataResponse] = await Promise.all([
-      getInventoryOrganizationsMetadataApi(),
-      getInventoryOrganizationsApi(defaultOrgId)
-    ]);
-
-    const dataArray = orgDataResponse?.ActiveInventories || orgDataResponse?.Response || [];
-    
-    if (dataArray.length) {
-      const result = await createTableFromApiResponse(
-        TableNames.ORGANIZATIONS,
-        orgMetadata,
-        dataArray
-      );
-      
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to update local database');
-      }
-    } else {
-      throw new Error('No organization data received from API');
-    }
-  }, [defaultOrgId, createTableFromApiResponse]);
-
-  // Load organizations from database
-  const loadOrganizations = useCallback(async (searchQuery: string = '', pageNum: number = 0, append: boolean = false) => {
-    if (loading && !append) return; // Prevent multiple simultaneous loads
-    
+  // API refresh function for pull-to-refresh
+  const refreshOrganizationsFromAPI = async () => {
     try {
-      setLoading(true);
+      const [orgMetadata, orgDataResponse] = await Promise.all([
+        getInventoryOrganizationsMetadataApi(),
+        getInventoryOrganizationsApi(defaultOrgId || '')
+      ]);
+
+      const dataArray = orgDataResponse?.ActiveInventories || orgDataResponse?.Response || [];
       
-      const { rows } = await fetchOrganizationsPaged({ 
-        page: pageNum, 
-        limit, 
-        search: searchQuery.trim()
-      });
-      
-      if (!mountedRef.current) return;
-      
-      if (append) {
-        setOrganizations(prev => [...prev, ...rows]);
+      if (dataArray.length) {
+        const result = await createTableFromApiResponse(
+          TableNames.ORGANIZATIONS,
+          orgMetadata,
+          dataArray
+        );
+        
+        if (!result.success) {
+          showError('Error', result.error || 'Failed to update local database');
+          throw new Error(result.error || 'Failed to update local database');
+        }
+        showSuccess('Success', 'Organizations refreshed successfully');
       } else {
-        setOrganizations(rows);
-      }
-      
-      setPage(pageNum);
-      setHasMore(rows.length === limit);
-      
-    } catch (error) {
-      console.warn('Failed to load organizations:', error);
-      if (!mountedRef.current) return;
-      
-      // Show empty state on error
-      setOrganizations([]);
-      setHasMore(false);
-    } finally {
-      if (mountedRef.current) {
-        setLoading(false);
-        setIsInitialLoad(false);
-      }
-    }
-  }, [loading, limit]);
-
-  // Store loadOrganizations in ref to avoid dependency issues
-  const loadOrganizationsRef = useRef(loadOrganizations);
-  loadOrganizationsRef.current = loadOrganizations;
-
-  // Initial load
-  useEffect(() => {
-    loadOrganizationsRef.current();
-  }, []); // Only run once on mount
-
-  // Handle search changes with debouncing
-  useEffect(() => {
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-    
-    searchTimeoutRef.current = setTimeout(() => {
-      if (mountedRef.current) {
-        setPage(0);
-        setHasMore(true);
-        loadOrganizationsRef.current(searchText, 0, false);
-      }
-    }, 500); // Increased debounce time to reduce API calls
-    
-    return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
-    };
-  }, [searchText]); // Remove loadOrganizations dependency to prevent infinite loops
-
-  // Load more data when scrolling
-  const onEndReached = useCallback(() => {
-    if (loading || !hasMore || searchText.trim()) return; // Don't paginate during search
-    loadOrganizationsRef.current(searchText, page + 1, true);
-  }, [loading, hasMore, searchText, page]);
-
-  // Handle pull-to-refresh
-  const handleRefresh = useCallback(async () => {
-    try {
-      await refreshData(refreshOrganizationsFromAPI);
-      // Reset state and reload
-      setPage(0);
-      setHasMore(true);
-      setSelectedId(null);
-      await loadOrganizationsRef.current(searchText, 0, false);
-    } catch (error) {
-      console.warn('Refresh failed:', error);
-    }
-  }, [refreshData, refreshOrganizationsFromAPI, searchText]);
-
-  // Navigation
-  const onConfirm = useCallback(async () => {
-    if (!selectedId) return;
-
-    try {
-      setLoading(true);
-      
-      // Call shipping table service to fetch and create table
-      const result = await ShippingTableService.fetchAndCreateShippingTable(
-        selectedId,
-        createTableFromTableTypeResponse,
-        createTableFromApiResponse
-      );
-
-      await loadToDockService.createMediaStorageTable();
-
-      if (result.success) {
-        // showSuccessToast('Success', 'Shipping table data loaded successfully');
-        navigation.navigate('Dashboard');
-      } else {
-        showErrorToast('Error', result.error || 'Failed to load shipping table data');
+        showError('Error', 'No organization data received from API');
+        throw new Error('No organization data received from API');
       }
     } catch (error) {
-      console.error('Failed to load shipping table data:', error);
-      showErrorToast('Error', 'Failed to load shipping table data');
-    } finally {
-      setLoading(false);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to refresh organizations';
+      showError('Error', errorMessage);
+      throw error; // Re-throw to let the hook handle it
     }
-  }, [selectedId, navigation, showErrorToast, createTableFromTableTypeResponse, createTableFromApiResponse]);
-
-  // Render organization item
-  const renderItem = ({ item }: { item: OrganizationListItem }) => {
-    const id = String(item.InventoryOrgId ?? item.id ?? '');
-    const name = item.InventoryOrgName || '';
-    const code = item.InventoryOrgCode || id;
-    const selected = selectedId === id;
-    
-    return (
-      <TouchableOpacity 
-        style={styles.item} 
-        onPress={() => setSelectedId(id)} 
-        accessibilityRole="radio" 
-        accessibilityState={{ selected }}
-      >
-        <View style={styles.itemHeader}>
-          <View style={styles.itemHeaderLeft}>
-            <View style={[styles.radioOuter, selected && styles.radioOuterSelected]}>
-              {selected ? <View style={styles.radioInner} /> : null}
-            </View>
-            <Text style={[styles.itemName, selected && styles.selected]} numberOfLines={1}>
-              {name}
-            </Text>
-          </View>
-          <View style={[styles.codePill, selected && styles.codePillSelected]}>
-            <Text style={[styles.codePillText, selected && styles.codePillTextSelected]} numberOfLines={1}>
-              {code}
-            </Text>
-          </View>
-        </View>
-        {!!id && <Text style={styles.itemSubtitle} numberOfLines={1}>{id}</Text>}
-      </TouchableOpacity>
-    );
   };
 
-  const styles = createOrganizationScreenStyles(theme);
+  // Custom hooks for organization management
+  const {
+    organizations,
+    loading,
+    searchText,
+    handleSearch,
+    loadMore,
+    refresh,
+  } = useOrganizations({
+    pageSize: BUSINESS_CONFIG.PAGINATION.ORGANIZATION_PAGE_SIZE,
+    searchDebounceMs: BUSINESS_CONFIG.PAGINATION.ORGANIZATION_SEARCH_DEBOUNCE_MS,
+  });
+
+  const {
+    selectedId,
+    isProcessing,
+    handleSelectOrganization,
+    handleConfirmSelection,
+  } = useOrganizationSelection({
+    createTableFromTableTypeResponse: useDynamicTables().createTableFromTableTypeResponse,
+    createTableFromApiResponse,
+  });
+
+  // Memoized values for performance
+  const styles = useMemo(() => createOrganizationScreenStyles(theme), [theme]);
   
+  const searchResultsCount = useMemo(() => {
+    if (!searchText || !organizations.length) return null;
+    return `${organizations.length} organization${organizations.length !== 1 ? 's' : ''} found`;
+  }, [searchText, organizations.length]);
+
+  const isInitialLoad = useMemo(() => loading && organizations.length === 0, [loading, organizations.length]);
+
+  // Handle pull-to-refresh
+  const handleRefresh = async () => {
+    await refresh(refreshOrganizationsFromAPI);
+  };
+
+  // Handle infinite scrolling
+  const handleEndReached = () => {
+    loadMore();
+  };
+
   return (
     <View style={styles.container}>
       <AppHeader title="Select Organization" />
 
-      <View style={styles.content}>
+      <View style={[
+        styles.content,
+        isSmallDevice && styles.smallDeviceContent,
+        isTablet && styles.tabletContent
+      ]}>
         <View style={styles.searchContainer}>
           <SearchBar
             value={searchText}
-            onChangeText={setSearchText}
+            onChangeText={handleSearch}
             placeholder="Search organizations..."
           />
+          {searchResultsCount && (
+            <Text style={styles.searchResultsCount}>
+              {searchResultsCount}
+            </Text>
+          )}
         </View>
 
         <PullToRefreshFlatList
           data={organizations}
           keyExtractor={(item) => String(item.InventoryOrgId ?? item.id)}
-          renderItem={renderItem}
-          ItemSeparatorComponent={FlatListSeparator}
+          renderItem={({ item }) => (
+            <OrganizationItem
+              item={item}
+              selected={selectedId === String(item.InventoryOrgId ?? item.id)}
+              onSelect={handleSelectOrganization}
+            />
+          )}
+          ItemSeparatorComponent={() => <View style={styles.listSeparator} />}
           contentContainerStyle={styles.listContent}
-          onEndReached={onEndReached}
-          onEndReachedThreshold={0.4}
-          initialNumToRender={20}
-          maxToRenderPerBatch={30}
-          windowSize={11}
+          onEndReached={handleEndReached}
+          onEndReachedThreshold={BUSINESS_CONFIG.FLATLIST.ORGANIZATION.ON_END_REACHED_THRESHOLD}
+          initialNumToRender={BUSINESS_CONFIG.FLATLIST.ORGANIZATION.INITIAL_NUM_TO_RENDER}
+          maxToRenderPerBatch={BUSINESS_CONFIG.FLATLIST.ORGANIZATION.MAX_TO_RENDER_PER_BATCH}
+          windowSize={BUSINESS_CONFIG.FLATLIST.ORGANIZATION.WINDOW_SIZE}
           removeClippedSubviews
-          ListFooterComponent={<ListFooter loading={loading} />}
+          ListFooterComponent={<OrganizationListFooter loading={loading} />}
           ListEmptyComponent={
-            !loading && !refreshing && !isInitialLoad ? (
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyStateText}>
-                  {searchText ? 'No organizations found' : 'No organizations available'}
-                </Text>
-                <Text style={styles.emptyStateSubtext}>
-                  {searchText ? 'Try adjusting your search terms' : 'Pull down to refresh'}
-                </Text>
-              </View>
-            ) : null
+            <OrganizationEmptyState
+              searchText={searchText}
+              loading={loading}
+              refreshing={false}
+              isInitialLoad={isInitialLoad}
+            />
           }
           refreshConfig={{
             onRefresh: handleRefresh,
@@ -299,21 +160,24 @@ const OrganizationScreen: React.FC = () => {
         />
       </View>
 
-      <View style={styles.stickyFooter}>
+      <SafeAreaView style={[
+        styles.stickyFooter,
+        isSmallDevice && styles.smallDeviceFooter,
+        isTablet && styles.tabletFooter
+      ]}>
         <Button
-          title="Confirm"
-          onPress={onConfirm}
-          disabled={!selectedId || loading}
+          title={selectedId ? "Confirm Selection" : "Select an Organization"}
+          onPress={handleConfirmSelection}
+          disabled={!selectedId || isProcessing}
           fullWidth
           accessibilityLabel="Confirm organization selection"
           size="lg"
+          variant={selectedId ? "solid" : "outline"}
         />
-      </View>
+      </SafeAreaView>
     </View>
   );
 };
-
-
 
 export default OrganizationScreen;
 

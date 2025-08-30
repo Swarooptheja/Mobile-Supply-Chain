@@ -1,12 +1,11 @@
-import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { useAuth } from '../context';
+import React from 'react';
 import { LoginScreen } from '../screen';
-import OrganizationScreen from '../screen/OrganizationScreen';
 import DashboardScreen from '../screen/DashboardScreen';
-import LoadToDockNavigator from './LoadToDockNavigator';
+import OrganizationScreen from '../screen/OrganizationScreen';
 import BottomTabNavigator from './BottomTabNavigator';
+import LoadToDockNavigator from './LoadToDockNavigator';
 
 export type RootStackParamList = {
   Login: undefined;
@@ -19,27 +18,19 @@ export type RootStackParamList = {
 const Stack = createStackNavigator<RootStackParamList>();
 
 const AppNavigator: React.FC = () => {
-  const { isAuthenticated } = useAuth();
-
   return (
     <NavigationContainer>
       <Stack.Navigator
-        key={isAuthenticated ? 'auth' : 'guest'}
-        initialRouteName={isAuthenticated ? 'Organization' : 'Login'}
+        initialRouteName="Login"
         screenOptions={{
           headerShown: false,
         }}
       >
-        {isAuthenticated ? (
-          <>
-            <Stack.Screen name="Organization" component={OrganizationScreen} />
-            <Stack.Screen name="Dashboard" component={DashboardScreen} />
-            <Stack.Screen name="LoadToDock" component={LoadToDockNavigator} />
-            <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
-          </>
-        ) : (
-          <Stack.Screen name="Login" component={LoginScreen} />
-        )}
+        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="Organization" component={OrganizationScreen} />
+        <Stack.Screen name="Dashboard" component={DashboardScreen} />
+        <Stack.Screen name="LoadToDock" component={LoadToDockNavigator} />
+        <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
       </Stack.Navigator>
     </NavigationContainer>
   );

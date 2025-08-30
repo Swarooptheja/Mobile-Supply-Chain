@@ -4,6 +4,7 @@
 export * from './global.styles';
 export * from './LoginScreen.styles';
 export * from './OrganizationScreen.styles';
+export * from './header.styles';
 
 // You can add more style exports here as you create them
 // export * from './Button.styles';

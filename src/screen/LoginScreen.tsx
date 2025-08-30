@@ -10,6 +10,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { StackNavigationProp } from '@react-navigation/stack';
 
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useForm } from 'react-hook-form';
@@ -20,9 +22,10 @@ import VectorIcon from '../components/VectorIcon';
 import { ENV } from '../config/env';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { useAttractiveNotifications } from '../hooks';
+import { useAttractiveNotification } from '../context/AttractiveNotificationContext';
 import { ILoginForm } from '../interfaces';
 import { createLoginScreenStyles } from '../styles/LoginScreen.styles';
+import type { RootStackParamList } from '../navigation/AppNavigator';
 
 // Validation schema
 const loginSchema = yup.object().shape({
@@ -34,9 +37,10 @@ const LoginScreen: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
-  const { showErrorNotification, showValidationError } = useAttractiveNotifications();
+  const { showError, showWarning } = useAttractiveNotification();
   const theme = useTheme();
   const styles = createLoginScreenStyles(theme);
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'Login'>>();
 
   const {
     handleSubmit,
@@ -48,23 +52,26 @@ const LoginScreen: React.FC = () => {
     mode: 'onChange',
   });
 
-
   const handleLogin = async (data: ILoginForm): Promise<void> => {
     if (!data.username?.trim() || !data.password?.trim()) {
-      showValidationError('all required');
+      showWarning('Validation Error', 'Please fill in all required fields');
       return;
     }
 
     setIsLoading(true);
     try {
-      await login({ username: data.username.trim(), password: data.password });
-      // Navigation will happen automatically based on authentication state
+      // Pass a callback that will be called after successful login and notification
+      await login({ username: data.username.trim(), password: data.password }, () => {
+        // This callback will be executed after the success notification is shown
+        // Now navigate to the Organization screen
+        navigation.navigate('Organization');
+      });
     } catch (error) {
       // Show attractive error notification
       if (error instanceof Error) {
-        showErrorNotification('Login Failed', error.message);
+        showError('Login Failed', error.message);
       } else {
-        showErrorNotification('Login Failed', 'An unexpected error occurred. Please try again.');
+        showError('Login Failed', 'An unexpected error occurred. Please try again.');
       }
       console.error('Login error in LoginScreen:', error);
     } finally {
@@ -102,8 +109,11 @@ const LoginScreen: React.FC = () => {
                   autoCapitalize="none"
                   autoCorrect={false}
                   editable={!isLoading}
+                  selectionColor={theme.colors.primary}
                   {...register('username')}
                 />
+                {/* Empty view to maintain consistent layout with password field */}
+                <View style={styles.eyeIcon} />
               </View>
               {errors.username && (
                 <Text style={styles.errorText}>{errors.username.message}</Text>
@@ -122,12 +132,15 @@ const LoginScreen: React.FC = () => {
                   secureTextEntry={!showPassword}
                   editable={!isLoading}
                   selectionColor={theme.colors.primary}
+                  autoCapitalize="none"
+                  autoCorrect={false}
                   {...register('password')}
                 />
                 <TouchableOpacity
                   style={styles.eyeIcon}
                   onPress={() => setShowPassword(!showPassword)}
                   disabled={isLoading}
+                  activeOpacity={0.7}
                 >
                   <VectorIcon 
                     name={showPassword ? "visibility" : "visibility-off"} 
