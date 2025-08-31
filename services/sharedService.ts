@@ -24,6 +24,9 @@ export async function apiService<T = any>(
   const { method, headers = {}, body, timeout = 30000 } = config;
   
   try {
+    console.log(`Making API request to: ${url}`);
+    console.log(`Request config:`, { method, headers, timeout });
+    
     // Create AbortController for timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -48,6 +51,8 @@ export async function apiService<T = any>(
     // Clear timeout
     clearTimeout(timeoutId);
     
+    console.log(`Response status: ${response.status} ${response.statusText}`);
+    
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
     }
@@ -62,10 +67,20 @@ export async function apiService<T = any>(
     };
     
   } catch (error) {
+    console.error(`API request failed for ${url}:`, error);
+    
     if (error instanceof Error) {
       if (error.name === 'AbortError') {
         throw new Error('Request timeout. Please check your internet connection.');
       }
+      
+      // Handle network-specific errors
+      if (error.message.includes('Network request failed') || 
+          error.message.includes('fetch') ||
+          error.message.includes('Failed to fetch')) {
+        throw new Error(`Network request failed. Please check your internet connection and try again. (${error.message})`);
+      }
+      
       throw new Error(error.message);
     }
     throw new Error('An unexpected error occurred.');

@@ -25,6 +25,7 @@ export const API_CONFIG = {
 
 export const API_VERSION = {
   EBS_20D: 'EBS/20D',
+  EBS_23A: 'EBS/23A',
   EBS_23B: 'EBS/23B',
 }
 
@@ -48,6 +49,13 @@ export const API_ENDPOINTS = {
   INVENTORY_ORGS: `${API_VERSION.EBS_20D}/getInventoryOrganizations`,
   INVENTORY_ORGS_METADATA: `${API_VERSION.EBS_20D}/getInventoryOrganizations/metadata`,
   SALES_ORDERS_SHIPPING: `${API_VERSION.EBS_23B}/getSalesOrdersForShippingTable`,
+  ITEM: `${API_VERSION.EBS_20D}/getItemsTable`,
+  ACCOUNT: `${API_VERSION.EBS_20D}/getglaccounts`,
+  SUB_INV: `${API_VERSION.EBS_20D}/getSubinventories`,
+  LOCATORS: `${API_VERSION.EBS_23A}/getLocatorsTable`,
+  REASON: `${API_VERSION.EBS_20D}/getreasons`,
+  GL_PERIODS: `${API_VERSION.EBS_20D}/getGLPeriods`,
+  INVENTORY_PERIODS: `${API_VERSION.EBS_20D}/getInventoryPeriods`,
 };
 
 // API Headers
@@ -66,3 +74,17 @@ export const DEMO_CREDENTIALS = {
   username: 'manideep j',
   password: 'Propel@123',
 };
+
+
+export const MASTER_RESPOSIBILITIES = [
+  'ITEM',
+  'ACCOUNT',
+  'SUB_INV',
+  'LOCATORS',
+];
+
+export const CONFIG_RESPOSIBILITIES = [
+  'REASON',
+  'GL_PERIODS',
+  'INVENTORY_PERIODS',
+];

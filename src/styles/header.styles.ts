@@ -80,11 +80,37 @@ export const headerStyles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 8,
   },
+
+  // Sync Activity specific header styles
+  syncActivityHeader: {
+    backgroundColor: '#3B82F6', // Blue theme for Sync Activity
+    shadowColor: '#3B82F6',
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 5,
+  },
+
+  // Sync Activity header title
+  syncActivityTitle: {
+    color: '#ffffff',
+    fontSize: 20,
+    fontWeight: '700',
+    textAlign: 'center',
+    letterSpacing: 0.5,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 2,
+  },
 });
 
 // Header color constants for consistent theming
 export const headerColors = {
   primary: '#1e3a8a', // Main header background
+  syncActivity: '#3B82F6', // Blue theme for Sync Activity
   text: '#ffffff', // Header text color
   icon: '#ffffff', // Header icon color
   border: 'rgba(255, 255, 255, 0.2)', // Header button border

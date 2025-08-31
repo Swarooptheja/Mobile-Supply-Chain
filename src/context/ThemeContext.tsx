@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useMemo, useEffect } from 'react';
+import React, { createContext, useContext, useMemo } from 'react';
 import { useColorScheme } from 'react-native';
 
 export type Theme = {
@@ -6,6 +6,8 @@ export type Theme = {
     background: string;
     textPrimary: string;
     textSecondary: string;
+    text: string;
+    textTertiary: string;
     primary: string;
     border: string;
     separator: string;
@@ -16,6 +18,11 @@ export type Theme = {
     buttonBg: string;
     buttonText: string;
     radioBorder: string;
+    surface: string;
+    shadow: string;
+    error: string;
+    white: string;
+    success: string;
   };
 };
 
@@ -24,6 +31,8 @@ const lightTheme: Theme = {
     background: '#ffffff',
     textPrimary: '#111827',
     textSecondary: '#6b7280',
+    text: '#111827',
+    textTertiary: '#9ca3af',
     primary: '#2563eb',
     border: '#E5E7EB',
     separator: '#E5E7EB',
@@ -34,6 +43,11 @@ const lightTheme: Theme = {
     buttonBg: '#2563eb',
     buttonText: '#ffffff',
     radioBorder: '#9CA3AF',
+    surface: '#f9fafb',
+    shadow: '#000000',
+    error: '#dc2626',
+    white: '#ffffff',
+    success: '#059669',
   },
 };
 
@@ -42,6 +56,8 @@ const darkTheme: Theme = {
     background: '#0b0f1a',
     textPrimary: '#e5e7eb',
     textSecondary: '#9ca3af',
+    text: '#e5e7eb',
+    textTertiary: '#6b7280',
     primary: '#60a5fa',
     border: '#374151',
     separator: '#1f2937',
@@ -52,6 +68,11 @@ const darkTheme: Theme = {
     buttonBg: '#3b82f6',
     buttonText: '#f9fafb',
     radioBorder: '#6b7280',
+    surface: '#1f2937',
+    shadow: '#000000',
+    error: '#ef4444',
+    white: '#ffffff',
+    success: '#10b981',
   },
 };
 
@@ -60,19 +81,6 @@ const ThemeContext = createContext<Theme>(lightTheme);
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const scheme = useColorScheme();
   const theme = useMemo(() => (scheme === 'dark' ? darkTheme : lightTheme), [scheme]);
-  
-  // Apply theme to document root for CSS variables
-  useEffect(() => {
-    if (typeof document !== 'undefined') {
-      const root = document.documentElement;
-      root.setAttribute('data-theme', scheme === 'dark' ? 'dark' : 'light');
-      
-      // Apply CSS custom properties
-      Object.entries(theme.colors).forEach(([key, value]) => {
-        root.style.setProperty(`--color-${key}`, value);
-      });
-    }
-  }, [theme, scheme]);
 
   return <ThemeContext.Provider value={theme}>{children}</ThemeContext.Provider>;
 };
@@ -89,7 +97,6 @@ export function useThemeMode(): 'light' | 'dark' {
 
 // Helper function to toggle theme manually (if needed)
 export function useThemeToggle() {
-  const { scheme } = useColorScheme();
   const currentScheme = useColorScheme();
   
   const toggleTheme = () => {

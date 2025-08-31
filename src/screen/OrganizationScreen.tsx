@@ -11,7 +11,7 @@ import { getInventoryOrganizationsApi, getInventoryOrganizationsMetadataApi } fr
 import { createOrganizationScreenStyles } from '../styles/OrganizationScreen.styles';
 
 import { OrganizationEmptyState, OrganizationItem, OrganizationListFooter, SearchBar } from '../components';
-import AppHeader from '../components/AppHeader';
+import { AppHeader } from '../components/AppHeader';
 import { Button } from '../components/Button';
 
 const OrganizationScreen: React.FC = () => {
@@ -76,10 +76,7 @@ const OrganizationScreen: React.FC = () => {
     isProcessing,
     handleSelectOrganization,
     handleConfirmSelection,
-  } = useOrganizationSelection({
-    createTableFromTableTypeResponse: useDynamicTables().createTableFromTableTypeResponse,
-    createTableFromApiResponse,
-  });
+  } = useOrganizationSelection();
 
   // Memoized values for performance
   const styles = useMemo(() => createOrganizationScreenStyles(theme), [theme]);

@@ -32,6 +32,10 @@ interface IUseDynamicTablesReturn {
   
   dropTable: (tableName: string) => Promise<boolean>;
   
+  needsLocalField: (tableName: string) => Promise<boolean>;
+  
+  addLocalFieldIfNeeded: (tableName: string) => Promise<boolean>;
+  
   clearError: () => void;
 }
 
@@ -188,6 +192,39 @@ export const useDynamicTables = (): IUseDynamicTablesReturn => {
     }
   }, []);
 
+  const needsLocalField = useCallback(async (
+    tableName: string
+  ): Promise<boolean> => {
+    try {
+      return await dynamicTableService.needsLocalField(tableName);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      setError(errorMessage);
+      return false;
+    }
+  }, []);
+
+  const addLocalFieldIfNeeded = useCallback(async (
+    tableName: string
+  ): Promise<boolean> => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const success = await dynamicTableService.addLocalFieldIfNeeded(tableName);
+      if (!success) {
+        setError(`Failed to add LOCAL field to table ${tableName}`);
+      }
+      return success;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      setError(errorMessage);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   return {
     // State
     isLoading,
@@ -201,6 +238,8 @@ export const useDynamicTables = (): IUseDynamicTablesReturn => {
     getTableSchema,
     tableExists,
     dropTable,
+    needsLocalField,
+    addLocalFieldIfNeeded,
     clearError,
   };
 };

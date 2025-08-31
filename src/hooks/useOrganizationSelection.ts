@@ -2,22 +2,17 @@ import { useCallback, useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { useAttractiveNotification } from '../context/AttractiveNotificationContext';
-import { ShippingTableService } from '../services/shippingTableService';
-import { loadToDockService } from '../services/loadToDockService';
+import { useUserResponsibilities } from './useUserResponsibilities';
 import type { RootStackParamList } from '../navigation/AppNavigator';
+import { CONFIG_RESPOSIBILITIES, MASTER_RESPOSIBILITIES } from '../config/api';
 
-interface UseOrganizationSelectionConfig {
-  createTableFromTableTypeResponse: any;
-  createTableFromApiResponse: any;
-}
 
-export const useOrganizationSelection = (config: UseOrganizationSelectionConfig) => {
+export const useOrganizationSelection = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'Organization'>>();
-  const { showError, showSuccess } = useAttractiveNotification();
+  const { showError } = useAttractiveNotification();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-
-  const { createTableFromTableTypeResponse, createTableFromApiResponse } = config;
+  const { responsibilities, error: responsibilitiesError } = useUserResponsibilities();
 
   // Handle organization selection
   const handleSelectOrganization = useCallback((id: string) => {
@@ -31,36 +26,24 @@ export const useOrganizationSelection = (config: UseOrganizationSelectionConfig)
     try {
       setIsProcessing(true);
       
-      // Call shipping table service to fetch and create table
-      const result = await ShippingTableService.fetchAndCreateShippingTable(
-        selectedId,
-        createTableFromTableTypeResponse,
-        createTableFromApiResponse
-      );
-
-      // Create media storage table
-      await loadToDockService.createMediaStorageTable();
-
-      if (result.success) {
-        showSuccess('Success', 'Shipping table data loaded successfully');
-        navigation.navigate('Dashboard');
+      // Navigate to Activity Screen for comprehensive API synchronization
+      if (responsibilities.length) {
+        navigation.navigate('Activity', {
+          selectedOrgId: selectedId,
+          responsibilities: [...responsibilities, ...MASTER_RESPOSIBILITIES, ...CONFIG_RESPOSIBILITIES],
+        });
+      } else if (responsibilitiesError) {
+        showError('Error', `Failed to get user responsibilities: ${responsibilitiesError}`);
       } else {
-        showError('Error', result.error || 'Failed to load shipping table data');
+        showError('Error', 'No user responsibilities found');
       }
     } catch (error) {
-      console.error('Failed to load shipping table data:', error);
-      showError('Error', 'Failed to load shipping table data');
+      console.error('Failed to navigate to activity screen:', error);
+      showError('Error', 'Failed to proceed to activity screen');
     } finally {
       setIsProcessing(false);
     }
-  }, [
-    selectedId, 
-    navigation, 
-    showError, 
-    showSuccess, 
-    createTableFromTableTypeResponse, 
-    createTableFromApiResponse
-  ]);
+  }, [selectedId, navigation, showError, responsibilities, responsibilitiesError]);
 
   // Clear selection
   const clearSelection = useCallback(() => {

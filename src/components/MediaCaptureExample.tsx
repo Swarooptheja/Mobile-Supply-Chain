@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, Alert } from 'react-native';
 import { MediaCapture } from './MediaCapture';
 import { IMediaItem } from '../types/media.interface';
-import Button from './Button';
+import { Button } from './Button';
 
 /**
  * Example component demonstrating MediaCapture usage

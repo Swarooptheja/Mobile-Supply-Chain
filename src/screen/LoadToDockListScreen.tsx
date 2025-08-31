@@ -7,7 +7,7 @@ import {
   Alert,
 } from 'react-native';
 import { HeaderButton } from '../components';
-import AppHeader from '../components/AppHeader';
+import { AppHeader } from '../components/AppHeader';
 import { SearchBar } from '../components';
 import InfiniteScrollList from '../components/InfiniteScrollList';
 import LoadToDockItem from '../components/LoadToDockItem';

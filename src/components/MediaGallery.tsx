@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
 import { IMediaGalleryProps } from '../types/media.interface';
-import Button from './Button';
+import { Button } from './Button';
 
 const { width: screenWidth } = Dimensions.get('window');
 const itemSize = (screenWidth - 40) / 3; // 3 items per row with reduced padding

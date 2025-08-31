@@ -4,12 +4,17 @@ import React from 'react';
 import { LoginScreen } from '../screen';
 import DashboardScreen from '../screen/DashboardScreen';
 import OrganizationScreen from '../screen/OrganizationScreen';
+import ActivityScreen from '../screen/ActivityScreen';
 import BottomTabNavigator from './BottomTabNavigator';
 import LoadToDockNavigator from './LoadToDockNavigator';
 
 export type RootStackParamList = {
   Login: undefined;
   Organization: undefined;
+  Activity: {
+    selectedOrgId: string;
+    responsibilities: string[];
+  };
   Dashboard: undefined;
   LoadToDock: undefined;
   MainTabs: undefined;
@@ -28,6 +33,7 @@ const AppNavigator: React.FC = () => {
       >
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Organization" component={OrganizationScreen} />
+        <Stack.Screen name="Activity" component={ActivityScreen} />
         <Stack.Screen name="Dashboard" component={DashboardScreen} />
         <Stack.Screen name="LoadToDock" component={LoadToDockNavigator} />
         <Stack.Screen name="MainTabs" component={BottomTabNavigator} />

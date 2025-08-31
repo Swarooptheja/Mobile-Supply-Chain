@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   Easing,
 } from 'react-native';
-import VectorIcon from './VectorIcon';
+import { VectorIcon } from './VectorIcon';
 import { IAttractiveNotificationProps, ITypeConfig } from '../interfaces';
 
 const { width, height } = Dimensions.get('window');

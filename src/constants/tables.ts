@@ -6,6 +6,15 @@ export enum TableNames {
   SETTINGS = 'settings',
   SHIPPING_TABLE = 'shipping_table',
   MEDIA_STORAGE = 'media_storage',
+  // Activity-related tables
+  ITEMS = 'items',
+  GL_ACCOUNTS = 'gl_accounts',
+  SUB_INVENTORIES = 'sub_inventories',
+  LOCATORS = 'locators',
+  REASONS = 'reasons',
+  GL_PERIODS = 'gl_periods',
+  INVENTORY_PERIODS = 'inventory_periods',
+  SHIPPING_ORDERS = 'shipping_orders',
 }
 
 export const TABLE_SCHEMAS = {

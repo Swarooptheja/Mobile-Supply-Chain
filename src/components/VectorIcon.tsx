@@ -114,4 +114,4 @@ export const CommonIcon: React.FC<{
   );
 };
 
-export default VectorIcon;
+export { VectorIcon };

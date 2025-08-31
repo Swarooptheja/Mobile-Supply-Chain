@@ -113,6 +113,6 @@ function getSizing(size: ButtonSize) {
   }
 }
 
-export default Button;
+export { Button };
 
 

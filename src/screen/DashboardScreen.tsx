@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity } from 'react-native';
 import { useAuth } from '../context/AuthContext';
-import AppHeader from '../components/AppHeader';
+import { AppHeader } from '../components/AppHeader';
 import NavigationDrawer from '../components/NavigationDrawer';
 import { useNavigationDrawer } from '../hooks';
 import { CommonIcon, HeaderButton } from '../components';

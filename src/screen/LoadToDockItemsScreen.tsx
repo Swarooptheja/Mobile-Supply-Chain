@@ -10,9 +10,9 @@ import {
   View
 } from 'react-native';
 import { CommonIcon, ScanButton, SearchBar, HeaderButton } from '../components';
-import AppHeader from '../components/AppHeader';
+import { AppHeader } from '../components/AppHeader';
 import BarcodeScanner from '../components/BarcodeScanner';
-import Button from '../components/Button';
+import { Button } from '../components/Button';
 import { loadToDockService } from '../services/loadToDockService';
 import { ILoadToDockItemDetail, LoadToDockItemsScreenProps } from '../types/loadToDock.interface';
 import { useAttractiveNotification } from '../context/AttractiveNotificationContext';

@@ -9,7 +9,6 @@ import {
 } from '../types/database';
 import {
   validateMetadata,
-  validateDataAgainstMetadata,
   sanitizeMetadata,
   logTableCreationResult,
   generateTableSummary,
@@ -40,14 +39,22 @@ class DynamicTableService implements IDynamicTableService {
    * Convert API metadata to SQLite column definitions
    */
   private convertMetadataToColumns(metadata: IApiResponseMetadata[]): IColumnMetadata[] {
+    // Find all columns marked as primary keys to support composite primary keys
+    const primaryKeyColumns = metadata.filter(col => 
+      (col as any).primarykey === true || (col as any).primaryKey === true
+    );
+    
     return metadata.map((column) => {
       const sqliteType = this.mapTypeToSqlite(column.type);
+      
+      // Mark column as primary key if it's in the primary key list
+      const isPrimaryKey = primaryKeyColumns.some(pkCol => pkCol.name === column.name);
       
       return {
         name: column.name,
         type: sqliteType,
         nullable: true, // Default to nullable for dynamic tables
-        primaryKey: (column as any).primarykey === true || (column as any).primaryKey === true,
+        primaryKey: isPrimaryKey,
         autoIncrement: false, // Don't auto-increment by default
       };
     });
@@ -65,12 +72,14 @@ class DynamicTableService implements IDynamicTableService {
    * Generate CREATE TABLE SQL statement
    */
   private generateCreateTableSQL(tableName: string, columns: IColumnMetadata[]): string {
-    const hasPrimaryKeyInMetadata = columns.some(c => c.primaryKey);
+    const primaryKeyColumns = columns.filter(c => c.primaryKey);
 
     const columnDefinitions = columns.map(column => {
       let definition = `${column.name} ${column.type}`;
       
-      if (column.primaryKey) {
+      // Don't add PRIMARY KEY constraint here for composite primary keys
+      // We'll handle it separately at the end
+      if (column.primaryKey && primaryKeyColumns.length === 1) {
         definition += ' PRIMARY KEY';
         if (column.autoIncrement) {
           definition += ' AUTOINCREMENT';
@@ -89,11 +98,18 @@ class DynamicTableService implements IDynamicTableService {
     });
 
     const columnsSql = columnDefinitions.join(', ');
-    // Only add synthetic id column if metadata did not specify a primary key
-    const createSql = hasPrimaryKeyInMetadata
-      ? `CREATE TABLE IF NOT EXISTS ${tableName} (${columnsSql})`
-      : `CREATE TABLE IF NOT EXISTS ${tableName} (id INTEGER PRIMARY KEY AUTOINCREMENT, ${columnsSql})`;
-
+    let createSql = `CREATE TABLE IF NOT EXISTS ${tableName} (${columnsSql}`;
+    
+    // Handle composite primary keys
+    if (primaryKeyColumns.length > 1) {
+      const primaryKeyNames = primaryKeyColumns.map(col => col.name).join(', ');
+      createSql += `, PRIMARY KEY(${primaryKeyNames})`;
+    } else if (primaryKeyColumns.length === 0) {
+      // Only add synthetic id column if no primary keys specified
+      createSql = `CREATE TABLE IF NOT EXISTS ${tableName} (id INTEGER PRIMARY KEY AUTOINCREMENT, ${columnsSql}`;
+    }
+    
+    createSql += ')';
     return createSql;
   }
 
@@ -138,7 +154,47 @@ class DynamicTableService implements IDynamicTableService {
       // Insert data if provided
       let rowsInserted = 0;
       if (data && data.length) {
-        rowsInserted = await this.insertDataIntoTable(tableName, data);
+        // For regular APIs, data might be nested like {GLPeriods: [...], Success: true}
+        // Extract the actual data rows from the response
+        let actualDataRows: any[] = [];
+        
+        if (data.length === 1 && typeof data[0] === 'object') {
+          const firstItem = data[0];
+          
+          // Debug logging to understand the data structure
+          if (__DEV__) {
+            console.log(`Data structure analysis for ${tableName}:`, {
+              dataLength: data.length,
+              firstItemKeys: Object.keys(firstItem),
+              firstItemStructure: Object.keys(firstItem).map(key => ({
+                key,
+                type: typeof firstItem[key],
+                isArray: Array.isArray(firstItem[key]),
+                length: Array.isArray(firstItem[key]) ? firstItem[key].length : 'N/A'
+              }))
+            });
+          }
+          
+          // Look for arrays in the response that contain the actual data
+          for (const key in firstItem) {
+            if (Array.isArray(firstItem[key]) && firstItem[key].length > 0) {
+              // Found the data array, extract it
+              actualDataRows = firstItem[key];
+              console.log(`Extracted ${actualDataRows.length} rows from ${key} field`);
+              
+              // Show sample of extracted data
+              if (__DEV__ && actualDataRows.length > 0) {
+                console.log(`Sample extracted data:`, actualDataRows[0]);
+              }
+              break;
+            }
+          }
+        }
+        
+        // If we found actual data rows, use them; otherwise use the original data
+        const dataToInsert = actualDataRows.length > 0 ? actualDataRows : data;
+        console.log(`Inserting ${dataToInsert.length} rows into ${tableName}`);
+        rowsInserted = await this.insertDataIntoTable(tableName, dataToInsert);
       }
 
       const result = {
@@ -170,19 +226,81 @@ class DynamicTableService implements IDynamicTableService {
   async insertDataIntoTable(tableName: string, data: any[]): Promise<number> {
     try {
       if (!data || !data.length) {
+        console.log(`No data provided for table ${tableName}`);
         return 0;
       }
 
-      // Get column names from first data row
-      const columns = Object.keys(data[0]);
+      // Validate data structure
+      const firstRow = data[0];
+      if (!firstRow || typeof firstRow !== 'object') {
+        console.error(`Invalid data structure for table ${tableName}. Expected object, got:`, typeof firstRow);
+        return 0;
+      }
+
+      const dataColumns = Object.keys(firstRow);
+      if (dataColumns.length === 0) {
+        console.error(`Data for table ${tableName} has no columns`);
+        return 0;
+      }
+
+      console.log(`Inserting data into ${tableName}:`, {
+        rowCount: data.length,
+        columns: dataColumns,
+        sampleData: firstRow
+      });
+
+      // Get the actual table schema to know which columns exist
+      const tableSchema = await this.getTableSchema(tableName);
+      if (!tableSchema) {
+        throw new Error(`Table schema not found for ${tableName}`);
+      }
+
+      // Get column names that actually exist in the table
+      const existingColumns = tableSchema.columns.map(col => col.name);
+      
+      // Filter data to only include columns that exist in the table
+      const filteredData = data.map(row => {
+        const filteredRow: any = {};
+        existingColumns.forEach(colName => {
+          if (row.hasOwnProperty(colName)) {
+            filteredRow[colName] = row[colName];
+          }
+        });
+        return filteredRow;
+      });
+
+      // Debug logging to understand what's happening
+      if (__DEV__) {
+        console.log(`Data filtering for table ${tableName}:`, {
+          originalColumns: Object.keys(data[0] || {}),
+          existingTableColumns: existingColumns,
+          filteredColumns: Object.keys(filteredData[0] || {}),
+          dataSample: data[0],
+          filteredSample: filteredData[0]
+        });
+      }
+
+      // Check if we have any valid columns after filtering
+      const firstRowAfterFiltering = filteredData[0];
+      const validColumns = Object.keys(firstRowAfterFiltering).filter(col => firstRowAfterFiltering[col] !== undefined);
+      
+      if (validColumns.length === 0) {
+        console.warn(`No valid columns found for table ${tableName} after filtering. Skipping insert.`);
+        console.warn(`Table schema:`, existingColumns);
+        console.warn(`Data columns:`, Object.keys(data[0] || {}));
+        return 0;
+      }
+
+      // Use only the valid columns that have data
+      const columns = validColumns;
       
       // Use optimized bulk insert for better performance
       const batchSize = 100; // Process 100 records at a time
       let totalInserted = 0;
 
       // Process data in chunks
-      for (let i = 0; i < data.length; i += batchSize) {
-        const chunk = data.slice(i, i + batchSize);
+      for (let i = 0; i < filteredData.length; i += batchSize) {
+        const chunk = filteredData.slice(i, i + batchSize);
         
         try {
           // Use bulk insert syntax: INSERT INTO table (cols) VALUES (...), (...), ...
@@ -201,8 +319,8 @@ class DynamicTableService implements IDynamicTableService {
           totalInserted += chunk.length;
           
           // Log progress for large datasets
-          if (__DEV__ && data.length > 100) {
-            console.log(`Inserted ${totalInserted}/${data.length} records into ${tableName}`);
+          if (__DEV__ && filteredData.length > 100) {
+            console.log(`Inserted ${totalInserted}/${filteredData.length} records into ${tableName}`);
           }
         } catch (bulkError) {
           console.error(`Error in bulk insert for ${tableName}:`, bulkError);
@@ -319,9 +437,12 @@ class DynamicTableService implements IDynamicTableService {
       }
 
       // Process columns to identify primary keys and create metadata
-      const columnMetadata: IColumnMetadata[] = columns.map((columnName, index) => {
-        const isPrimaryKey = columnName.endsWith('_PK');
-        const cleanColumnName = isPrimaryKey ? columnName.replace('_PK', '') : columnName;
+      const columnMetadata: IColumnMetadata[] = columns.map((columnName) => {
+        // Support multiple primary keys for composite primary key support
+        const isPrimaryKey = columnName.endsWith('_PK') || 
+          (columnName.toLowerCase().includes('id') && columnName.toLowerCase().endsWith('id'));
+        
+        const cleanColumnName = isPrimaryKey && columnName.endsWith('_PK') ? columnName.replace('_PK', '') : columnName;
         
         return {
           name: cleanColumnName,
@@ -331,6 +452,13 @@ class DynamicTableService implements IDynamicTableService {
           autoIncrement: false,
         };
       });
+
+      // Log info about primary keys found
+      const primaryKeyCount = columnMetadata.filter(col => col.primaryKey).length;
+      if (primaryKeyCount > 0) {
+        const primaryKeyNames = columnMetadata.filter(col => col.primaryKey).map(col => col.name).join(', ');
+        console.log(`Found ${primaryKeyCount} primary key(s): ${primaryKeyNames}`);
+      }
 
       // Generate and execute CREATE TABLE statement
       const createTableSQL = this.generateCreateTableSQL(tableName, columnMetadata);
@@ -356,6 +484,7 @@ class DynamicTableService implements IDynamicTableService {
           columnMetadata.forEach((column, index) => {
             obj[column.name] = row[index] || null;
           });
+          
           return obj;
         });
 

@@ -9,22 +9,33 @@ interface AppHeaderProps {
 	title?: string;
 	leftElement?: React.ReactNode;
 	rightElement?: React.ReactNode;
+	variant?: 'default' | 'syncActivity';
 }
 
-const AppHeader: React.FC<AppHeaderProps> = ({ title, leftElement, rightElement }) => {
+const AppHeader: React.FC<AppHeaderProps> = ({ title, leftElement, rightElement, variant = 'default' }) => {
 	const theme = useTheme();
 	const insets = useSafeAreaInsets();
 	const { headerHeight } = useResponsive();
-	const styles = createStyles(insets, headerHeight);
+	const styles = createStyles(insets, headerHeight, variant);
 
 	return (
-		<View style={[headerStyles.headerContainer, styles.container]}>
+		<View style={[
+			headerStyles.headerContainer, 
+			styles.container,
+			variant === 'syncActivity' && headerStyles.syncActivityHeader
+		]}>
 			<View style={[headerStyles.headerContent, styles.headerContent]}>
 				<View style={[headerStyles.headerButtonContainer, styles.leftContainer]}>
 					{leftElement}
 				</View>
 				<View style={[headerStyles.headerTitleContainer, styles.titleContainer]}>
-					<Text style={[headerStyles.headerTitle, styles.title]} numberOfLines={1}>
+					<Text 
+						style={[
+							variant === 'syncActivity' ? headerStyles.syncActivityTitle : headerStyles.headerTitle, 
+							styles.title
+						]} 
+						numberOfLines={1}
+					>
 						{title || ''}
 					</Text>
 				</View>
@@ -36,7 +47,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({ title, leftElement, rightElement 
 	);
 };
 
-const createStyles = (insets: any, headerHeight: number) => StyleSheet.create({
+const createStyles = (insets: any, headerHeight: number, variant: string) => StyleSheet.create({
 	container: {
 		paddingTop: insets.top > 0 ? insets.top + 8 : 20, // Reduced padding for compact look
 	},
@@ -62,8 +73,10 @@ const createStyles = (insets: any, headerHeight: number) => StyleSheet.create({
 		minWidth: headerSpacing.buttonSize, // Use consistent button size
 	},
 	title: {
-		fontSize: Math.max(18, Math.min(22, headerHeight * 0.35)), // Responsive font size
+		fontSize: variant === 'syncActivity' 
+			? Math.max(20, Math.min(24, headerHeight * 0.4)) // Larger font for sync activity
+			: Math.max(18, Math.min(22, headerHeight * 0.35)), // Standard font size
 	},
 });
 
-export default AppHeader;
+export { AppHeader };

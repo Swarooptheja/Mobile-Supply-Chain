@@ -6,8 +6,8 @@ import {
   View,
   Alert
 } from 'react-native';
-import AppHeader from '../components/AppHeader';
-import Button from '../components/Button';
+import { AppHeader } from '../components/AppHeader';
+import { Button } from '../components/Button';
 import { MediaCapture, ItemDetailsCard, DynamicTabs, CommonIcon, HeaderButton } from '../components';
 import { loadToDockService } from '../services/loadToDockService';
 import { LoadToDockItemDetailsScreenProps, TabType } from '../types/loadToDock.interface';
