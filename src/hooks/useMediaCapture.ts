@@ -267,30 +267,22 @@ export const useMediaCapture = (
 
   // Function to initialize with existing media
   const initializeWithExistingMedia = useCallback((existingMedia: IMediaItem[]) => {
-    if (!initializedRef.current && existingMedia && existingMedia.length > 0) {
-      const photos = existingMedia.filter(item => item.type === 'photo');
-      const videos = existingMedia.filter(item => item.type === 'video');
+    if (existingMedia && existingMedia.length > 0) {
+      console.log('🎬 Initializing with existing media:', existingMedia);
+      const photos = existingMedia.filter(item => item && item.type === 'photo');
+      const videos = existingMedia.filter(item => item && item.type === 'video');
       
-      // Only update state if the media is actually different
-      setState(prev => {
-        if (prev.photos.length === photos.length && prev.videos.length === videos.length) {
-          // Check if content is the same
-          const photosSame = prev.photos.every((photo, index) => photo.id === photos[index]?.id);
-          const videosSame = prev.videos.every((video, index) => video.id === videos[index]?.id);
-          
-          if (photosSame && videosSame) {
-            return prev; // No change needed
-          }
-        }
-        
-        return {
-          ...prev,
-          photos,
-          videos,
-        };
-      });
+      console.log('🎬 Filtered media - Photos:', photos.length, 'Videos:', videos.length);
       
-      initializedRef.current = true;
+      // Always update state with existing media
+      setState(prev => ({
+        ...prev,
+        photos,
+        videos,
+      }));
+      
+      // Reset initialization flag to allow future updates
+      initializedRef.current = false;
     }
   }, []);
 

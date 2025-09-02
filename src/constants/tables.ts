@@ -15,6 +15,7 @@ export enum TableNames {
   GL_PERIODS = 'gl_periods',
   INVENTORY_PERIODS = 'inventory_periods',
   SHIPPING_ORDERS = 'shipping_orders',
+  LOAD_TO_DOCK_TRANSACTION_HISTORY = 'load_to_dock_transaction_history',
 }
 
 export const TABLE_SCHEMAS = {

@@ -27,6 +27,7 @@ export const API_VERSION = {
   EBS_20D: 'EBS/20D',
   EBS_23A: 'EBS/23A',
   EBS_23B: 'EBS/23B',
+  EBS_23C: 'EBS/23C',
 }
 
 // Current environment - change this to switch between environments
@@ -56,6 +57,7 @@ export const API_ENDPOINTS = {
   REASON: `${API_VERSION.EBS_20D}/getreasons`,
   GL_PERIODS: `${API_VERSION.EBS_20D}/getGLPeriods`,
   INVENTORY_PERIODS: `${API_VERSION.EBS_20D}/getInventoryPeriods`,
+  CREATE_LOAD_TO_DOCK_WMS: `${API_VERSION.EBS_23C}/createLoadtoDockwms`,
 };
 
 // API Headers
@@ -88,3 +90,7 @@ export const CONFIG_RESPOSIBILITIES = [
   'GL_PERIODS',
   'INVENTORY_PERIODS',
 ];
+
+export const RESPONSIBILITIES = {
+  LOAD_TO_DOCK: 'load to dock',
+}

@@ -102,3 +102,46 @@ export const apiDelete = <T = any>(url: string, headers?: Record<string, string>
 
 export const apiPatch = <T = any>(url: string, body: any, headers?: Record<string, string>) =>
   apiService<T>(url, { method: 'PATCH', body, headers });
+
+
+export const getLocalTransactionId = () => {
+  return `${Date.now() + Math.random()}`.split(".").join("");
+}
+
+/**
+ * Get current server date with timezone offset
+ * @param serverOffsetTime - Server timezone offset in minutes (default: -360 for -06:00)
+ * @returns Formatted server date string in "dd-MMM-yyyy HH:mm:ss" format
+ */
+export const getCurrentServerDate = (serverOffsetTime: number = -360): string => {
+  const currentDate = new Date();
+  return formatDateWithTimezone(currentDate, serverOffsetTime);
+}
+
+/**
+ * Format date with timezone offset
+ * @param date - Date object to format
+ * @param timezoneOffsetMinutes - Timezone offset in minutes (e.g., -360 for -06:00, 330 for +05:30)
+ * @returns Formatted date string in "dd-MMM-yyyy HH:mm:ss" format
+ */
+export const formatDateWithTimezone = (date: Date, timezoneOffsetMinutes: number): string => {
+  try {
+    // Apply timezone offset directly using minutes
+    const adjustedDate = new Date(date.getTime() + (timezoneOffsetMinutes * 60 * 1000));
+    
+    // Format the date
+    const day = adjustedDate.getUTCDate().toString().padStart(2, '0');
+    const month = adjustedDate.toLocaleDateString('en-US', { month: 'short' });
+    const year = adjustedDate.getUTCFullYear();
+    const hours = adjustedDate.getUTCHours().toString().padStart(2, '0');
+    const mins = adjustedDate.getUTCMinutes().toString().padStart(2, '0');
+    const secs = adjustedDate.getUTCSeconds().toString().padStart(2, '0');
+    
+    return `${day}-${month}-${year} ${hours}:${mins}:${secs}`;
+  } catch (error) {
+    console.error('Error formatting date with timezone:', error);
+    // Fallback to simple date formatting
+    return date.toISOString().replace('T', ' ').substring(0, 19);
+  }
+}
+

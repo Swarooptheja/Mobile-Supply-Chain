@@ -37,9 +37,17 @@ export const MediaCapture: React.FC<IMediaCaptureProps> = ({
   // Initialize with existing media
   useEffect(() => {
     if (existingMedia && existingMedia.length > 0) {
+      console.log(`🎬 MediaCapture (${mediaType}) received existing media:`, existingMedia);
+      console.log(`🎬 MediaCapture (${mediaType}) media breakdown:`, {
+        total: existingMedia.length,
+        photos: existingMedia.filter(m => m && m.type === 'photo').length,
+        videos: existingMedia.filter(m => m && m.type === 'video').length
+      });
       initializeWithExistingMedia(existingMedia);
+    } else {
+      console.log(`🎬 MediaCapture (${mediaType}) no existing media received`);
     }
-  }, [existingMedia, initializeWithExistingMedia]);
+  }, [existingMedia, initializeWithExistingMedia, mediaType]);
 
   // Track previous media state to avoid unnecessary calls
   const prevMediaRef = useRef<{ photos: IMediaItem[], videos: IMediaItem[] }>({ photos: [], videos: [] });
@@ -150,9 +158,13 @@ export const MediaCapture: React.FC<IMediaCaptureProps> = ({
             activeOpacity={0.8}
           >
             <View style={styles.actionCardContent}>
-              {/* <View style={styles.actionIconContainer}>
-                <IconComponent name="camera" size={20} color="#ffffff" />
-              </View> */}
+              <View style={styles.actionIconContainer}>
+                <CommonIcon 
+                  icon="camera"
+                  size={25} 
+                  color="#ffffff"
+                />
+              </View>
               <View style={styles.actionTextContainer}>
                 <Text style={styles.actionCardTitle}>Take Photo</Text>
                 <Text style={styles.actionCardSubtitle}>Use camera</Text>
@@ -178,7 +190,6 @@ export const MediaCapture: React.FC<IMediaCaptureProps> = ({
           >
             <View style={styles.actionCardContent}>
               <View style={[styles.actionIconContainer, styles.secondaryIconContainer]}>
-                {/* <IconComponent name="image" size={20} color="#6b7280" /> */}
                 <CommonIcon 
                   icon="image"
                   size={25} 
@@ -194,11 +205,11 @@ export const MediaCapture: React.FC<IMediaCaptureProps> = ({
         </View>
 
         {/* Photo Preview Section - Clean and simple */}
-        <View style={styles.previewSection}>
-          <View style={styles.previewHeader}>
-            <Text style={styles.previewTitle}>Photo Preview</Text>
-            <Text style={styles.previewCount}>{photos.length} Photos</Text>
-          </View>
+                 <View style={styles.previewSection}>
+           <View style={styles.previewHeader}>
+             <Text style={styles.previewTitle}>Photo Preview</Text>
+             <Text style={styles.previewCount}>{photos.length} Uploaded</Text>
+           </View>
           
           {photos.length > 0 ? (
             <MediaGallery
@@ -252,9 +263,13 @@ export const MediaCapture: React.FC<IMediaCaptureProps> = ({
             activeOpacity={0.8}
           >
             <View style={styles.actionCardContent}>
-              {/* <View style={styles.actionIconContainer}>
-                <IconComponent name="video" size={20} color="#ffffff" />
-              </View> */}
+              <View style={styles.actionIconContainer}>
+                <CommonIcon 
+                  icon="video"
+                  size={25} 
+                  color="#ffffff"
+                />
+              </View>
               <View style={styles.actionTextContainer}>
                 <Text style={styles.actionCardTitle}>Take Video</Text>
                 <Text style={styles.actionCardSubtitle}>Use camera</Text>
@@ -280,10 +295,14 @@ export const MediaCapture: React.FC<IMediaCaptureProps> = ({
           >
             <View style={styles.actionCardContent}>
               <View style={[styles.actionIconContainer, styles.secondaryIconContainer]}>
-                <IconComponent name="film" size={20} color="#6b7280" />
+                <CommonIcon 
+                  icon="video"
+                  size={25} 
+                  color="#6b7280"
+                />
               </View>
               <View style={styles.actionTextContainer}>
-                <Text style={styles.actionCardTitle}>From Gallery</Text>
+                <Text style={styles.actionCardTitle}>FromGallery</Text>
                 <Text style={styles.actionCardSubtitle}>Choose existing</Text>
               </View>
             </View>
@@ -291,11 +310,11 @@ export const MediaCapture: React.FC<IMediaCaptureProps> = ({
         </View>
 
         {/* Video Preview Section */}
-        <View style={styles.previewSection}>
-          <View style={styles.previewHeader}>
-            <Text style={styles.previewTitle}>Video Preview</Text>
-            <Text style={styles.previewCount}>{videos.length} Videos</Text>
-          </View>
+                 <View style={styles.previewSection}>
+           <View style={styles.previewHeader}>
+             <Text style={styles.previewTitle}>Video Preview</Text>
+             <Text style={styles.previewCount}>{videos.length} Uploaded</Text>
+           </View>
           
           {videos.length > 0 ? (
             <MediaGallery
@@ -365,7 +384,7 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   mediaSection: {
-    marginBottom: 24,
+    marginBottom: 32,
     width: '100%',
   },
   headerSection: {
@@ -402,7 +421,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: 12,
-    marginBottom: 20,
+    marginBottom: 24,
   },
   actionCard: {
     flex: 1,
@@ -448,13 +467,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   actionCardTitle: {
-    fontSize: 16,
+    fontSize: 14, // Reduced font size
     fontWeight: '600',
     color: '#1f2937',
     marginBottom: 4,
   },
   actionCardSubtitle: {
-    fontSize: 13,
+    fontSize: 12, // Reduced font size
     color: '#6b7280',
   },
   loadingIndicator: {
@@ -471,9 +490,10 @@ const styles = StyleSheet.create({
   previewSection: {
     backgroundColor: '#f8fafc',
     borderRadius: 12,
-    padding: 16,
+    padding: 20,
     borderWidth: 1,
     borderColor: '#e2e8f0',
+    marginTop: 8,
   },
   previewHeader: {
     flexDirection: 'row',

@@ -1,110 +1,109 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   SafeAreaView,
   ScrollView,
   StatusBar,
-  StyleSheet,
   Text,
-  TextInput,
-  TouchableOpacity,
   View
 } from 'react-native';
-import { CommonIcon, ScanButton, SearchBar, HeaderButton } from '../components';
-import { AppHeader } from '../components/AppHeader';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  DeliveryDetailsCard,
+  LoadToDockHeader,
+  LoadToDockItemCard,
+  SearchAndScanSection,
+  VehicleInputSection
+} from '../components';
 import BarcodeScanner from '../components/BarcodeScanner';
 import { Button } from '../components/Button';
-import { loadToDockService } from '../services/loadToDockService';
-import { ILoadToDockItemDetail, LoadToDockItemsScreenProps } from '../types/loadToDock.interface';
 import { useAttractiveNotification } from '../context/AttractiveNotificationContext';
+import { useTheme } from '../context/ThemeContext';
+import { useLoadToDockItems } from '../hooks/useLoadToDockItems';
+import { useLoadToDockValidation } from '../hooks/useLoadToDockValidation';
+import { useNavigationHandlers } from '../hooks/useNavigationHandlers';
+import { useSearchWithDebounce } from '../hooks/useSearchWithDebounce';
+import { loadToDockService, LoadToDockRequest } from '../services/loadToDockService';
+import { createLoadToDockItemsScreenStyles } from '../styles/LoadToDockItemsScreen.styles';
+import { ILoadToDockItemDetail, LoadToDockItemsScreenProps } from '../types/loadToDock.interface';
+import { useAuth } from '../context/AuthContext';
+import { LOGIN_QUERIES } from '../constants/queries';
+import { simpleDatabaseService } from '../services/simpleDatabase';
+import { getDataFromResultSet } from '../../services/sharedService';
+import { RESPONSIBILITIES } from '../config/api';
 
 const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, navigation }) => {
   const { deliveryItem } = route.params;
   const [vehicleNumber, setVehicleNumber] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [items, setItems] = useState<ILoadToDockItemDetail[]>([]);
-  const [filteredItems, setFilteredItems] = useState<ILoadToDockItemDetail[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [canLoadToDock, setCanLoadToDock] = useState(false);
   const [isScannerVisible, setIsScannerVisible] = useState(false);
+  const [vehicleInputFocused, setVehicleInputFocused] = useState(false);
+  
   const { showError, showSuccess } = useAttractiveNotification();
+  const theme = useTheme();
+  const styles = createLoadToDockItemsScreenStyles(theme);
+  const insets = useSafeAreaInsets();
+  const { defaultOrgId } = useAuth();
 
-  useEffect(() => {
-    const loadItems = async () => {
-      setIsLoading(true);
-        try {
-          const data = await loadToDockService.getItemsByDeliveryId(deliveryItem.deliveryId);
-          setItems(data);
-          setFilteredItems(data);
-        } catch (serviceError) {
-          showError('Service Warning', 'Service not available, using fallback data');
-        } finally {
-        setIsLoading(false);
-      }
-    };
+  // Use custom hooks for data management
+  const {
+    items,
+    filteredItems,
+    isLoading,
+    searchItems,
+    updateItemMediaStatus,
+    updateItemQuantity,
+    getItemMediaStatus,
+    scanItem,
+  } = useLoadToDockItems({
+    deliveryId: deliveryItem.deliveryId,
+    onError: showError,
+  });
 
-    loadItems();
-  }, [deliveryItem.deliveryId, showError]); // Only depend on deliveryItem.deliveryId
+  const canLoadToDock = useLoadToDockValidation(items, vehicleNumber);
 
-  useEffect(() => {
-    // Search items from database based on search query
-    const searchItems = async () => {
-      if (!searchQuery.trim()) {
-        setFilteredItems(items);
-        return;
-      }
+  // Use debounced search
+  useSearchWithDebounce({
+    searchQuery,
+    onSearch: searchItems,
+  });
 
-      try {
-        setIsLoading(true);
-        const searchResults = await loadToDockService.searchItemsByDeliveryId(
-          deliveryItem.deliveryId,
-          searchQuery
-        );
-        setFilteredItems(searchResults);
-      } catch (error) {
-        console.error('Error searching items:', error);
-        showError('Search Error', 'Failed to search items');
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  // Navigation handlers
+  const {
+    navigateToItemDetails,
+    handleBackToDashboard,
+    createMediaSavedCallback,
+  } = useNavigationHandlers({
+    navigation,
+    deliveryItem,
+    updateItemMediaStatus,
+    showSuccess,
+    getItemMediaStatus,
+  });
 
-    // Debounce search to avoid too many database calls
-    const timeoutId = setTimeout(() => {
-      searchItems();
-    }, 300);
 
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery, deliveryItem.deliveryId, items, showError]);
-
-  useEffect(() => {
-    // Check if all requirements are satisfied
-    const allItemsHaveMedia = items.every(item => item.hasPhotos && item.hasVideo);
-    const allItemsHaveQuantities = items.every(item => Number(item.QtyPicked) > 0);
-    const vehicleEntered = vehicleNumber.trim().length > 0;
-    
-    setCanLoadToDock(allItemsHaveMedia && allItemsHaveQuantities && vehicleEntered);
-  }, [items, vehicleNumber]);
 
   const handleScanItem = () => {
     setIsScannerVisible(true);
   };
 
-  const handleBarcodeScanned = async (barcode: string) => {
+  const handleBarcodeScanned = useCallback(async (barcode: string) => {
     try {
-      // Search for the scanned item in the database
-      const searchResults = await loadToDockService.scanItemsByDeliveryId(
-        deliveryItem.deliveryId,
-        barcode
-      );
+      const searchResults = await scanItem(barcode);
       
       if (searchResults.length) {
         const scannedItem = searchResults[0];
         showSuccess('Item Found', `Scanned: ${barcode}`);
         
-        // Redirect to the item details screen
+        console.log('🎬 handleBarcodeScanned - Scanned item:', scannedItem.ItemNumber);
+        console.log('🎬 handleBarcodeScanned - Media data:', scannedItem.mediaData);
+        
+        // Navigate to item details with media callback
         navigation.navigate('LoadToDockItemDetails', {
           deliveryItem,
-          itemDetail: scannedItem
+          itemDetail: scannedItem,
+          existingMediaStatus: getItemMediaStatus(scannedItem),
+          existingMedia: getItemMediaStatus(scannedItem)?.capturedMedia || [],
+          onMediaSaved: createMediaSavedCallback(scannedItem.ItemNumber)
         });
       } else {
         showError('Item Not Found', `No item found with barcode: ${barcode}`);
@@ -113,18 +112,17 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
       console.error('Error searching scanned item:', error);
       showError('Scan Error', 'Failed to process scanned barcode');
     }
-  };
+  }, [scanItem, showSuccess, showError, navigation, deliveryItem, getItemMediaStatus, createMediaSavedCallback]);
 
   const handleScannerClose = () => {
     setIsScannerVisible(false);
   };
 
-  const handleItemPress = (item: ILoadToDockItemDetail) => {
-    navigation.navigate('LoadToDockItemDetails', {
-      deliveryItem,
-      itemDetail: item
-    });
-  };
+
+
+
+
+
 
   const handleLoadToDock = async () => {
     try {
@@ -133,164 +131,125 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
         return;
       }
 
-      // TODO: Implement Load to Dock functionality
-      showSuccess('Success', 'Items loaded to dock successfully!');
-      
-      // Navigate back to list page
-      navigation.goBack();
+
+
+      // Show loading state
+      // Note: isLoading is managed by the useLoadToDockItems hook
+
+      // Prepare request data
+      const userData = await simpleDatabaseService.executeQuery(LOGIN_QUERIES.GET_USER_ID);
+      const userIdArray = getDataFromResultSet(userData);
+
+      const responsibilityData = await simpleDatabaseService.executeQuery(LOGIN_QUERIES.GET_USER_RESPONSIBILITIES);
+      const responsibilityArray = getDataFromResultSet(responsibilityData);
+      const loadToDockResponsibility = responsibilityArray.filter((responsibility: any) => responsibility.RESPONSIBILITY.toLowerCase() === RESPONSIBILITIES.LOAD_TO_DOCK);
+
+
+      const request: LoadToDockRequest = {
+        // deliveryId: deliveryItem.deliveryId,
+        vehicleNumber: vehicleNumber.trim(),
+        dockDoor: 'DOCK001', // You can make this configurable
+        inventoryOrgId: defaultOrgId, // You should get this from user context
+        userId: userIdArray[0].USER_ID || '1001', // You should get this from user context
+        responsibilityId: loadToDockResponsibility[0].RESPONSIBILITY_ID || '66732', // Default responsibility ID
+        items: items
+          .filter(item => {
+            const hasMedia = item.mediaData?.hasPhotos && item.mediaData?.hasVideo;
+            const hasQuantity = Number(item.QtyPicked) > 0;
+            return hasMedia && hasQuantity;
+          })
+      };
+
+      if(!request.items) {
+        showError('Error', 'Please add at least one item to load to dock');
+        return;
+      }
+
+      // Process the request
+      const result = await loadToDockService.processLoadToDock(request);
+
+      if (result.success) {
+        if (result.offline) {
+          showSuccess('Data Saved Locally', 'Your data has been saved locally and will sync when you\'re back online.');
+        } else {
+          showSuccess('Success', 'Items loaded to dock successfully!');
+        }
+        
+        // Navigate back to list page
+        navigation.goBack();
+      } else {
+        showError('Error', result.error || 'Failed to load items to dock');
+      }
+
     } catch (error) {
       console.error('Error loading to dock:', error);
       showError('Error', 'Failed to load items to dock');
+    } finally {
+      // Note: isLoading is managed by the useLoadToDockItems hook
     }
   };
 
-  const handleBackToDashboard = () => {
-    navigation.navigate('Dashboard');
-  };
 
-  const updateItemQuantity = (itemNumber: string, newQuantity: number) => {
-    const updatedItems = items.map(i => 
-      i.ItemNumber === itemNumber 
-        ? { ...i, QtyPicked: newQuantity.toString() }
-        : i
-    );
-    setItems(updatedItems);
-  };
 
-  const renderItem = (item: ILoadToDockItemDetail, index: number) => (
-    <TouchableOpacity
-      key={item.ItemNumber}
-      style={[
-        styles.itemCard,
-        item.hasPhotos && item.hasVideo && styles.completedItemCard
-      ]}
-      onPress={() => handleItemPress(item)}
-      activeOpacity={0.7}
-    >
-      <View style={styles.itemHeader}>
-        <Text style={styles.itemId}>{index + 1}. {item.ItemNumber}</Text>
-        <TouchableOpacity style={styles.arrowButton}>
-          <CommonIcon 
-                icon="arrowRight"
-                size={16} 
-                color="#6b7280"
-              />
-        </TouchableOpacity>
-      </View>
-      
-      <Text style={styles.itemDescription}>{item.ItemDesc}</Text>
-      
-      <View style={styles.quantityRow}>
-        <Text style={styles.quantityLabel}>Requested: {item.QtyRequested} {item.ItemUom}</Text>
-      </View>
-      
-      <View style={styles.loadedQuantityRow}>
-        <Text style={styles.quantityLabel}>Loaded: </Text>
-        <TextInput
-          style={styles.quantityInput}
-          value={item.QtyPicked}
-          onChangeText={(text) => {
-            const newQuantity = parseInt(text) || 0;
-            if (newQuantity > Number(item.QtyRequested)) {
-              showError('Error', 'Loaded quantity cannot exceed requested quantity');
-              return;
-            }
-            updateItemQuantity(item.ItemNumber, newQuantity);
-          }}
-          keyboardType="numeric"
-          placeholder="0"
-        />
-        <Text style={styles.quantityLabel}> of {item.QtyRequested} {item.ItemUom}</Text>
-      </View>
-      
-      <View style={styles.mediaStatus}>
-        <View style={[styles.statusDot, { backgroundColor: item.hasPhotos ? '#10b981' : '#f59e0b' }]} />
-        <Text style={styles.statusText}>{item.hasPhotos ? 'Photos ✓' : 'Photos Pending'}</Text>
-        <View style={[styles.statusDot, { backgroundColor: item.hasVideo ? '#10b981' : '#f59e0b' }]} />
-        <Text style={styles.statusText}>{item.hasVideo ? 'Video ✓' : 'Video Pending'}</Text>
-      </View>
-    </TouchableOpacity>
-  );
+
+  const renderItem = useCallback((item: ILoadToDockItemDetail, index: number) => (
+    <LoadToDockItemCard
+      key={`${item.DeliveryLineId}-${item.mediaData?.hasPhotos || false}-${item.mediaData?.hasVideo || false}`}
+      item={item}
+      index={index}
+      styles={styles}
+      onItemPress={navigateToItemDetails}
+      onQuantityChange={updateItemQuantity}
+      onQuantityError={showError}
+    />
+  ), [navigateToItemDetails, updateItemQuantity, showError, styles]);
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1e3a8a" />
       
       {/* Header */}
-      <AppHeader 
-        title={`Pick Slip #${deliveryItem.deliveryId}`}
-        leftElement={
-          <HeaderButton
-            icon="back"
-            onPress={() => navigation.goBack()}
-            backgroundColor="rgba(255, 255, 255, 0.2)"
-          />
-        }
-        rightElement={
-          <HeaderButton
-            icon="home"
-            onPress={handleBackToDashboard}
-            backgroundColor="rgba(255, 255, 255, 0.2)"
-          />
-        }
+      <LoadToDockHeader
+        deliveryId={deliveryItem.deliveryId}
+        onBack={() => navigation.goBack()}
+        onHome={handleBackToDashboard}
       />
 
-      {/* Compact Details Section */}
-      <View style={styles.compactDetailsSection}>
-        <View style={styles.detailsRow}>
-          <View style={styles.leftDetails}>
-            <Text style={styles.detailLabel}>SO# {deliveryItem.salesOrderNumber}</Text>
-            <Text style={styles.detailValue}>{deliveryItem.customerName}</Text>
-            <Text style={styles.detailLabel}>Total Items: {deliveryItem.itemCount || items.length}</Text>
-          </View>
-          <View style={styles.rightDetails}>
-            <Text style={styles.detailLabel}>Date</Text>
-            <Text style={styles.detailValue}>{deliveryItem.date}</Text>
-          </View>
-        </View>
-      </View>
+      {/* Delivery Details */}
+      <DeliveryDetailsCard
+        salesOrderNumber={deliveryItem.salesOrderNumber}
+        customerName={deliveryItem.customerName}
+        itemCount={deliveryItem.itemCount || items.length}
+        date={deliveryItem.date}
+      />
 
-      {/* Enhanced Input Section */}
-      <View style={styles.inputSection}>
-        <View style={styles.vehicleInputContainer}>
-          <Text style={styles.vehicleLabel}>Vehicle#</Text>
-          <TextInput
-            style={styles.vehicleInput}
-            value={vehicleNumber}
-            onChangeText={setVehicleNumber}
-            placeholder="Enter Vehicle Number"
-            placeholderTextColor="#9ca3af"
-          />
-        </View>
-        
-        <View style={styles.searchContainer}>
-          <View style={styles.searchBarWrapper}>
-            <SearchBar
-              placeholder="Search items"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-          </View>
-          <ScanButton
-            onPress={handleScanItem}
-            size={48}
-            iconColor="#ffffff"
-            backgroundColor="#1e3a8a"
-            borderColor="#1e3a8a"
-            hintText="Scan"
-            hintTextColor="#6b7280"
-          />
-        </View>
-      </View>
+      {/* Vehicle Input Section */}
+      <VehicleInputSection
+        vehicleNumber={vehicleNumber}
+        onVehicleNumberChange={setVehicleNumber}
+        isFocused={vehicleInputFocused}
+        onFocus={() => setVehicleInputFocused(true)}
+        onBlur={() => setVehicleInputFocused(false)}
+        theme={theme}
+        style={styles.inputSection}
+      />
+
+      {/* Search and Scan Section */}
+      <SearchAndScanSection
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onScanPress={handleScanItem}
+        style={styles.searchContainer}
+      />
 
       {/* Items List */}
       <View style={styles.itemsSection}>
-        {/* <View style={styles.sectionHeader}>
+        <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Items to Load</Text>
           <Text style={styles.itemCount}>
             {filteredItems.length} of {deliveryItem.itemCount || items.length} items
           </Text>
-        </View> */}
+        </View>
         
         <ScrollView 
           style={styles.itemsList}
@@ -312,8 +271,11 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
         </ScrollView>
       </View>
 
-      {/* Load to Dock Button */}
-      <View style={styles.bottomButtonContainer}>
+      {/* Sticky Load to Dock Button - Dynamically positioned above bottom navigation */}
+      <View style={[
+        styles.bottomButtonContainer,
+        { paddingBottom: Math.max(40, insets.bottom + 20) } // Ensures button is always visible above navigation
+      ]}>
         <Button
           title="LOAD TO DOCK"
           onPress={handleLoadToDock}
@@ -342,234 +304,5 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  compactDetailsSection: {
-    backgroundColor: '#ffffff',
-    marginHorizontal: 16,
-    marginTop: 12,
-    marginBottom: 8,
-    padding: 12,
-    borderRadius: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  detailsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  leftDetails: {
-    flex: 1,
-  },
-  rightDetails: {
-    flex: 1,
-    alignItems: 'flex-end',
-  },
-  detailLabel: {
-    fontSize: 11,
-    color: '#6b7280',
-    fontWeight: '500',
-    marginBottom: 2,
-  },
-  detailValue: {
-    fontSize: 14,
-    color: '#1f2937',
-    fontWeight: '600',
-  },
-  inputSection: {
-    paddingHorizontal: 16,
-    marginBottom: 12,
-  },
-  vehicleInputContainer: {
-    marginBottom: 12,
-  },
-  vehicleLabel: {
-    fontSize: 12,
-    color: '#374151',
-    fontWeight: '600',
-    marginBottom: 6,
-  },
-  vehicleInput: {
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 14,
-    color: '#1f2937',
-    backgroundColor: '#ffffff',
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  searchBarWrapper: {
-    flex: 1,
-  },
-  itemsSection: {
-    flex: 1,
-    paddingHorizontal: 16,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1f2937',
-  },
-  itemCount: {
-    fontSize: 12,
-    color: '#6b7280',
-    fontWeight: '500',
-  },
-  itemsList: {
-    flex: 1,
-  },
-  itemsListContent: {
-    paddingBottom: 20,
-  },
-  itemCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  completedItemCard: {
-    borderLeftWidth: 3,
-    borderLeftColor: '#10b981',
-  },
-  itemHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  itemId: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#1f2937',
-  },
-  arrowButton: {
-    width: 20,
-    height: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  arrowIcon: {
-    fontSize: 16,
-    color: '#9ca3af',
-    fontWeight: 'bold',
-  },
-  itemDescription: {
-    fontSize: 13,
-    color: '#374151',
-    fontWeight: '500',
-    marginBottom: 8,
-  },
-  quantityRow: {
-    marginBottom: 6,
-  },
-  loadedQuantityRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  quantityLabel: {
-    fontSize: 13,
-    color: '#6b7280',
-    fontWeight: '500',
-  },
-  quantityInput: {
-    borderWidth: 1,
-    borderColor: '#1e3a8a',
-    borderRadius: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    fontSize: 13,
-    color: '#1f2937',
-    backgroundColor: '#ffffff',
-    minWidth: 40,
-    textAlign: 'center',
-    marginHorizontal: 4,
-  },
-  mediaStatus: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  statusText: {
-    fontSize: 13,
-    color: '#6b7280',
-    fontWeight: '500',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 40,
-  },
-  loadingText: {
-    fontSize: 16,
-    color: '#6b7280',
-    fontWeight: '500',
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 40,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#6b7280',
-    fontWeight: '500',
-    marginBottom: 8,
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: '#9ca3af',
-    textAlign: 'center',
-  },
-  bottomButtonContainer: {
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
-  },
-  loadToDockButton: {
-    backgroundColor: '#1e3a8a',
-    paddingVertical: 14,
-    borderRadius: 8,
-  },
-  disabledButton: {
-    backgroundColor: '#9ca3af',
-  },
-  loadToDockButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-});
 
 export default LoadToDockItemsScreen;

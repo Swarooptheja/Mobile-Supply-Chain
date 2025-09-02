@@ -28,6 +28,10 @@ export type { ITabItem, IDynamicTabsProps } from './DynamicTabs';
 export { default as IconComponent } from './icons/IconComponent';
 export type { IIconProps } from './icons/IconComponent';
 export { VectorIcon, CommonIcon, CommonIcons } from './VectorIcon';
+export { LoadToDockHeader } from './LoadToDockHeader';
+export { DeliveryDetailsCard } from './DeliveryDetailsCard';
+export { VehicleInputSection } from './VehicleInputSection';
+export { SearchAndScanSection } from './SearchAndScanSection';
 export type { IconSet, IVectorIconProps } from '../interfaces/VectorIcon.interface';
 export { default as VectorIconExample } from './VectorIconExample';
 export { default as OrganizationItem } from './OrganizationItem';
@@ -42,3 +46,5 @@ export { ActivityCard as ActivityScreenCard } from './ActivityScreen/ActivityCar
 export { EmptyState } from './ActivityScreen/EmptyState';
 export { ActionButtons } from './ActivityScreen/ActionButtons';
 export { default as NotificationCenter } from './NotificationCenter';
+export { MediaStatusChip } from './MediaStatusChip';
+export { default as LoadToDockItemCard } from './LoadToDockItemCard';

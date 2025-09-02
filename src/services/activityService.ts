@@ -4,6 +4,8 @@ import { getCurrentApiConfig } from '../config/api';
 import { dynamicTableService } from './dynamicTableService';
 import { TableNames } from '../constants/tables';
 import { API_ENDPOINTS } from '../config/api';
+import { LOAD_TO_DOCK_QUERIES } from '../constants/queries';
+import { simpleDatabaseService } from './simpleDatabase';
 
 interface IApiConfig {
   responsibility: string;
@@ -15,6 +17,7 @@ interface IApiConfig {
   version: string;
   lastSyncTime?: boolean;
   fullRefresh?: boolean;
+  queries?: string[];
 }
 
 
@@ -97,6 +100,7 @@ export class ActivityService {
       version: 'EBS/23B',
       lastSyncTime: true,
       fullRefresh: false,
+      queries: [LOAD_TO_DOCK_QUERIES.CREATE_TRANSACTION_HISTORY_TABLE]
     },
   };
 
@@ -153,6 +157,12 @@ export class ActivityService {
       console.log(`Processing API: ${apiName} with URL: ${fullUrl}`);
       console.log(`API Config:`, config);
 
+        // NEW: Create static tables first if queries are provided
+      if (config?.queries && config.queries.length) {
+        console.log(`Creating ${config.queries.length} static tables for ${apiName}`);
+        await this.createStaticTables(apiName, config.queries);
+      }
+
       // For JSON APIs, we need to call metadata API first
       if (config.tableType === 'json') {
         return await this.processJsonApiWithMetadata(apiName, fullUrl, baseUrl, abortSignal);
@@ -183,6 +193,28 @@ export class ActivityService {
       }
       
       throw error;
+    }
+  }
+
+  private static async createStaticTables(apiName: string, queries: string[]): Promise<void> {
+    try {
+      console.log(`Creating ${queries.length} static tables for ${apiName}`);
+      
+      for (let i = 0; i < queries.length; i++) {
+        const query = queries[i];
+        try {
+          await simpleDatabaseService.executeQuery(query);
+          console.log(`Created static table ${i + 1}/${queries.length} for ${apiName}`);
+        } catch (error) {
+          console.error(`Failed to create static table ${i + 1} for ${apiName}:`, error);
+          // Continue with other tables even if one fails
+        }
+      }
+      
+      console.log(`Completed creating ${queries.length} static tables for ${apiName}`);
+    } catch (error) {
+      console.error(`Error creating static tables for ${apiName}:`, error);
+      // Don't throw - let the API processing continue
     }
   }
 

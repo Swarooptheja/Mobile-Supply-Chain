@@ -65,6 +65,8 @@ const DynamicTabs: React.FC<IDynamicTabsProps> = ({
           ]}>
             {tab.label}
           </Text>
+          {/* Active indicator underline */}
+          {activeTab === tab.id && <View style={styles.activeIndicator} />}
         </TouchableOpacity>
       ))}
     </View>
@@ -89,47 +91,65 @@ const styles = StyleSheet.create({
     marginHorizontal: 12,
     marginBottom: 12,
     backgroundColor: '#ffffff',
-    borderRadius: 8,
-    padding: 2,
+    borderRadius: 10,
+    padding: 3,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 2,
-    elevation: 1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   tab: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-    gap: 6,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    gap: 8,
     margin: 1,
+    position: 'relative', // For active indicator positioning
   },
   activeTab: {
     backgroundColor: '#1e3a8a',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+    transform: [{ scale: 1.02 }], // Slight scale effect for active state
   },
   iconContainer: {
     justifyContent: 'center',
     alignItems: 'center',
   },
   tabText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     color: '#6b7280',
-    letterSpacing: 0.2,
+    letterSpacing: 0.3,
   },
   activeTabText: {
     color: '#ffffff',
-    fontWeight: '600',
-    letterSpacing: 0.2,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  activeIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    left: '25%',
+    right: '25%',
+    height: 3,
+    backgroundColor: '#ffffff',
+    borderRadius: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
   },
 });
 

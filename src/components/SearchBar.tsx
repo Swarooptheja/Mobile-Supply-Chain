@@ -53,13 +53,13 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
+    borderWidth: 2, // Increased from 1 to 2 to match vehicle input
     borderColor: '#E5E7EB',
     backgroundColor: '#ffffff',
     borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    height: 48,
+    paddingHorizontal: 16, // Increased from 12 to 16 for better padding
+    paddingVertical: 14, // Increased from 8 to 14 to match vehicle input
+    height: 52, // Increased from 48 to 52 to match vehicle input height
     justifyContent: 'center',
   },
   searchIcon: {
@@ -70,8 +70,9 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     paddingVertical: 0,
-    fontSize: 14,
-    height: 32,
+    fontSize: 16, // Increased from 14 to 16 to match vehicle input
+    height: 36, // Increased from 32 to 36 for better proportion
+    marginLeft: 8, // Added left margin for better spacing from search icon
   },
   clear: {
     color: '#6b7280',

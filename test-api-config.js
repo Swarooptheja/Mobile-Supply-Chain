@@ -9,7 +9,7 @@ try {
   // Test the SHIP_CONFIRM API specifically
   console.log('\n=== Testing SHIP_CONFIRM API ===');
   const testOrgId = '12345';
-  const url = ActivityService['buildApiUrl']('SHIP_CONFIRM', testOrgId);
+  const url = ActivityService.buildApiUrl('SHIP_CONFIRM', testOrgId);
   console.log('✅ SHIP_CONFIRM URL:', url);
   
   // Test all API configurations

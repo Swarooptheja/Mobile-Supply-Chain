@@ -1,3 +1,6 @@
+import { IMediaItem } from "./media.interface";
+
+
 export interface ILoadToDockItem {
   deliveryId: string;
   salesOrderNumber: string;
@@ -84,6 +87,11 @@ export interface ILoadToDockItemDetail {
   PickSlipNumber: string;
   hasPhotos?: boolean;
   hasVideo?: boolean;
+  mediaData?: {
+    hasPhotos: boolean;
+    hasVideo: boolean;
+    capturedMedia?: IMediaItem[];
+  };
 }
 
 export interface ILoadToDockTransaction {
@@ -141,9 +149,38 @@ export interface LoadToDockItemDetailsScreenProps {
     params: {
       deliveryItem: ILoadToDockItem;
       itemDetail: ILoadToDockItemDetail;
+      existingMediaStatus?: {
+        hasPhotos: boolean;
+        hasVideo: boolean;
+      };
+      existingMedia?: IMediaItem[];
+      onMediaSaved?: (mediaData: {
+        deliveryLineId: string;
+        hasPhotos: boolean;
+        hasVideo: boolean;
+        capturedMedia: IMediaItem[];
+      }) => void;
     };
   };
   navigation: any;
 }
 
 export type TabType = string;
+
+
+export interface ILoadToDockTransactionRequest {
+  MobileTransactionId: number;
+  TransactionDate: string;
+  DeliveryLineId: string;
+  VehicleNumber: string;
+  DockDoor: string;
+  LpnNumber: string;
+  InventoryOrgId: string;
+  UserId: string;
+  ResponsibilityId: string;
+  ItemsData: string;
+  EBSTransactionStatus: string;
+  sharePointTransactionStatus: string;
+  CreatedAt: string;
+  Message: string
+}

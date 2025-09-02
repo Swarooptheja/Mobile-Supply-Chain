@@ -162,7 +162,7 @@ const IconComponent: React.FC<IIconProps> = ({
     'default': Info
   };
 
-  const IconComponent = iconMap[name] || iconMap['default'];
+  const IconComponent = iconMap[name] || iconMap.default;
 
   return (
     <View style={[styles.iconContainer, style]}>
