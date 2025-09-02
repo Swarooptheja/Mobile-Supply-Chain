@@ -660,6 +660,24 @@ export const createActivityScreenStyles = () => StyleSheet.create({
     fontWeight: '500',
     textAlign: 'center',
   },
+  dashboardReadyIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#D1FAE5',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#10B981',
+  },
+  dashboardReadyText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#047857',
+    marginLeft: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
 });
 
 // Additional style functions for the new components
@@ -695,6 +713,24 @@ export const createProgressOverviewStyles = () => StyleSheet.create({
     color: '#1E293B',
     textAlign: 'left',
     letterSpacing: 0.3,
+  },
+  dashboardReadyIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#D1FAE5',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#10B981',
+  },
+  dashboardReadyText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#047857',
+    marginLeft: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   progressSection: {
     marginBottom: 10,

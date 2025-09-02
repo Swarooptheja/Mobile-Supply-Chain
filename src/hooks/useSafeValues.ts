@@ -21,16 +21,33 @@ export const useSafeValues = (
     consolidatedApiRecords?: any[];
   }
 ) => {
+  // Destructure to get primitive values for stable dependencies
+  const selectedOrgId = routeParams.selectedOrgId;
+  const responsibilities = routeParams.responsibilities;
+  const defaultOrgId = routeParams.defaultOrgId;
+  const overallProgress = data.overallProgress;
+  const statistics = data.statistics;
+  const totalRecordsCount = data.totalRecordsCount;
+  const consolidatedApiRecords = data.consolidatedApiRecords;
+
   return useMemo(() => ({
     // Route parameters with safe fallbacks
-    selectedOrgId: routeParams.selectedOrgId || '',
-    responsibilities: Array.isArray(routeParams.responsibilities) ? routeParams.responsibilities : [],
-    defaultOrgId: routeParams.defaultOrgId || null,
+    selectedOrgId: selectedOrgId || '',
+    responsibilities: Array.isArray(responsibilities) ? responsibilities : [],
+    defaultOrgId: defaultOrgId || null,
     
     // Data with safe fallbacks
-    overallProgress: data.overallProgress || { percentage: 0 },
-    statistics: data.statistics || { completed: 0, failed: 0, total: 0, processing: 0 },
-    totalRecordsCount: data.totalRecordsCount || 0,
-    consolidatedApiRecords: data.consolidatedApiRecords || [],
-  }), [routeParams, data]);
+    overallProgress: overallProgress || { percentage: 0 },
+    statistics: statistics || { completed: 0, failed: 0, total: 0, processing: 0 },
+    totalRecordsCount: totalRecordsCount || 0,
+    consolidatedApiRecords: consolidatedApiRecords || [],
+  }), [
+    selectedOrgId,
+    responsibilities,
+    defaultOrgId,
+    overallProgress,
+    statistics,
+    totalRecordsCount,
+    consolidatedApiRecords
+  ]);
 };

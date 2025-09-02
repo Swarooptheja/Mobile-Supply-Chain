@@ -14,6 +14,8 @@ interface UseActivityManagerReturn {
   clearErrors: () => void;
   cancelProcess: () => void;
   getBatchResult: () => IActivityBatchResult;
+  updateActivityStatus: (activityId: string, updates: Partial<IActivity>) => void;
+  updateMultipleActivityStatuses: (updates: Array<{ id: string; updates: Partial<IActivity> }>) => void;
 }
 
 const { MAX_RETRY_ATTEMPTS, RETRY_DELAY_MS, API_TIMEOUT_MS } = ACTIVITY_CONSTANTS;
@@ -86,6 +88,45 @@ export const useActivityManager = (): UseActivityManagerReturn => {
       }
       return activity;
     }));
+  }, []);
+
+  /**
+   * Batch update multiple activities at once to reduce re-renders
+   * This is more efficient than calling updateActivityStatus multiple times
+   */
+  const updateMultipleActivityStatuses = useCallback((
+    updates: Array<{ id: string; updates: Partial<IActivity> }>
+  ) => {
+    if (updates.length === 0) return;
+    
+    setActivities(prev => {
+      const updatesMap = new Map(updates.map(u => [u.id, u.updates]));
+      return prev.map(activity => {
+        if (updatesMap.has(activity.id)) {
+          const update = updatesMap.get(activity.id)!;
+          // Apply the same safety logic as single update
+          const safeUpdates = {
+            ...update,
+            name: update.name || activity.name || 'Unknown API',
+            type: update.type || activity.type || 'unknown',
+            status: update.status || activity.status || 'pending',
+            error: update.error !== undefined ? (update.error || 'Unknown error') : activity.error,
+            recordsTotal: update.recordsTotal !== undefined ? update.recordsTotal : activity.recordsTotal,
+            recordsInserted: update.recordsInserted !== undefined ? update.recordsInserted : activity.recordsInserted,
+            progress: update.progress !== undefined ? Math.max(0, Math.min(100, update.progress || 0)) : (activity.progress || 0),
+            retryCount: update.retryCount !== undefined ? (update.retryCount || 0) : (activity.retryCount || 0),
+            startTime: update.startTime || activity.startTime,
+            endTime: update.endTime || activity.endTime,
+            lastRetryTime: update.lastRetryTime || activity.lastRetryTime,
+            canExpand: update.canExpand !== undefined ? update.canExpand : activity.canExpand,
+            orgId: update.orgId || activity.orgId,
+            defaultOrgId: update.defaultOrgId || activity.defaultOrgId,
+          };
+          return { ...activity, ...safeUpdates };
+        }
+        return activity;
+      });
+    });
   }, []);
 
   const createActivitiesFromResponsibilities = useCallback((
@@ -658,5 +699,7 @@ export const useActivityManager = (): UseActivityManagerReturn => {
     clearErrors,
     cancelProcess,
     getBatchResult,
+    updateActivityStatus,
+    updateMultipleActivityStatuses,
   };
 };

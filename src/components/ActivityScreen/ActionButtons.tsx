@@ -19,6 +19,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
 }) => {
   const styles = createActionButtonsStyles();
   
+  // Show retry button when there are failures
   if (!showRetryButton) {
     return null;
   }

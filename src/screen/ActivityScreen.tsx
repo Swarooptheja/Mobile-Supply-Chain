@@ -13,15 +13,15 @@ import { ProgressOverview } from '../components/ActivityScreen/ProgressOverview'
 import { 
   useSafeValues, 
   useAutoScroll, 
-  useRetryHandler 
+  useRetryHandler,
+  useActivityData
 } from '../hooks';
 
 // Import other hooks and types
 import { useAuth } from '../context/AuthContext';
-import { useActivityConsolidation } from '../hooks/useActivityConsolidation';
 import { useActivityManager } from '../hooks/useActivityManager';
 import { useActivityScreenState } from '../hooks/useActivityScreenState';
-import { useActivityStatistics, useTotalRecordsCount } from '../hooks/useActivityStatistics';
+import { useAttractiveNotification } from '../context/AttractiveNotificationContext';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import type { ConsolidatedApiRecord } from '../hooks/useActivityConsolidation';
 import { createActivityScreenStyles } from '../styles/ActivityScreen.styles';
@@ -36,15 +36,27 @@ type ActivityScreenRouteProp = RouteProp<RootStackParamList, 'Activity'>;
  * - Remove redundant useMemo calls
  * - Consolidate duplicate logic
  * - Make the code more maintainable for junior developers
+ * - Automatically navigate to Dashboard when all APIs succeed
+ * 
+ * ## Automatic Navigation Feature
+ * 
+ * When all Master and Config APIs are successfully completed:
+ * 1. A success notification is displayed
+ * 2. After 2.5 seconds, the user is automatically redirected to the Dashboard
+ * 
+ * The navigation happens automatically without requiring user interaction.
  */
 const ActivityScreen: React.FC = () => {
   const route = useRoute<ActivityScreenRouteProp>();
   const { logout, defaultOrgId } = useAuth();
   const navigation = useNavigation<any>();
+  const { showSuccess } = useAttractiveNotification();
   const styles = createActivityScreenStyles();
   
   // Track if the initial process has been started
   const hasInitialProcessStarted = useRef(false);
+  // Track if navigation to dashboard has been triggered
+  const hasNavigatedToDashboard = useRef(false);
 
   // Custom hooks for state management and data processing
   const {
@@ -59,6 +71,7 @@ const ActivityScreen: React.FC = () => {
     activities,
     isProcessing,
     overallProgress,
+    canProceedToDashboard,
     startActivityProcess,
     retryFailedApis,
   } = useActivityManager();
@@ -68,10 +81,8 @@ const ActivityScreen: React.FC = () => {
   const isSmallDevice = screenWidth <= 375;
   const isTablet = screenWidth > 768;
 
-  // Use custom hooks for data processing
-  const consolidatedApiRecords = useActivityConsolidation(activities || []);
-  const statistics = useActivityStatistics(consolidatedApiRecords);
-  const totalRecordsCount = useTotalRecordsCount(consolidatedApiRecords);
+  // Use consolidated hook for all activity data (replaces multiple separate hooks)
+  const activityData = useActivityData(activities || []);
 
   // Use custom hook for safe values (replaces multiple useMemo calls)
   const safeValues = useSafeValues(
@@ -82,9 +93,9 @@ const ActivityScreen: React.FC = () => {
     },
     { 
       overallProgress, 
-      statistics, 
-      totalRecordsCount, 
-      consolidatedApiRecords 
+      statistics: activityData.statistics, 
+      totalRecordsCount: activityData.totalRecordsCount, 
+      consolidatedApiRecords: activityData.consolidated 
     }
   );
 
@@ -114,8 +125,37 @@ const ActivityScreen: React.FC = () => {
 
   // Auto-scroll to relevant cards (consolidated logic)
   useEffect(() => {
-    handleAutoScroll(safeValues.consolidatedApiRecords, isProcessing);
+    if (safeValues.consolidatedApiRecords && safeValues.consolidatedApiRecords.length > 0) {
+      handleAutoScroll(safeValues.consolidatedApiRecords, isProcessing);
+    }
   }, [safeValues.consolidatedApiRecords, isProcessing, handleAutoScroll]);
+
+  // Automatically navigate to Dashboard when all APIs are successful
+  useEffect(() => {
+    if (canProceedToDashboard && 
+        !isProcessing && 
+        !hasNavigatedToDashboard.current &&
+        activities.length > 0) {
+      
+      hasNavigatedToDashboard.current = true;
+      
+      // Show success notification
+      showSuccess(
+        'Synchronization Complete!', 
+        'All data has been successfully synchronized. Redirecting to Dashboard...',
+        2500
+      );
+      
+      // Navigate to Dashboard after showing success message
+      // This gives users time to see the completion state and read the notification
+      setTimeout(() => {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Dashboard' as never }],
+        });
+      }, 2500); // Wait for notification to be visible
+    }
+  }, [canProceedToDashboard, isProcessing, activities.length, navigation, showSuccess]);
 
   /**
    * Handle logout with confirmation dialog
@@ -160,10 +200,8 @@ const ActivityScreen: React.FC = () => {
     await handleIndividualRetryFromHook(record, isApiAttempting);
   };
 
-  // Memoized computed values for performance
-  const hasErrors = safeValues.consolidatedApiRecords.some(record => record.status === 'error');
-  const hasFailures = safeValues.consolidatedApiRecords.some(record => record.status === 'failure');
-  const showRetryButton = hasErrors || hasFailures;
+  // Use pre-computed values from the consolidated hook (no need to recalculate)
+  const showRetryButton = activityData.hasErrors || activityData.hasFailures;
 
   return (
     <SafeAreaView style={styles.container}>

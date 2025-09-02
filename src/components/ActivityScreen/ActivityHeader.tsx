@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { View } from 'react-native';
 import { AppHeader } from '../AppHeader';
 import { Button } from '../Button';
@@ -13,7 +13,12 @@ interface ActivityHeaderProps {
  * Contains the title, left icon, and logout button
  * This component reduces inline JSX complexity in the main screen
  */
-export const ActivityHeader: React.FC<ActivityHeaderProps> = ({ onLogout }) => {
+export const ActivityHeader: React.FC<ActivityHeaderProps> = React.memo(({ onLogout }) => {
+  // Memoize the logout handler to prevent unnecessary re-renders
+  const handleLogout = useCallback(() => {
+    onLogout();
+  }, [onLogout]);
+
   return (
     <AppHeader 
       title="Sync Activity" 
@@ -31,7 +36,7 @@ export const ActivityHeader: React.FC<ActivityHeaderProps> = ({ onLogout }) => {
         <View style={{ alignItems: 'center' }}>
           <Button
             title="LOGOUT"
-            onPress={onLogout}
+            onPress={handleLogout}
             colorScheme="danger"
             size="sm"
             leftIcon={
@@ -48,4 +53,4 @@ export const ActivityHeader: React.FC<ActivityHeaderProps> = ({ onLogout }) => {
       }
     />
   );
-};
+});

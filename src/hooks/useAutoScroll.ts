@@ -1,6 +1,5 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useCallback } from 'react';
 import { ScrollView, View } from 'react-native';
-import { ACTIVITY_CONSTANTS } from '../constants/activityConstants';
 
 /**
  * Custom hook to handle auto-scrolling to specific cards
@@ -11,7 +10,6 @@ import { ACTIVITY_CONSTANTS } from '../constants/activityConstants';
 export const useAutoScroll = () => {
   const scrollViewRef = useRef<ScrollView>(null);
   const cardRefs = useRef<{ [key: string]: View | null }>({});
-  const lastScrolledCard = useRef<string | null>(null);
 
   /**
    * Scroll to a specific card by ID
@@ -25,7 +23,7 @@ export const useAutoScroll = () => {
         scrollViewRef.current as any,
         (x, y) => {
           scrollViewRef.current?.scrollTo({
-            y: Math.max(0, y - ACTIVITY_CONSTANTS.SCROLL_OFFSET),
+            y: Math.max(0, y - 100), // Fixed offset instead of constant
             animated
           });
         },
@@ -42,14 +40,14 @@ export const useAutoScroll = () => {
    * @param isProcessing - Whether any API is currently processing
    */
   const handleAutoScroll = useCallback((records: any[], isProcessing: boolean) => {
-    if (records.length === 0) return;
+    if (!records || records.length === 0) return;
 
     let cardToScrollTo: string | null = null;
 
     // Priority 1: Scroll to processing cards
     if (isProcessing) {
       const processingCard = records.find(record => record.status === 'processing');
-      if (processingCard && processingCard.id !== lastScrolledCard.current) {
+      if (processingCard) {
         cardToScrollTo = processingCard.id;
       }
     }
@@ -59,20 +57,15 @@ export const useAutoScroll = () => {
       const completedCards = records.filter(record => record.status === 'success');
       if (completedCards.length > 0) {
         const lastCompletedCard = completedCards[completedCards.length - 1];
-        if (lastCompletedCard.id !== lastScrolledCard.current) {
-          cardToScrollTo = lastCompletedCard.id;
-        }
+        cardToScrollTo = lastCompletedCard.id;
       }
     }
 
     // Perform the scroll if we found a card
     if (cardToScrollTo) {
-      lastScrolledCard.current = cardToScrollTo;
-      const delay = isProcessing ? ACTIVITY_CONSTANTS.SCROLL_DELAY : ACTIVITY_CONSTANTS.SCROLL_DELAY + 200;
-      
       setTimeout(() => {
         scrollToCard(cardToScrollTo!);
-      }, delay);
+      }, 300); // Fixed delay instead of using constants
     }
   }, [scrollToCard]);
 

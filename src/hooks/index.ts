@@ -10,6 +10,7 @@ export { useOrganizationSelection } from './useOrganizationSelection';
 export { useActivityManager } from './useActivityManager';
 export { useActivityConsolidation } from './useActivityConsolidation';
 export { useActivityStatistics, useTotalRecordsCount, useLastSyncTimeForSubtitle } from './useActivityStatistics';
+export { useActivityData } from './useActivityData';
 export { useActivityScreenState } from './useActivityScreenState';
 export { useUserResponsibilities } from './useUserResponsibilities';
 export { useSafeValues } from './useSafeValues';

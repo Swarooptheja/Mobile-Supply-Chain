@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { VectorIcon } from '../VectorIcon';
 import { ConsolidatedApiRecord } from '../../hooks/useActivityConsolidation';
@@ -19,7 +19,7 @@ interface ActivityCardProps {
   isRetrying: boolean;
 }
 
-export const ActivityCard: React.FC<ActivityCardProps> = ({
+export const ActivityCard: React.FC<ActivityCardProps> = React.memo(({
   record,
   isExpanded,
   onToggleExpansion,
@@ -28,18 +28,26 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
 }) => {
   const styles = createActivityCardStyles();
   
-  const handleRetry = () => {
-    onRetry(record);
-  };
+  // Memoize computed styles to prevent recalculation on every render
+  const cardStyles = useMemo(() => ({
+    accentBar: { ...styles.accentBar, backgroundColor: getTypeColor(record.type || 'unknown') },
+    subtitle: { ...styles.cardSubtitle, color: getTypeColor(record.type || 'unknown') },
+    statusIndicator: { ...styles.statusIndicator, backgroundColor: getStatusColor(record.status || 'unknown') }
+  }), [record.type, record.status, styles]);
 
-  const handleToggleExpansion = () => {
+  // Memoize handlers to prevent unnecessary re-renders
+  const handleRetry = useCallback(() => {
+    onRetry(record);
+  }, [onRetry, record]);
+
+  const handleToggleExpansion = useCallback(() => {
     if (record.canExpand) {
       onToggleExpansion(record.id);
     }
-  };
+  }, [record.canExpand, onToggleExpansion, record.id]);
 
-  // Function to build the full API URL
-  const getFullApiUrl = (): string => {
+  // Memoize the full API URL calculation
+  const fullApiUrl = useMemo(() => {
     const config = getCurrentApiConfig();
     const relativePath = record.activities?.[0]?.url || '';
     const orgId = record.activities?.[0]?.orgId;
@@ -65,7 +73,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
     }
     
     return `${config.hostname}/${fullPath}`;
-  };
+  }, [record.activities]);
 
   // Safe text values with fallbacks
   const safeName = record.name || 'Unknown API';
@@ -78,12 +86,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
   return (
     <View style={styles.syncCard}>
       {/* Left accent bar */}
-      <View 
-        style={[
-          styles.accentBar, 
-          { backgroundColor: getTypeColor(safeType) }
-        ]} 
-      />
+      <View style={cardStyles.accentBar} />
       
       {/* Clickable card header - only when there are errors */}
       <TouchableOpacity
@@ -109,12 +112,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
             </View>
             <View style={styles.titleContainer}>
               <Text style={styles.cardTitle}>{safeName}</Text>
-              <Text 
-                style={[
-                  styles.cardSubtitle, 
-                  { color: getTypeColor(safeType) }
-                ]}
-              >
+              <Text style={cardStyles.subtitle}>
                 {safeType.toUpperCase()}
               </Text>
             </View>
@@ -135,10 +133,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
             </Text>
             <View style={styles.cardStatusRow}>
               <TouchableOpacity
-                style={[
-                  styles.statusIndicator, 
-                  { backgroundColor: getStatusColor(safeStatus) }
-                ]}
+                style={cardStyles.statusIndicator}
                 accessible={true}
                 accessibilityLabel={`${safeStatus} status for ${safeName}`}
                 accessibilityHint={`API ${safeName} is in ${safeStatus} state`}
@@ -220,7 +215,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
               
               {/* Show full API URL instead of just relative path */}
               <Text style={styles.errorMessage}>
-                {getFullApiUrl()}
+                {fullApiUrl}
               </Text>
                 
 
@@ -264,4 +259,4 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
       )}
     </View>
   );
-};
+});

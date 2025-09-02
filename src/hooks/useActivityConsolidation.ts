@@ -40,22 +40,22 @@ export const useActivityConsolidation = (activities: IActivity[]): ConsolidatedA
       // Determine overall status
       const overallStatus = getOverallStatus(groupActivities);
 
+      // Pre-calculate and cache expensive operations to avoid repeated calculations
+      const activitiesWithTimestamps = groupActivities.map(activity => ({
+        ...activity,
+        endTimeStamp: activity.endTime ? new Date(activity.endTime).getTime() : 0,
+        startTimeStamp: activity.startTime ? new Date(activity.startTime).getTime() : 0,
+        lastRetryTimeStamp: activity.lastRetryTime ? new Date(activity.lastRetryTime).getTime() : 0
+      }));
+
       // Get the most recent successful activity for accurate record counts
-      const mostRecentSuccessful = groupActivities
+      const mostRecentSuccessful = activitiesWithTimestamps
         .filter(a => a.status === 'success')
-        .sort((a, b) => {
-          const timeA = a.endTime ? new Date(a.endTime).getTime() : 0;
-          const timeB = b.endTime ? new Date(b.endTime).getTime() : 0;
-          return timeB - timeA; // Most recent first
-        })[0];
+        .sort((a, b) => b.endTimeStamp - a.endTimeStamp)[0];
 
       // Use the most recent successful activity for record counts, or the latest activity if no success
-      const latestActivity = groupActivities
-        .sort((a, b) => {
-          const timeA = a.endTime ? new Date(a.endTime).getTime() : (a.startTime ? new Date(a.startTime).getTime() : 0);
-          const timeB = b.endTime ? new Date(b.endTime).getTime() : (b.startTime ? new Date(b.startTime).getTime() : 0);
-          return timeB - timeA; // Most recent first
-        })[0];
+      const latestActivity = activitiesWithTimestamps
+        .sort((a, b) => Math.max(b.endTimeStamp, b.startTimeStamp) - Math.max(a.endTimeStamp, a.startTimeStamp))[0];
 
       // Use successful activity for records if available, otherwise use latest
       const recordSource = mostRecentSuccessful || latestActivity;
@@ -68,22 +68,22 @@ export const useActivityConsolidation = (activities: IActivity[]): ConsolidatedA
       const correctedTotalRecords = correctRecordsTotal(totalRecords, insertedRecords, groupActivities[0]?.type || 'unknown');
 
       // Get latest sync time with safe defaults
-      const lastSyncTime = groupActivities
-        .filter(a => a.startTime)
-        .sort((a, b) => new Date(b.startTime!).getTime() - new Date(a.startTime!).getTime())[0]?.startTime || null;
+      const lastSyncTime = activitiesWithTimestamps
+        .filter(a => a.startTimeStamp > 0)
+        .sort((a, b) => b.startTimeStamp - a.startTimeStamp)[0]?.startTime || null;
 
       // Get latest error with safe defaults
-      const error = groupActivities
+      const error = activitiesWithTimestamps
         .filter(a => a.error)
-        .sort((a, b) => new Date(b.endTime || 0).getTime() - new Date(a.endTime || 0).getTime())[0]?.error || null;
+        .sort((a, b) => b.endTimeStamp - a.endTimeStamp)[0]?.error || null;
 
       // Get max retry count with safe defaults
-      const retryCount = Math.max(...groupActivities.map(a => a.retryCount ?? 0));
+      const retryCount = Math.max(...activitiesWithTimestamps.map(a => a.retryCount ?? 0));
 
       // Get latest retry time with safe defaults
-      const lastRetryTime = groupActivities
-        .filter(a => a.lastRetryTime)
-        .sort((a, b) => new Date(b.lastRetryTime!).getTime() - new Date(a.lastRetryTime!).getTime())[0]?.lastRetryTime;
+      const lastRetryTime = activitiesWithTimestamps
+        .filter(a => a.lastRetryTimeStamp > 0)
+        .sort((a, b) => b.lastRetryTimeStamp - a.lastRetryTimeStamp)[0]?.lastRetryTime;
 
       // Determine if can expand (show error details)
       // Cards can expand if they have errors OR if they have partial success (some records inserted but also some failures)
