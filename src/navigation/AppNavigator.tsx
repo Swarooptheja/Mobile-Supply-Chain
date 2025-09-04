@@ -5,6 +5,7 @@ import { LoginScreen } from '../screen';
 import DashboardScreen from '../screen/DashboardScreen';
 import OrganizationScreen from '../screen/OrganizationScreen';
 import ActivityScreen from '../screen/ActivityScreen';
+import TransactionHistoryScreen from '../screen/TransactionHistoryScreen';
 import BottomTabNavigator from './BottomTabNavigator';
 import LoadToDockNavigator from './LoadToDockNavigator';
 
@@ -17,6 +18,7 @@ export type RootStackParamList = {
   };
   Dashboard: undefined;
   LoadToDock: undefined;
+  TransactionHistory: undefined;
   MainTabs: undefined;
 };
 
@@ -36,6 +38,7 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen name="Activity" component={ActivityScreen} />
         <Stack.Screen name="Dashboard" component={DashboardScreen} />
         <Stack.Screen name="LoadToDock" component={LoadToDockNavigator} />
+        <Stack.Screen name="TransactionHistory" component={TransactionHistoryScreen} />
         <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
       </Stack.Navigator>
     </NavigationContainer>

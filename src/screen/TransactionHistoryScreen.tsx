@@ -1,386 +1,301 @@
-import React from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
   SafeAreaView,
+  ScrollView,
+  StatusBar,
+  Text,
+  View,
   TouchableOpacity,
+  RefreshControl
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AppHeader } from '../components/AppHeader';
+import { HeaderButton } from '../components';
+import { useAttractiveNotification } from '../context/AttractiveNotificationContext';
+import { useTheme } from '../context/ThemeContext';
+import { useTransactionHistory } from '../hooks/useTransactionHistory';
+import { createTransactionHistoryScreenStyles } from '../styles/TransactionHistoryScreen.styles';
 
-interface ITransaction {
-  id: string;
-  title: string;
-  amount: number;
-  type: 'income' | 'expense';
-  category: string;
-  date: string;
-  status: 'completed' | 'pending' | 'failed';
+interface TransactionHistoryScreenProps {
+  navigation: any;
 }
 
-const TransactionHistoryScreen: React.FC = () => {
-  // Mock transaction data
-  const transactions: ITransaction[] = [
-    {
-      id: '1',
-      title: 'Project Payment',
-      amount: 2500,
-      type: 'income',
-      category: 'Freelance',
-      date: '2024-01-15',
-      status: 'completed',
-    },
-    {
-      id: '2',
-      title: 'Software License',
-      amount: 99,
-      type: 'expense',
-      category: 'Tools',
-      date: '2024-01-14',
-      status: 'completed',
-    },
-    {
-      id: '3',
-      title: 'Client Invoice',
-      amount: 1800,
-      type: 'income',
-      category: 'Consulting',
-      date: '2024-01-13',
-      status: 'pending',
-    },
-    {
-      id: '4',
-      title: 'Office Supplies',
-      amount: 45,
-      type: 'expense',
-      category: 'Office',
-      date: '2024-01-12',
-      status: 'completed',
-    },
-    {
-      id: '5',
-      title: 'Web Development',
-      amount: 3200,
-      type: 'income',
-      category: 'Freelance',
-      date: '2024-01-11',
-      status: 'completed',
-    },
-  ];
+type TransactionStatus = 'pending' | 'success' | 'failed' | 'all';
 
-  const getStatusColor = (status: string) => {
+const TransactionHistoryScreen: React.FC<TransactionHistoryScreenProps> = ({ navigation }) => {
+  const [selectedStatus, setSelectedStatus] = useState<TransactionStatus>('all');
+  
+  const { showError, showSuccess } = useAttractiveNotification();
+  const theme = useTheme();
+  const styles = createTransactionHistoryScreenStyles(theme);
+  const insets = useSafeAreaInsets();
+
+  // Use the custom hook for transaction history management
+  const {
+    transactions,
+    filteredTransactions,
+    stats,
+    isLoading,
+    isRefreshing,
+    error,
+    refreshTransactions,
+    filterTransactions,
+    clearError
+  } = useTransactionHistory({
+    autoLoad: true,
+    initialFilter: { status: 'all' },
+    pageSize: 50
+  });
+
+  // Handle errors from the hook
+  useEffect(() => {
+    if (error) {
+      showError('Error', error);
+      clearError();
+    }
+  }, [error, showError, clearError]);
+
+  const handleRefresh = async () => {
+    await refreshTransactions();
+  };
+
+  const handleStatusFilter = async (status: TransactionStatus) => {
+    setSelectedStatus(status);
+    await filterTransactions({ status: status === 'all' ? undefined : status });
+  };
+
+  const getStatusCount = (status: TransactionStatus): number => {
+    if (!stats) return 0;
+    
     switch (status) {
-      case 'completed':
-        return '#28a745';
+      case 'all':
+        return stats.total;
       case 'pending':
-        return '#ffc107';
+        return stats.pending;
+      case 'success':
+        return stats.success;
       case 'failed':
-        return '#dc3545';
+        return stats.failed;
       default:
-        return '#6c757d';
+        return 0;
     }
   };
 
-  const getStatusText = (status: string) => {
-    return status.charAt(0).toUpperCase() + status.slice(1);
+  const formatTimestamp = (timestamp: string): string => {
+    try {
+      const date = new Date(timestamp);
+      return date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+    } catch (error) {
+      return timestamp;
+    }
   };
 
-  const formatAmount = (amount: number, type: string) => {
-    const sign = type === 'income' ? '+' : '-';
-    return `${sign}$${Math.abs(amount).toFixed(2)}`;
-  };
+  const renderStatusFilter = () => (
+    <View style={styles.filterContainer}>
+      <ScrollView 
+        horizontal 
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.filterScrollContent}
+      >
+        {[
+          { key: 'all', label: 'All', count: getStatusCount('all') },
+          { key: 'pending', label: 'Pending', count: getStatusCount('pending') },
+          { key: 'success', label: 'Success', count: getStatusCount('success') },
+          { key: 'failed', label: 'Failed', count: getStatusCount('failed') }
+        ].map((filter) => (
+          <TouchableOpacity
+            key={filter.key}
+            style={[
+              styles.filterButton,
+              selectedStatus === filter.key && styles.filterButtonActive
+            ]}
+            onPress={() => handleStatusFilter(filter.key as TransactionStatus)}
+            activeOpacity={0.7}
+          >
+            <Text style={[
+              styles.filterButtonText,
+              selectedStatus === filter.key && styles.filterButtonTextActive
+            ]}>
+              {filter.label}
+            </Text>
+            <View style={[
+              styles.filterBadge,
+              selectedStatus === filter.key && styles.filterBadgeActive
+            ]}>
+              <Text style={[
+                styles.filterBadgeText,
+                selectedStatus === filter.key && styles.filterBadgeTextActive
+              ]}>
+                {filter.count}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </View>
+  );
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  };
+  const renderTransactionCard = useCallback((transaction: any, index: number) => {
+    const status = transaction.EBSTransactionStatus;
+    const isPending = status === 'pending';
+    const isSuccess = status === 'success';
+    const isFailed = status === 'failed';
+
+    return (
+      <View key={`${transaction.MobileTransactionId}-${index}`} style={styles.transactionCard}>
+        {/* Header with status */}
+        <View style={styles.transactionHeader}>
+          <View style={styles.transactionInfo}>
+            <Text style={styles.transactionId}>
+              ID: {transaction.MobileTransactionId}
+            </Text>
+            <Text style={styles.transactionTimestamp}>
+              {formatTimestamp(transaction.CreatedAt)}
+            </Text>
+          </View>
+          <View style={[
+            styles.statusBadge,
+            isPending && styles.statusBadgePending,
+            isSuccess && styles.statusBadgeSuccess,
+            isFailed && styles.statusBadgeFailed
+          ]}>
+            <Text style={[
+              styles.statusText,
+              isPending && styles.statusTextPending,
+              isSuccess && styles.statusTextSuccess,
+              isFailed && styles.statusTextFailed
+            ]}>
+              {status.toUpperCase()}
+            </Text>
+          </View>
+        </View>
+
+        {/* Transaction Details */}
+        <View style={styles.transactionDetails}>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Delivery ID:</Text>
+            <Text style={styles.detailValue}>{transaction.DeliveryLineId}</Text>
+          </View>
+          
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Vehicle Number:</Text>
+            <Text style={styles.detailValue}>{transaction.VehicleNumber}</Text>
+          </View>
+          
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Dock Door:</Text>
+            <Text style={styles.detailValue}>{transaction.DockDoor}</Text>
+          </View>
+          
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>LPN Number:</Text>
+            <Text style={styles.detailValue}>{transaction.LpnNumber}</Text>
+          </View>
+        </View>
+
+        {/* Status-specific content */}
+        {isPending && (
+          <View style={styles.pendingContainer}>
+            <View style={styles.pendingIndicator}>
+              <View style={styles.pendingDot} />
+              <Text style={styles.pendingText}>Transaction is being processed...</Text>
+            </View>
+          </View>
+        )}
+
+        {isSuccess && (
+          <View style={styles.successContainer}>
+            <Text style={styles.successText}>✓ Transaction completed successfully</Text>
+            {transaction.Message && (
+              <Text style={styles.messageText}>{transaction.Message}</Text>
+            )}
+          </View>
+        )}
+
+        {isFailed && (
+          <View style={styles.failedContainer}>
+            <Text style={styles.failedText}>✗ Transaction failed</Text>
+            {transaction.Message && (
+              <Text style={styles.errorMessageText}>{transaction.Message}</Text>
+            )}
+          </View>
+        )}
+      </View>
+    );
+  }, [styles]);
+
+  const renderEmptyState = () => (
+    <View style={styles.emptyContainer}>
+      <Text style={styles.emptyTitle}>No Transactions Found</Text>
+      <Text style={styles.emptySubtitle}>
+        {selectedStatus === 'all' 
+          ? 'No transactions have been recorded yet.'
+          : `No ${selectedStatus} transactions found.`
+        }
+      </Text>
+    </View>
+  );
+
+  const renderLoadingState = () => (
+    <View style={styles.loadingContainer}>
+      <Text style={styles.loadingText}>Loading transactions...</Text>
+    </View>
+  );
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Transaction History</Text>
-          <Text style={styles.headerSubtitle}>Track your income and expenses</Text>
-        </View>
+      <StatusBar barStyle="light-content" backgroundColor="#1e3a8a" />
+      
+      {/* Header */}
+      <AppHeader 
+        title="Transaction History" 
+        leftElement={
+          <HeaderButton
+            icon="back"
+            onPress={() => navigation.goBack()}
+          />
+        }
+      />
 
-        {/* Summary Cards */}
-        <View style={styles.summaryContainer}>
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryLabel}>Total Income</Text>
-            <Text style={styles.summaryAmountIncome}>
-              +${transactions
-                .filter(t => t.type === 'income')
-                .reduce((sum, t) => sum + t.amount, 0)
-                .toFixed(2)}
-            </Text>
-          </View>
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryLabel}>Total Expenses</Text>
-            <Text style={styles.summaryAmountExpense}>
-              -${transactions
-                .filter(t => t.type === 'expense')
-                .reduce((sum, t) => sum + t.amount, 0)
-                .toFixed(2)}
-            </Text>
-          </View>
-        </View>
+      {/* Status Filter */}
+      {renderStatusFilter()}
 
-        {/* Filter Options */}
-        <View style={styles.filterContainer}>
-          <TouchableOpacity style={[styles.filterButton, styles.filterButtonActive]}>
-            <Text style={styles.filterButtonTextActive}>All</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.filterButton}>
-            <Text style={styles.filterButtonText}>Income</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.filterButton}>
-            <Text style={styles.filterButtonText}>Expenses</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Transactions List */}
-        <View style={styles.transactionsContainer}>
-          <Text style={styles.sectionTitle}>Recent Transactions</Text>
-          {transactions.map((transaction) => (
-            <View key={transaction.id} style={styles.transactionItem}>
-              <View style={styles.transactionLeft}>
-                <View style={styles.transactionIcon}>
-                  <Text style={styles.transactionIconText}>
-                    {transaction.type === 'income' ? '💰' : '💳'}
-                  </Text>
-                </View>
-                <View style={styles.transactionDetails}>
-                  <Text style={styles.transactionTitle}>{transaction.title}</Text>
-                  <Text style={styles.transactionCategory}>{transaction.category}</Text>
-                  <Text style={styles.transactionDate}>{formatDate(transaction.date)}</Text>
-                </View>
-              </View>
-              <View style={styles.transactionRight}>
-                <Text
-                  style={[
-                    styles.transactionAmount,
-                    { color: transaction.type === 'income' ? '#28a745' : '#dc3545' },
-                  ]}
-                >
-                  {formatAmount(transaction.amount, transaction.type)}
-                </Text>
-                <View
-                  style={[
-                    styles.statusBadge,
-                    { backgroundColor: getStatusColor(transaction.status) },
-                  ]}
-                >
-                  <Text style={styles.statusText}>{getStatusText(transaction.status)}</Text>
-                </View>
-              </View>
-            </View>
-          ))}
-        </View>
-
-        {/* Load More Button */}
-        <View style={styles.loadMoreContainer}>
-          <TouchableOpacity style={styles.loadMoreButton}>
-            <Text style={styles.loadMoreButtonText}>Load More Transactions</Text>
-          </TouchableOpacity>
-        </View>
+      {/* Transactions List */}
+      <ScrollView 
+        style={styles.content}
+        contentContainerStyle={[
+          styles.contentContainer,
+          { paddingBottom: Math.max(20, insets.bottom + 20) }
+        ]}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            colors={['#1e3a8a']}
+            tintColor="#1e3a8a"
+          />
+        }
+        showsVerticalScrollIndicator={false}
+      >
+        {isLoading ? (
+          renderLoadingState()
+        ) : filteredTransactions.length === 0 ? (
+          renderEmptyState()
+        ) : (
+          filteredTransactions.map((transaction, index) => 
+            renderTransactionCard(transaction, index)
+          )
+        )}
       </ScrollView>
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingVertical: 24,
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#212529',
-    marginBottom: 4,
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: '#6c757d',
-  },
-  summaryContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    marginTop: 16,
-    marginBottom: 20,
-  },
-  summaryCard: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-    padding: 20,
-    marginHorizontal: 4,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  summaryLabel: {
-    fontSize: 14,
-    color: '#6c757d',
-    marginBottom: 8,
-  },
-  summaryAmountIncome: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#28a745',
-  },
-  summaryAmountExpense: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#dc3545',
-  },
-  filterContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    marginBottom: 20,
-  },
-  filterButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginRight: 12,
-    borderRadius: 20,
-    backgroundColor: '#ffffff',
-    borderWidth: 1,
-    borderColor: '#e9ecef',
-  },
-  filterButtonActive: {
-    backgroundColor: '#007bff',
-    borderColor: '#007bff',
-  },
-  filterButtonText: {
-    color: '#6c757d',
-    fontSize: 14,
-  },
-  filterButtonTextActive: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  transactionsContainer: {
-    backgroundColor: '#ffffff',
-    marginHorizontal: 20,
-    marginBottom: 20,
-    borderRadius: 12,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#212529',
-    marginBottom: 16,
-  },
-  transactionItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f8f9fa',
-  },
-  transactionLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  transactionIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#f8f9fa',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  transactionIconText: {
-    fontSize: 16,
-  },
-  transactionDetails: {
-    flex: 1,
-  },
-  transactionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#212529',
-    marginBottom: 4,
-  },
-  transactionCategory: {
-    fontSize: 14,
-    color: '#6c757d',
-    marginBottom: 2,
-  },
-  transactionDate: {
-    fontSize: 12,
-    color: '#adb5bd',
-  },
-  transactionRight: {
-    alignItems: 'flex-end',
-  },
-  transactionAmount: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  statusText: {
-    color: '#ffffff',
-    fontSize: 10,
-    fontWeight: '600',
-  },
-  loadMoreContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 20,
-  },
-  loadMoreButton: {
-    backgroundColor: '#ffffff',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#e9ecef',
-    alignItems: 'center',
-  },
-  loadMoreButtonText: {
-    color: '#6c757d',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-});
 
 export default TransactionHistoryScreen;

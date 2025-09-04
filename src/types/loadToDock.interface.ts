@@ -184,3 +184,12 @@ export interface ILoadToDockTransactionRequest {
   CreatedAt: string;
   Message: string
 }
+
+export interface IUploadDocumentResponse {
+    fileName: string;
+    folderPath: string;
+    fileType: string;
+    webUrl: string;
+    ReturnStatus: 'S' | 'E';
+    ReturnMessage: string;
+}

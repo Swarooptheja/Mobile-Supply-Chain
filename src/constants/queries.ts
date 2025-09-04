@@ -105,7 +105,7 @@ export const LOAD_TO_DOCK_QUERIES = {
 
     UPDATE_TRANSACTION_STATUS: `
         UPDATE ${TableNames.LOAD_TO_DOCK_TRANSACTION_HISTORY} 
-        SET EBSTransactionStatus = ?, Message = ?, UpdatedAt = ?
+        SET sharePointTransactionStatus = ?, Message = ?, UpdatedAt = ?
         WHERE MobileTransactionId = ?
     `,
 
@@ -137,7 +137,8 @@ export const LOAD_TO_DOCK_QUERIES = {
             EBSTransactionStatus TEXT DEFAULT 'pending',
             sharePointTransactionStatus TEXT DEFAULT 'pending',
             CreatedAt TEXT NOT NULL,
-            Message TEXT
+            Message TEXT,
+            UpdatedAt TEXT
         )
     `,
     // Enhanced Load to Dock Transaction queries
@@ -145,10 +146,10 @@ export const LOAD_TO_DOCK_QUERIES = {
         INSERT INTO ${TableNames.LOAD_TO_DOCK_TRANSACTION_HISTORY} (
             MobileTransactionId, TransactionDate, DeliveryLineId, VehicleNumber, DockDoor, 
             LpnNumber, InventoryOrgId, UserId, ResponsibilityId, ItemsData, 
-            EBSTransactionStatus, sharePointTransactionStatus, CreatedAt, Message
+            EBSTransactionStatus, sharePointTransactionStatus, CreatedAt, Message, UpdatedAt 
         ) VALUES (?, ?, ?, ?, ?,
                   ?, ?, ?, ?, ?, 
-                  ?, ?, ?, ?)
+                  ?, ?, ?, ?, ?)
     `,
 
     
@@ -160,12 +161,158 @@ export const LOAD_TO_DOCK_QUERIES = {
     
     GET_PENDING_LOAD_TO_DOCK_TRANSACTIONS: `
         SELECT * FROM ${TableNames.LOAD_TO_DOCK_TRANSACTION_HISTORY} 
-        WHERE EBSTransactionStatus = 'pending'
+        WHERE sharePointTransactionStatus = 'pending'
     `,
 
     GET_LOAD_TO_DOCK_TRANSACTION: `
         SELECT * FROM ${TableNames.LOAD_TO_DOCK_TRANSACTION_HISTORY} 
         WHERE MobileTransactionId = ?
+    `,
+
+    // Transaction History queries
+    GET_ALL_TRANSACTIONS: `
+        SELECT * FROM ${TableNames.LOAD_TO_DOCK_TRANSACTION_HISTORY} 
+        ORDER BY CreatedAt DESC
+    `,
+
+    GET_TRANSACTIONS_BY_STATUS: `
+        SELECT * FROM ${TableNames.LOAD_TO_DOCK_TRANSACTION_HISTORY} 
+        WHERE EBSTransactionStatus = ?
+        ORDER BY CreatedAt DESC
+    `,
+
+    GET_TRANSACTIONS_PAGINATED: `
+        SELECT * FROM ${TableNames.LOAD_TO_DOCK_TRANSACTION_HISTORY} 
+        ORDER BY CreatedAt DESC
+        LIMIT ? OFFSET ?
+    `,
+
+    // Media storage queries
+    INSERT_MEDIA: `
+        INSERT INTO ${TableNames.MEDIA_STORAGE} (
+            DeliveryId, ItemNumber, MediaType, Base64Data, 
+            Size, Duration, Timestamp
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    `,
+
+    // Transaction history queries
+    INSERT_TRANSACTION_HISTORY: `
+        INSERT INTO transaction_history (
+            MobileTransactionId, DeliveryId, DeliveryLineId, ShipDate, 
+            Quantity, PartialAction, ResponsibilityId, UserId, 
+            TrackingNumber, FreightCost, ShipMethod, GrossWeight
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
 
+};
+
+// Dedicated Transaction History Queries
+export const TRANSACTION_HISTORY_QUERIES = {
+    // Basic CRUD operations
+    GET_ALL_TRANSACTIONS: `
+        SELECT * FROM ${TableNames.LOAD_TO_DOCK_TRANSACTION_HISTORY} 
+        ORDER BY CreatedAt DESC
+    `,
+
+    GET_TRANSACTIONS_BY_STATUS: `
+        SELECT * FROM ${TableNames.LOAD_TO_DOCK_TRANSACTION_HISTORY} 
+        WHERE EBSTransactionStatus = ?
+        ORDER BY CreatedAt DESC
+    `,
+
+    GET_TRANSACTIONS_PAGINATED: `
+        SELECT * FROM ${TableNames.LOAD_TO_DOCK_TRANSACTION_HISTORY} 
+        ORDER BY CreatedAt DESC
+        LIMIT ? OFFSET ?
+    `,
+
+    GET_TRANSACTIONS_COUNT: `
+        SELECT COUNT(*) as count FROM ${TableNames.LOAD_TO_DOCK_TRANSACTION_HISTORY}
+    `,
+
+    GET_TRANSACTION_BY_ID: `
+        SELECT * FROM ${TableNames.LOAD_TO_DOCK_TRANSACTION_HISTORY} 
+        WHERE MobileTransactionId = ?
+    `,
+
+    // Advanced filtering and search
+    GET_RECENT_TRANSACTIONS: `
+        SELECT * FROM ${TableNames.LOAD_TO_DOCK_TRANSACTION_HISTORY} 
+        WHERE CreatedAt >= ?
+        ORDER BY CreatedAt DESC
+    `,
+
+    GET_TRANSACTIONS_BY_DATE_RANGE: `
+        SELECT * FROM ${TableNames.LOAD_TO_DOCK_TRANSACTION_HISTORY} 
+        WHERE CreatedAt BETWEEN ? AND ?
+        ORDER BY CreatedAt DESC
+    `,
+
+    SEARCH_TRANSACTIONS: `
+        SELECT * FROM ${TableNames.LOAD_TO_DOCK_TRANSACTION_HISTORY} 
+        WHERE MobileTransactionId LIKE ? 
+           OR DeliveryLineId LIKE ? 
+           OR VehicleNumber LIKE ? 
+           OR LpnNumber LIKE ?
+        ORDER BY CreatedAt DESC
+    `,
+
+    // Statistics and analytics
+    GET_TRANSACTION_STATS: `
+        SELECT 
+            COUNT(*) as total,
+            SUM(CASE WHEN EBSTransactionStatus = 'pending' THEN 1 ELSE 0 END) as pending,
+            SUM(CASE WHEN EBSTransactionStatus = 'success' THEN 1 ELSE 0 END) as success,
+            SUM(CASE WHEN EBSTransactionStatus = 'failed' THEN 1 ELSE 0 END) as failed
+        FROM ${TableNames.LOAD_TO_DOCK_TRANSACTION_HISTORY}
+    `,
+
+    GET_TRANSACTION_COUNT_BY_STATUS: `
+        SELECT EBSTransactionStatus as status, COUNT(*) as count
+        FROM ${TableNames.LOAD_TO_DOCK_TRANSACTION_HISTORY}
+        GROUP BY EBSTransactionStatus
+    `,
+
+    // Status management
+    GET_PENDING_TRANSACTIONS: `
+        SELECT * FROM ${TableNames.LOAD_TO_DOCK_TRANSACTION_HISTORY} 
+        WHERE EBSTransactionStatus = 'pending'
+        ORDER BY CreatedAt ASC
+    `,
+
+    UPDATE_TRANSACTION_STATUS: `
+        UPDATE ${TableNames.LOAD_TO_DOCK_TRANSACTION_HISTORY} 
+        SET EBSTransactionStatus = ?, Message = ?, UpdatedAt = ?
+        WHERE MobileTransactionId = ?
+    `,
+
+    // Cleanup operations
+    DELETE_TRANSACTION: `
+        DELETE FROM ${TableNames.LOAD_TO_DOCK_TRANSACTION_HISTORY} 
+        WHERE MobileTransactionId = ?
+    `,
+
+    DELETE_OLD_TRANSACTIONS: `
+        DELETE FROM ${TableNames.LOAD_TO_DOCK_TRANSACTION_HISTORY} 
+        WHERE CreatedAt < ? AND EBSTransactionStatus IN ('success', 'failed')
+    `,
+
+    // Performance optimization queries
+    GET_TRANSACTIONS_BY_USER: `
+        SELECT * FROM ${TableNames.LOAD_TO_DOCK_TRANSACTION_HISTORY} 
+        WHERE UserId = ?
+        ORDER BY CreatedAt DESC
+    `,
+
+    GET_TRANSACTIONS_BY_VEHICLE: `
+        SELECT * FROM ${TableNames.LOAD_TO_DOCK_TRANSACTION_HISTORY} 
+        WHERE VehicleNumber = ?
+        ORDER BY CreatedAt DESC
+    `,
+
+    GET_TRANSACTIONS_BY_DELIVERY: `
+        SELECT * FROM ${TableNames.LOAD_TO_DOCK_TRANSACTION_HISTORY} 
+        WHERE DeliveryLineId = ?
+        ORDER BY CreatedAt DESC
+    `
 };

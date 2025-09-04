@@ -310,7 +310,15 @@ export const useActivityManager = (): UseActivityManagerReturn => {
             return {
               activityId: activity.id,
               success: false,
-              error: 'API request timed out. Please check your connection and try again.',
+              error: `API request timed out after ${API_TIMEOUT_MS / 1000} seconds. Please check your connection and try again.`,
+              recordsTotal: 0,
+              recordsInserted: 0
+            };
+          } else if (errorMessage.includes('Network request failed') || errorMessage.includes('fetch')) {
+            return {
+              activityId: activity.id,
+              success: false,
+              error: 'Network connection failed. Please check your internet connection and try again.',
               recordsTotal: 0,
               recordsInserted: 0
             };
@@ -458,10 +466,24 @@ export const useActivityManager = (): UseActivityManagerReturn => {
       if (allSuccessful) {
         showSuccess('Synchronization Complete', 'All APIs processed successfully');
       } else if (hasErrors || hasFailures) {
-        const failedCount = currentActivities.filter(a => 
+        const failedActivities = currentActivities.filter(a => 
           a.status === 'error' || a.status === 'failure'
-        ).length;
-        showWarning('Synchronization Incomplete', `${failedCount} APIs failed. You can retry them.`);
+        );
+        const failedCount = failedActivities.length;
+        
+        // Check if any failed due to timeout
+        const timeoutErrors = failedActivities.filter(a => 
+          a.error && a.error.includes('timed out')
+        );
+        
+        if (timeoutErrors.length > 0) {
+          showWarning(
+            'Synchronization Incomplete', 
+            `${failedCount} APIs failed (${timeoutErrors.length} due to timeout). Please check your connection and retry.`
+          );
+        } else {
+          showWarning('Synchronization Incomplete', `${failedCount} APIs failed. You can retry them.`);
+        }
       }
 
     } catch (error) {

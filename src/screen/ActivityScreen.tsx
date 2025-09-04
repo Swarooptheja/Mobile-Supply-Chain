@@ -130,7 +130,7 @@ const ActivityScreen: React.FC = () => {
     }
   }, [safeValues.consolidatedApiRecords, isProcessing, handleAutoScroll]);
 
-  // Automatically navigate to Dashboard when all APIs are successful
+  // Automatically navigate to Dashboard when ALL APIs (master, config, and transactional) are successful
   useEffect(() => {
     if (canProceedToDashboard && 
         !isProcessing && 

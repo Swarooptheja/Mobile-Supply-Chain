@@ -100,7 +100,7 @@ export class ActivityService {
       version: 'EBS/23B',
       lastSyncTime: true,
       fullRefresh: false,
-      queries: [LOAD_TO_DOCK_QUERIES.CREATE_TRANSACTION_HISTORY_TABLE]
+      queries: [LOAD_TO_DOCK_QUERIES.CREATE_LOAD_TO_DOCK_TRANSACTION_TABLE]
     },
   };
 
@@ -530,12 +530,8 @@ export class ActivityService {
 
   // Check if API can proceed based on dependency rules
   static canProceedToDashboard(activities: IActivity[]): boolean {
-    const masterConfigActivities = activities.filter(a => 
-      a.type === 'master' || a.type === 'config'
-    );
-    
-    // All master and config APIs must succeed
-    return masterConfigActivities.every(a => a.status === 'success');
+    // All APIs (master, config, and transactional) must succeed to proceed to dashboard
+    return activities.every(a => a.status === 'success');
   }
 
   // Debug method to validate all API configurations

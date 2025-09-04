@@ -16,4 +16,5 @@ export { useUserResponsibilities } from './useUserResponsibilities';
 export { useSafeValues } from './useSafeValues';
 export { useAutoScroll } from './useAutoScroll';
 export { useRetryHandler } from './useRetryHandler';
+export { useTransactionHistory } from './useTransactionHistory';
 

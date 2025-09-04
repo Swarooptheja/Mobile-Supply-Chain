@@ -1,10 +1,11 @@
 import { apiPost, getCurrentServerDate, getDataFromResultSet, getLocalTransactionId } from '../../services/sharedService';
-import { API_ENDPOINTS, buildApiUrl, getApiHeaders } from '../config/api';
+import { getApiHeaders } from '../config/api';
 import { LOAD_TO_DOCK_QUERIES } from '../constants/queries';
-import { ILoadToDockItem, ILoadToDockItemDetail, ILoadToDockTransaction, ILoadToDockTransactionRequest, ITransactionResponse } from '../types/loadToDock.interface';
-import { networkService } from './api';
-import { mediaUploadService, PurpleDBUploadRequest } from './mediaUploadService';
+import { ILoadToDockItem, ILoadToDockItemDetail, ILoadToDockTransaction, ILoadToDockTransactionRequest, ITransactionResponse, IUploadDocumentResponse } from '../types/loadToDock.interface';
+import { IMediaItem } from '../types/media.interface';
+import { networkService } from './networkService';
 import { simpleDatabaseService } from './simpleDatabase';
+import { transactionHistoryService } from './transactionHistoryService';
 
 // New interfaces for the enhanced Load to Dock functionality
 export interface LoadToDockRequest {
@@ -41,6 +42,21 @@ export interface LoadToDockResult {
   success: boolean;
   error?: string;
   offline?: boolean;
+}
+
+// New interfaces for PropelDB document upload
+export interface PropelDBUploadData {
+  customerNumber: string;
+  documentType: string;
+  documentNumber: string;
+  files: PropelDBFile[];
+}
+
+export interface PropelDBFile {
+  base64: string;
+  type: string;
+  size: number;
+  duration?: number | null;
 }
 
 class LoadToDockService {
@@ -258,18 +274,6 @@ class LoadToDockService {
     }
   }
 
-  /**
-   * Get media content for an item
-   */
-  async getMediaContent(deliveryId: string, itemId: string): Promise<any[]> {
-    try {
-      const result = await simpleDatabaseService.executeQuery(LOAD_TO_DOCK_QUERIES.GET_MEDIA_BY_ITEM, [deliveryId, itemId]);
-      return getDataFromResultSet(result);
-    } catch (error) {
-      console.error('Error fetching media content:', error);
-      throw new Error('Failed to fetch media content');
-    }
-  }
 
   /**
    * Create ship confirm transaction
@@ -458,8 +462,12 @@ class LoadToDockService {
 
   /**
    * POST API call to EBS createLoadtoDockwms endpoint
+   * COMMENTED OUT - Replaced with PropelDB document upload API
    */
-  private async postLoadToDockTransaction(request: ILoadToDockTransactionRequest[]): Promise<{ success: boolean; error?: string }> {
+  private async postLoadToDockTransaction(_request: ILoadToDockTransactionRequest[]): Promise<{ success: boolean; error?: string }> {
+    // TODO: This method has been commented out as we're now using PropelDB document upload API
+    // The original EBS API implementation is preserved below for reference:
+    /*
     try {
       const url = buildApiUrl(API_ENDPOINTS.CREATE_LOAD_TO_DOCK_WMS);
       
@@ -517,33 +525,248 @@ class LoadToDockService {
         error: error instanceof Error ? error.message : 'EBS API call failed'
       };
     }
+    */
+
+    // For now, return success to maintain existing flow
+    // This will be replaced with PropelDB upload logic
+    console.log('📤 EBS API call commented out - using PropelDB upload instead');
+    return {
+      success: true
+    };
   }
 
   /**
-   * Upload media to Purple DB
+   * Upload media to PropelDB using the new document upload API
    */
-  private async uploadMediaToPropelDB(request: ILoadToDockTransactionRequest[]): Promise<any[]> {
-    const uploadRequests: PurpleDBUploadRequest[] = [];
-    for(let i = 0; i < request.length; i++) {
-      const element = request[i];
-      const data = JSON.parse(element.ItemsData);
-      const mediaItems = data.mediaItems;
-      const mediaUploadRequests = mediaItems.map((mediaItem: any) => ({
-        customerNumber: data.deliveryId, // Using deliveryId as customerNumber
-        documentType: 'LoadToDock',
-        documentNumber: data.deliveryId,
-        mediaItem
-      }));
-      uploadRequests.push(...mediaUploadRequests);
+  private async uploadMediaToPropelDB(request: ILoadToDockTransactionRequest[]): Promise<{ success: boolean; error?: string }> {
+    try {
+      console.log('📤 Starting PropelDB document upload for', request.length, 'transactions');
+      
+      // Process each transaction and upload associated media
+      for (const transaction of request) {
+        const uploadResult = await this.uploadTransactionMediaToPropelDB(transaction);
+        
+        if (!uploadResult.success) {
+          console.error('❌ Failed to upload media for transaction:', transaction.MobileTransactionId, uploadResult.error);
+          // Continue with other transactions even if one fails
+        } else {
+          console.log('✅ Successfully uploaded media for transaction:', transaction.MobileTransactionId);
+        }
+      }
+      
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error in PropelDB media upload:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'PropelDB upload failed'
+      };
     }
+  }
 
-    return await mediaUploadService.uploadMultipleMedia(uploadRequests);
+  /**
+   * Upload media for a single transaction to PropelDB
+   */
+  private async uploadTransactionMediaToPropelDB(transaction: ILoadToDockTransactionRequest): Promise<{ success: boolean; error?: string }> {
+    try {
+      // Parse the ItemsData to get delivery and item information
+      const itemsData: ILoadToDockItemDetail = JSON.parse(transaction.ItemsData);
+      // const deliveryId = itemsData.DeliveryId;
+      // const itemNumber = itemsData.ItemNumber;
+      
+      // Get media content from database
+      const mediaContent: IMediaItem[] = itemsData.mediaData?.capturedMedia || [];
+      
+      if (!mediaContent || !mediaContent.length) {
+        console.log('📷 No media content found for transaction:', transaction.MobileTransactionId);
+        return { success: true }; // No media to upload is not an error
+      }
+      
+      // Prepare upload data
+      const uploadData = await this.preparePropelDBUploadData(itemsData, mediaContent);
+      
+      // Upload to PropelDB
+      const uploadResult = await this.postToPropelDB(uploadData);
+      
+      if (uploadResult.success) {
+        const data = uploadResult.data || [];
+        await this.updateTransactionStatus(data, transaction.MobileTransactionId);
+
+        // Update transaction status to indicate successful media upload
+        // await this.updateTransactionSharePointStatus(transaction.MobileTransactionId, 'success');
+      }
+      
+      return uploadResult;
+    } catch (error) {
+      console.error('❌ Error uploading transaction media:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Transaction media upload failed'
+      };
+    }
+  }
+
+  /**
+   * Prepare data for PropelDB upload
+   */
+  private async preparePropelDBUploadData(itemsData: ILoadToDockItemDetail, mediaContent: IMediaItem[]): Promise<PropelDBUploadData> {
+    try {
+      // Parse transaction data to extract required fields
+      // const itemsData: ILoadToDockItemDetail = JSON.parse(transaction.ItemsData);
+      
+      // Extract customer number from transaction data
+      // This might need to be adjusted based on your actual data structure
+      const customerNumber = itemsData.CustomerName || 'CUST2509'; // Default fallback
+      
+      // Determine document type based on media content
+      const hasVideo = mediaContent.some(media => media.type === 'video');
+      const documentType = hasVideo ? 'video' : 'photo';
+      
+      // Use delivery ID as document number
+      const documentNumber = itemsData.DeliveryLineId;
+      
+      // Prepare files array with base64 data
+      const files = mediaContent.map(media => ({
+        base64: media.base64,
+        type: media.type,
+        size: media.size || 0,
+        duration: media.duration || null
+      }));
+      
+      return ({
+        customerNumber,
+        documentType,
+        documentNumber,
+        files
+      });
+    } catch (error) {
+      console.error('❌ Error preparing PropelDB upload data:', error);
+      throw new Error('Failed to prepare upload data');
+    }
+  }
+
+  /**
+   * POST request to PropelDB document upload API
+   */
+  private async postToPropelDB(uploadData: PropelDBUploadData): Promise<{ success: boolean; error?: string, data?: IUploadDocumentResponse[] }> {
+    try {
+      const url = 'https://linuxserver.propelapps.com/CLD/24D/uploadDocumentsToPropelDB';
+      
+      // Create FormData for multipart form upload
+      const formData = new FormData();
+      
+      // Add form fields
+      formData.append('customerNumber', uploadData.customerNumber);
+      formData.append('documentType', uploadData.documentType);
+      formData.append('documentNumber', uploadData.documentNumber);
+      
+      // Add files to FormData
+      for (let i = 0; i < uploadData.files.length; i++) {
+        const file = uploadData.files[i];
+        
+        // Process base64 data for file upload
+        const base64Data = await this.base64ToBlob(file.base64, file.type);
+        
+        // Create file name with timestamp
+        const fileName = `${uploadData.documentNumber}_${file.type}_${Date.now()}_${i}.${file.type === 'video' ? 'mp4' : 'jpg'}`;
+        
+        // For React Native, create a file object with base64 data
+        const fileObject = {
+          uri: `data:${file.type === 'video' ? 'video/mp4' : 'image/jpeg'};base64,${base64Data}`,
+          type: file.type === 'video' ? 'video/mp4' : 'image/jpeg',
+          name: fileName
+        };
+        
+        formData.append('files', fileObject as any);
+      }
+      
+      console.log('📤 Uploading to PropelDB:', {
+        customerNumber: uploadData.customerNumber,
+        documentType: uploadData.documentType,
+        documentNumber: uploadData.documentNumber,
+        fileCount: uploadData.files.length
+      });
+      
+      // Make the API call
+      // const response = await fetch(url, {
+      //   method: 'POST',
+      //   body: formData,
+      //   headers: {
+      //     // Don't set Content-Type header - let fetch set it with boundary for FormData
+      //     'Cookie': 'CF_AppSession=...' // TODO: Add proper session cookie
+      //   }
+      // });
+
+      const response = await apiPost<any>(url, formData, {
+        ...getApiHeaders()
+      });
+
+      if (response.data && response.data.Response) {
+        return ({ 
+          success: true,
+          data: response.data.Response
+        });
+      } else {
+        return ({
+          success: false, 
+          error: 'PropelDB API request failed',
+        });
+      }
+      
+      // if (!response.ok) {
+      //   const errorText = await response.text();
+      //   throw new Error(`PropelDB API request failed: ${response.status} - ${errorText}`);
+      // }
+      
+      // const result = await response.json();
+      // console.log('📥 PropelDB API response:', result);
+      
+    } catch (error) {
+      console.error('❌ Error posting to PropelDB:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'PropelDB API call failed'
+      };
+    }
+  }
+
+  /**
+   * Convert base64 string to Blob for file upload
+   * Note: In React Native, we'll use the base64 string directly in FormData
+   */
+  private async base64ToBlob(base64: string, _type: string): Promise<string> {
+    try {
+      // Remove data URL prefix if present
+      const base64Data = base64.replace(/^data:[^;]+;base64,/, '');
+      
+      // For React Native, we'll return the base64 string directly
+      // FormData in React Native can handle base64 strings
+      return base64Data;
+    } catch (error) {
+      console.error('❌ Error processing base64 data:', error);
+      throw new Error('Failed to process base64 data');
+    }
+  }
+
+  /**
+   * Update SharePoint transaction status
+   */
+  private async updateTransactionSharePointStatus(mobileTransactionId: number, status: string): Promise<void> {
+    try {
+      await simpleDatabaseService.executeQuery(
+        LOAD_TO_DOCK_QUERIES.UPDATE_LOAD_TO_DOCK_TRANSACTION_SHAREPOINT_STATUS,
+        [status, mobileTransactionId.toString(), new Date().toISOString(), mobileTransactionId]
+      );
+    } catch (error) {
+      console.error('❌ Error updating SharePoint transaction status:', error);
+      throw error;
+    }
   }
 
   /**
    * Update transaction status in database
    */
-  private async updateTransactionStatus(response: LoadToDockTransactionResponse[]): Promise<void> {
+  private async updateTransactionStatus(response: IUploadDocumentResponse[], mobileTransactionId: number): Promise<void> {
     try {
       const promises = [];
       
@@ -560,8 +783,6 @@ class LoadToDockService {
           } else if (element.ReturnStatus.toLowerCase() === 's') {
             syncStatus = 'success';
             syncMessage = element.ReturnMessage || 'Transaction completed successfully';
-            const request = await this.getLoadToDockTransaction(element.MobileTransactionId);
-            // await this.uploadMediaToPropelDB(request);
           }
         
         // Create update promise for each transaction
@@ -571,7 +792,7 @@ class LoadToDockService {
             syncStatus,
             syncMessage,
             new Date().toISOString(),
-            element.MobileTransactionId
+            mobileTransactionId
           ]
         );
         
@@ -606,6 +827,90 @@ class LoadToDockService {
       return [];
     }
   };
+
+  /**
+   * Get all transactions for transaction history (delegated to transaction history service)
+   */
+  async getAllTransactions(): Promise<ILoadToDockTransactionRequest[]> {
+    try {
+      const transactions = await transactionHistoryService.getAllTransactions();
+      return transactions.map(transaction => ({
+        MobileTransactionId: parseInt(transaction.MobileTransactionId, 10),
+        TransactionDate: transaction.TransactionDate,
+        DeliveryLineId: transaction.DeliveryLineId,
+        VehicleNumber: transaction.VehicleNumber,
+        DockDoor: transaction.DockDoor,
+        LpnNumber: transaction.LpnNumber,
+        InventoryOrgId: transaction.InventoryOrgId,
+        UserId: transaction.UserId,
+        ResponsibilityId: transaction.ResponsibilityId,
+        ItemsData: transaction.ItemsData,
+        EBSTransactionStatus: transaction.EBSTransactionStatus,
+        sharePointTransactionStatus: transaction.sharePointTransactionStatus,
+        CreatedAt: transaction.CreatedAt,
+        Message: transaction.Message || ''
+      }));
+    } catch (error) {
+      console.error('Error fetching all transactions:', error);
+      throw new Error('Failed to fetch transaction history');
+    }
+  }
+
+  /**
+   * Get transactions by status (delegated to transaction history service)
+   */
+  async getTransactionsByStatus(status: 'pending' | 'success' | 'failed'): Promise<ILoadToDockTransactionRequest[]> {
+    try {
+      const transactions = await transactionHistoryService.getTransactionsByStatus(status);
+      return transactions.map(transaction => ({
+        MobileTransactionId: parseInt(transaction.MobileTransactionId, 10),
+        TransactionDate: transaction.TransactionDate,
+        DeliveryLineId: transaction.DeliveryLineId,
+        VehicleNumber: transaction.VehicleNumber,
+        DockDoor: transaction.DockDoor,
+        LpnNumber: transaction.LpnNumber,
+        InventoryOrgId: transaction.InventoryOrgId,
+        UserId: transaction.UserId,
+        ResponsibilityId: transaction.ResponsibilityId,
+        ItemsData: transaction.ItemsData,
+        EBSTransactionStatus: transaction.EBSTransactionStatus,
+        sharePointTransactionStatus: transaction.sharePointTransactionStatus,
+        CreatedAt: transaction.CreatedAt,
+        Message: transaction.Message || ''
+      }));
+    } catch (error) {
+      console.error('Error fetching transactions by status:', error);
+      throw new Error('Failed to fetch transactions by status');
+    }
+  }
+
+  /**
+   * Get paginated transactions (delegated to transaction history service)
+   */
+  async getTransactionsPaginated(page: number, pageSize: number): Promise<ILoadToDockTransactionRequest[]> {
+    try {
+      const result = await transactionHistoryService.getTransactionsPaginated(page, pageSize);
+      return result.transactions.map(transaction => ({
+        MobileTransactionId: parseInt(transaction.MobileTransactionId, 10),
+        TransactionDate: transaction.TransactionDate,
+        DeliveryLineId: transaction.DeliveryLineId,
+        VehicleNumber: transaction.VehicleNumber,
+        DockDoor: transaction.DockDoor,
+        LpnNumber: transaction.LpnNumber,
+        InventoryOrgId: transaction.InventoryOrgId,
+        UserId: transaction.UserId,
+        ResponsibilityId: transaction.ResponsibilityId,
+        ItemsData: transaction.ItemsData,
+        EBSTransactionStatus: transaction.EBSTransactionStatus,
+        sharePointTransactionStatus: transaction.sharePointTransactionStatus,
+        CreatedAt: transaction.CreatedAt,
+        Message: transaction.Message || ''
+      }));
+    } catch (error) {
+      console.error('Error fetching paginated transactions:', error);
+      throw new Error('Failed to fetch paginated transactions');
+    }
+  }
 
 }
 

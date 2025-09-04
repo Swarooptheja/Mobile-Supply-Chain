@@ -151,7 +151,7 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
         dockDoor: 'DOCK001', // You can make this configurable
         inventoryOrgId: defaultOrgId, // You should get this from user context
         userId: userIdArray[0].USER_ID || '1001', // You should get this from user context
-        responsibilityId: loadToDockResponsibility[0].RESPONSIBILITY_ID || '66732', // Default responsibility ID
+        responsibilityId: loadToDockResponsibility[0]?.RESPONSIBILITY_ID || '66732', // Default responsibility ID
         items: items
           .filter(item => {
             const hasMedia = item.mediaData?.hasPhotos && item.mediaData?.hasVideo;
