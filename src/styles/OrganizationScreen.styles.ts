@@ -1,23 +1,22 @@
 import { StyleSheet, Dimensions } from 'react-native';
 import { Theme } from '../context/ThemeContext';
+import { getSelectionColor, getButtonColor } from './global.styles';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 // Helper functions for responsive sizing
 const scale = (size: number) => (size * screenWidth) / 375;
 const verticalScale = (size: number) => (size * screenHeight) / 812;
-const moderateScale = (size: number, factor: number = 0.5) => size + (scale(size) - size) * factor;
 
 // Device size detection
 const isSmallDevice = screenWidth <= 375;
-const isTablet = screenWidth > 768;
 
 // Create styles function that accepts theme
 export const createOrganizationScreenStyles = (theme: Theme) => StyleSheet.create({
   // OrganizationScreen Container
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: theme.colors.background, // Theme-aware background
     paddingHorizontal: 0,
     paddingTop: 0,
     paddingBottom: 0, // Remove bottom padding since sticky footer handles it
@@ -30,10 +29,10 @@ export const createOrganizationScreenStyles = (theme: Theme) => StyleSheet.creat
     marginBottom: isSmallDevice ? verticalScale(120) : verticalScale(140), // Dynamic margin based on screen size
   },
   
-  // Enhanced Search Container - Dynamic spacing
+  // Enhanced Search Container - Better spacing
   searchContainer: { 
-    marginTop: verticalScale(12), 
-    marginBottom: verticalScale(16),
+    marginTop: verticalScale(20), 
+    marginBottom: verticalScale(24),
     paddingHorizontal: scale(4),
   },
   
@@ -43,32 +42,39 @@ export const createOrganizationScreenStyles = (theme: Theme) => StyleSheet.creat
     paddingHorizontal: scale(4),
   },
   
-  // Modern Organization Card
+  // Modern Organization Card - Enhanced user-friendly design
   organizationCard: {
-    backgroundColor: theme.colors.background,
+    backgroundColor: theme.colors.surface, // Subtle background for better contrast
     borderRadius: 12,
     marginBottom: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 18,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    shadowColor: '#000',
+    // Subtle shadow for depth without being heavy
+    shadowColor: theme.colors.shadow,
     shadowOffset: {
       width: 0,
       height: 1,
     },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
   },
   
-  // Selected Card State
+  // Selected Card State - Enhanced selection visibility
   organizationCardSelected: {
-    borderColor: theme.colors.primary,
-    backgroundColor: theme.colors.pillBgSelected,
-    shadowColor: theme.colors.primary,
-    shadowOpacity: 0.15,
-    elevation: 6,
+    borderColor: getSelectionColor(theme.colors.background === '#121212'), // Theme-aware selection color
+    backgroundColor: theme.colors.pillBgSelected, // Subtle background highlight
+    borderWidth: 2, // Thicker border for better visibility
+    shadowColor: getSelectionColor(theme.colors.background === '#121212'),
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   
   // Card Header with better layout
@@ -93,37 +99,46 @@ export const createOrganizationScreenStyles = (theme: Theme) => StyleSheet.creat
     justifyContent: 'center',
   },
   
-  // Modern Radio Button Outer
+  // Modern Radio Button Outer - Enhanced visibility
   radioOuter: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     borderWidth: 2,
     borderColor: theme.colors.radioBorder,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: theme.colors.background,
-  },
-  
-  // Radio Button Outer Selected
-  radioOuterSelected: {
-    borderColor: theme.colors.primary,
-    backgroundColor: theme.colors.primary,
-    shadowColor: theme.colors.primary,
+    // Subtle shadow for better definition
+    shadowColor: theme.colors.shadow,
     shadowOffset: {
       width: 0,
-      height: 0,
+      height: 1,
     },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
   },
   
-  // Radio Button Inner
+  // Radio Button Outer Selected - Theme-aware selection color
+  radioOuterSelected: {
+    borderColor: getSelectionColor(theme.colors.background === '#121212'), // Theme-aware selection color
+    backgroundColor: getSelectionColor(theme.colors.background === '#121212'),
+    shadowColor: getSelectionColor(theme.colors.background === '#121212'),
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  
+  // Radio Button Inner - Enhanced visibility
   radioInner: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
     backgroundColor: theme.colors.background,
   },
   
@@ -133,48 +148,66 @@ export const createOrganizationScreenStyles = (theme: Theme) => StyleSheet.creat
     justifyContent: 'center',
   },
   
-  // Enhanced Organization Name
+  // Enhanced Organization Name - Better hierarchy
   organizationName: { 
-    fontSize: 16, 
-    fontWeight: '600', 
-    color: theme.colors.textPrimary, 
-    marginBottom: 2,
+    fontSize: 17, 
+    fontWeight: '600', // Slightly less bold for better readability
+    color: theme.colors.textPrimary, // Theme-aware text color
+    marginBottom: 6,
+    letterSpacing: -0.1,
+    lineHeight: 22,
   },
   
-  // Organization Name Selected
+  // Organization Name Selected - Theme-aware selection color
   organizationNameSelected: {
-    color: theme.colors.primary,
+    color: getSelectionColor(theme.colors.background === '#121212'), // Theme-aware selection color
   },
   
-  // Enhanced Organization ID
+  // Enhanced Organization ID - Better contrast
   organizationId: {
-    fontSize: 13,
-    color: theme.colors.textSecondary,
-    fontWeight: '400',
+    fontSize: 14,
+    color: theme.colors.textSecondary, // Theme-aware secondary text color
+    fontWeight: '500',
+    letterSpacing: 0,
+    lineHeight: 18,
+    opacity: 0.8,
   },
   
-  // Modern Code Badge
+  // Modern Code Badge - Centered alignment
   codeBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     backgroundColor: theme.colors.pillBg,
-    borderRadius: 16,
-    alignSelf: 'flex-start',
+    borderRadius: 20,
+    alignSelf: 'center', // Center the chip
     borderWidth: 1,
     borderColor: theme.colors.border,
+    minWidth: 55,
+    alignItems: 'center',
+    justifyContent: 'center', // Center content within chip
+    // Subtle shadow for depth
+    shadowColor: theme.colors.shadow,
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   
-  // Code Badge Selected
+  // Code Badge Selected - Theme-aware selection color
   codeBadgeSelected: { 
-    backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
+    backgroundColor: getSelectionColor(theme.colors.background === '#121212'), // Theme-aware selection color
+    borderColor: getSelectionColor(theme.colors.background === '#121212'),
   },
   
-  // Code Badge Text
+  // Code Badge Text - Enhanced readability
   codeBadgeText: { 
     color: theme.colors.pillText, 
-    fontSize: 12, 
+    fontSize: 13, 
     fontWeight: '600',
+    letterSpacing: 0.3,
   },
   
   // Code Badge Text Selected
@@ -198,13 +231,13 @@ export const createOrganizationScreenStyles = (theme: Theme) => StyleSheet.creat
     left: 0,
     right: 0,
     bottom: isSmallDevice ? verticalScale(20) : verticalScale(30), // Dynamic bottom positioning
-    backgroundColor: theme.colors.background,
+    backgroundColor: theme.colors.background, // Theme-aware background
     paddingHorizontal: scale(16),
-    paddingTop: verticalScale(16),
-    paddingBottom: isSmallDevice ? verticalScale(16) : verticalScale(24), // Dynamic padding
+    paddingTop: verticalScale(20),
+    paddingBottom: isSmallDevice ? verticalScale(20) : verticalScale(24), // Dynamic padding
     borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
-    // Removed shadow properties to eliminate shadow behind button
+    borderTopColor: theme.colors.border, // Theme-aware border
+    // No shadows for clean, flat design
     // Responsive margins for different screen sizes
     marginHorizontal: isSmallDevice ? scale(8) : scale(16),
     borderRadius: isSmallDevice ? scale(12) : scale(16),
@@ -249,13 +282,13 @@ export const createOrganizationScreenStyles = (theme: Theme) => StyleSheet.creat
     opacity: 0.8,
   },
   
-  // Enhanced List Separator
+  // Enhanced List Separator - Better visual separation
   listSeparator: {
     height: 1,
     backgroundColor: theme.colors.separator,
-    marginLeft: 48,
-    marginRight: 16,
-    opacity: 0.5,
+    marginLeft: 56, // Aligned with radio button + margin
+    marginRight: 20, // Aligned with card padding
+    opacity: 0.4, // Slightly more visible
   },
   
   // Loading Container
@@ -275,11 +308,12 @@ export const createOrganizationScreenStyles = (theme: Theme) => StyleSheet.creat
   
   // Search Results Count
   searchResultsCount: {
-    fontSize: 13,
+    fontSize: 14,
     color: theme.colors.textSecondary,
-    marginBottom: 12,
+    marginBottom: 16,
     marginLeft: 4,
     fontWeight: '500',
+    letterSpacing: -0.1,
   },
   
   // No Results Container
@@ -320,19 +354,21 @@ export const createOrganizationScreenStyles = (theme: Theme) => StyleSheet.creat
   smallDeviceFooter: {
     bottom: verticalScale(15),
     paddingHorizontal: scale(12),
-    paddingTop: verticalScale(12),
-    paddingBottom: verticalScale(12),
+    paddingTop: verticalScale(16),
+    paddingBottom: verticalScale(16),
+    marginHorizontal: scale(4),
   },
 
   tabletFooter: {
     bottom: verticalScale(40),
     paddingHorizontal: scale(24),
-    paddingTop: verticalScale(20),
-    paddingBottom: verticalScale(30),
+    paddingTop: verticalScale(24),
+    paddingBottom: verticalScale(32),
     maxWidth: 600,
     alignSelf: 'center',
     left: scale(20),
     right: scale(20),
+    marginHorizontal: 0,
   },
 
   // Responsive content adjustments
@@ -342,8 +378,58 @@ export const createOrganizationScreenStyles = (theme: Theme) => StyleSheet.creat
   },
 
   tabletContent: {
-    marginBottom: verticalScale(160),
+    marginBottom: verticalScale(180),
     paddingHorizontal: scale(24),
+    maxWidth: 800,
+    alignSelf: 'center',
+  },
+
+  // Desktop-specific styles
+  desktopContent: {
+    marginBottom: verticalScale(200),
+    paddingHorizontal: scale(32),
+    maxWidth: 1200,
+    alignSelf: 'center',
+  },
+
+  desktopFooter: {
+    bottom: verticalScale(50),
+    paddingHorizontal: scale(32),
+    paddingTop: verticalScale(28),
+    paddingBottom: verticalScale(36),
+    maxWidth: 1200,
+    alignSelf: 'center',
+    left: scale(32),
+    right: scale(32),
+    marginHorizontal: 0,
+  },
+
+  // Confirm Button - Global button color
+  confirmButton: {
+    backgroundColor: getButtonColor(), // Global button color
+    borderColor: getButtonColor(),
+    borderRadius: 12, // Smooth border radius
+    paddingVertical: 18, // Increased padding for better touch target
+    paddingHorizontal: 24,
+    // Subtle shadow for better definition
+    shadowColor: theme.colors.shadow,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+
+  // Confirm Button Text - Enhanced readability
+  confirmButtonText: {
+    color: '#FFFFFF', // White text for consistency with header
+    fontSize: 17,
+    fontWeight: '600',
+    textAlign: 'center',
+    letterSpacing: 0.3,
+    lineHeight: 22,
   },
 });
 
@@ -353,6 +439,8 @@ export const defaultOrganizationScreenStyles = createOrganizationScreenStyles({
     background: '#ffffff',
     textPrimary: '#1f2937',
     textSecondary: '#6b7280',
+    text: '#1f2937',
+    textTertiary: '#9ca3af',
     primary: '#1e3a8a',
     border: '#e5e7eb',
     separator: '#e5e7eb',
@@ -360,8 +448,13 @@ export const defaultOrganizationScreenStyles = createOrganizationScreenStyles({
     pillBgSelected: '#dbeafe',
     pillText: '#374151',
     pillTextSelected: '#1d4ed8',
-    buttonBg: '#2563eb',
+    buttonBg: '#1e3a8a',
     buttonText: '#ffffff',
     radioBorder: '#9ca3af',
+    surface: '#f9fafb',
+    shadow: '#000000',
+    error: '#dc2626',
+    white: '#ffffff',
+    success: '#059669',
   },
 });

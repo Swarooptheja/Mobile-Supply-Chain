@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useMemo } from 'react';
+import React, { createContext, useContext, useMemo, useState, useEffect } from 'react';
 import { useColorScheme } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type Theme = {
   colors: {
@@ -40,7 +41,7 @@ const lightTheme: Theme = {
     pillBgSelected: '#DBEAFE',
     pillText: '#374151',
     pillTextSelected: '#1D4ED8',
-    buttonBg: '#2563eb',
+    buttonBg: '#1e3a8a',
     buttonText: '#ffffff',
     radioBorder: '#9CA3AF',
     surface: '#f9fafb',
@@ -53,59 +54,118 @@ const lightTheme: Theme = {
 
 const darkTheme: Theme = {
   colors: {
-    background: '#0b0f1a',
-    textPrimary: '#e5e7eb',
-    textSecondary: '#9ca3af',
-    text: '#e5e7eb',
-    textTertiary: '#6b7280',
-    primary: '#60a5fa',
-    border: '#374151',
-    separator: '#1f2937',
-    pillBg: '#111827',
-    pillBgSelected: '#1f2937',
-    pillText: '#e5e7eb',
-    pillTextSelected: '#93c5fd',
-    buttonBg: '#3b82f6',
-    buttonText: '#f9fafb',
-    radioBorder: '#6b7280',
-    surface: '#1f2937',
-    shadow: '#000000',
-    error: '#ef4444',
-    white: '#ffffff',
-    success: '#10b981',
+    background: '#121212', // Professional dark gray background
+    textPrimary: '#FFFFFF', // Pure white for primary text
+    textSecondary: '#9E9E9E', // Light gray for secondary/placeholder text
+    text: '#FFFFFF', // Pure white for main text
+    textTertiary: '#9E9E9E', // Light gray for tertiary text
+    primary: '#1976D2', // Material Blue for consistency
+    border: '#3A3A3A', // Subtle dark gray borders
+    separator: '#3A3A3A', // Subtle dark gray separators
+    pillBg: '#2A2A2A', // Card/input field background
+    pillBgSelected: '#3A3A3A', // Selected state background
+    pillText: '#FFFFFF', // White text for pills
+    pillTextSelected: '#1976D2', // Blue text for selected pills
+    buttonBg: '#1976D2', // Material Blue for buttons
+    buttonText: '#FFFFFF', // White text on buttons
+    radioBorder: '#9E9E9E', // Light gray for radio borders
+    surface: '#2A2A2A', // Card/input field background
+    shadow: '#000000', // Black shadow
+    error: '#FF5252', // Material red for errors
+    white: '#FFFFFF', // Pure white
+    success: '#4CAF50', // Green for success
   },
 };
 
-const ThemeContext = createContext<Theme>(lightTheme);
+type ThemeMode = 'light' | 'dark' | 'system';
+
+interface ThemeContextType {
+  theme: Theme;
+  themeMode: ThemeMode;
+  toggleTheme: () => void;
+  setThemeMode: (mode: ThemeMode) => void;
+}
+
+const ThemeContext = createContext<ThemeContextType>({
+  theme: lightTheme,
+  themeMode: 'system',
+  toggleTheme: () => {},
+  setThemeMode: () => {},
+});
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const scheme = useColorScheme();
-  const theme = useMemo(() => (scheme === 'dark' ? darkTheme : lightTheme), [scheme]);
+  const systemScheme = useColorScheme();
+  const [themeMode, setThemeModeState] = useState<ThemeMode>('system');
+  const [isLoaded, setIsLoaded] = useState(false);
 
-  return <ThemeContext.Provider value={theme}>{children}</ThemeContext.Provider>;
+  // Load saved theme preference on app start
+  useEffect(() => {
+    const loadThemePreference = async () => {
+      try {
+        const savedTheme = await AsyncStorage.getItem('themeMode');
+        if (savedTheme && (savedTheme === 'light' || savedTheme === 'dark' || savedTheme === 'system')) {
+          setThemeModeState(savedTheme as ThemeMode);
+        }
+      } catch (error) {
+        console.log('Error loading theme preference:', error);
+      } finally {
+        setIsLoaded(true);
+      }
+    };
+    loadThemePreference();
+  }, []);
+
+  // Save theme preference when it changes
+  const setThemeMode = async (mode: ThemeMode) => {
+    try {
+      await AsyncStorage.setItem('themeMode', mode);
+      setThemeModeState(mode);
+    } catch (error) {
+      console.log('Error saving theme preference:', error);
+    }
+  };
+
+  const toggleTheme = () => {
+    const newMode = themeMode === 'light' ? 'dark' : 'light';
+    setThemeMode(newMode);
+  };
+
+  const theme = useMemo(() => {
+    if (!isLoaded) return lightTheme; // Default to light theme while loading
+    
+    if (themeMode === 'system') {
+      return systemScheme === 'dark' ? darkTheme : lightTheme;
+    }
+    
+    return themeMode === 'dark' ? darkTheme : lightTheme;
+  }, [themeMode, systemScheme, isLoaded]);
+
+  return (
+    <ThemeContext.Provider value={{ theme, themeMode, toggleTheme, setThemeMode }}>
+      {children}
+    </ThemeContext.Provider>
+  );
 };
 
 export function useTheme(): Theme {
+  const context = useContext(ThemeContext);
+  return context.theme;
+}
+
+export function useThemeContext(): ThemeContextType {
   return useContext(ThemeContext);
 }
 
 // Helper function to get current theme mode
 export function useThemeMode(): 'light' | 'dark' {
+  const { themeMode } = useThemeContext();
   const scheme = useColorScheme();
-  return scheme === 'dark' ? 'dark' : 'light';
-}
-
-// Helper function to toggle theme manually (if needed)
-export function useThemeToggle() {
-  const currentScheme = useColorScheme();
   
-  const toggleTheme = () => {
-    // This would need to be implemented with a custom theme state
-    // since useColorScheme is read-only
-    console.log('Theme toggle not implemented - useColorScheme is read-only');
-  };
+  if (themeMode === 'system') {
+    return scheme === 'dark' ? 'dark' : 'light';
+  }
   
-  return { currentScheme, toggleTheme };
+  return themeMode === 'dark' ? 'dark' : 'light';
 }
 
 

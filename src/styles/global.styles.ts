@@ -248,9 +248,13 @@ export const defaultGlobalStyles = createGlobalStyles({
     background: '#ffffff',
     textPrimary: '#1f2937',
     textSecondary: '#6b7280',
+    text: '#1f2937',
+    textTertiary: '#9ca3af',
     primary: '#1e3a8a',
     border: '#e5e7eb',
     separator: '#e5e7eb',
+    surface: '#ffffff',
+    shadow: '#000000',
     pillBg: '#f3f4f6',
     pillBgSelected: '#dbeafe',
     pillText: '#374151',
@@ -258,6 +262,9 @@ export const defaultGlobalStyles = createGlobalStyles({
     buttonBg: '#2563eb',
     buttonText: '#ffffff',
     radioBorder: '#9ca3af',
+    success: '#059669',
+    error: '#dc2626',
+    white: '#ffffff',
   },
 });
 
@@ -301,3 +308,102 @@ export const fontWeight = {
   semibold: '600',
   bold: '700',
 } as const;
+
+// Global Color Constants
+export const COLORS = {
+  // Primary Brand Colors
+  PRIMARY: '#1e3a8a', // Header blue color
+  ORANGE: '#FF8C00', // Orange color for buttons and highlights
+  
+  // Text Colors
+  TEXT_PRIMARY: '#212121', // Main text color
+  TEXT_SECONDARY: '#757575', // Secondary text color
+  TEXT_WHITE: '#FFFFFF', // White text
+  
+  // Background Colors
+  BACKGROUND_LIGHT: '#FAFAFA', // Light theme background
+  BACKGROUND_DARK: '#121212', // Dark theme background
+  SURFACE_LIGHT: '#FFFFFF', // Light surface color
+  SURFACE_DARK: '#2A2A2A', // Dark surface color
+  
+  // Border Colors
+  BORDER_LIGHT: '#E0E0E0', // Light theme border
+  BORDER_DARK: '#3A3A3A', // Dark theme border
+  
+  // Status Colors
+  SUCCESS: '#059669', // Success green
+  ERROR: '#dc2626', // Error red
+  WARNING: '#F59E0B', // Warning yellow
+  
+  // Shadow Colors
+  SHADOW: '#000000', // Shadow color
+  
+  // Pill/Badge Colors
+  PILL_BG_LIGHT: '#F3F4F6', // Light theme pill background
+  PILL_BG_DARK: '#2A2A2A', // Dark theme pill background
+  PILL_BG_SELECTED_LIGHT: '#DBEAFE', // Light theme selected pill background
+  PILL_BG_SELECTED_DARK: '#3A3A3A', // Dark theme selected pill background
+  PILL_TEXT_LIGHT: '#374151', // Light theme pill text
+  PILL_TEXT_DARK: '#FFFFFF', // Dark theme pill text
+  
+  // Radio Button Colors
+  RADIO_BORDER_LIGHT: '#9CA3AF', // Light theme radio border
+  RADIO_BORDER_DARK: '#9E9E9E', // Dark theme radio border
+} as const;
+
+/**
+ * Theme-aware color helper functions
+ * These functions return the appropriate color based on the current theme
+ */
+export const getThemeColors = (isDark: boolean) => ({
+  // Primary colors
+  primary: COLORS.PRIMARY,
+  orange: COLORS.ORANGE,
+  
+  // Text colors
+  textPrimary: isDark ? COLORS.TEXT_WHITE : COLORS.TEXT_PRIMARY,
+  textSecondary: isDark ? '#B0B0B0' : COLORS.TEXT_SECONDARY,
+  textWhite: COLORS.TEXT_WHITE,
+  
+  // Background colors
+  background: isDark ? COLORS.BACKGROUND_DARK : COLORS.BACKGROUND_LIGHT,
+  surface: isDark ? COLORS.SURFACE_DARK : COLORS.SURFACE_LIGHT,
+  
+  // Border colors
+  border: isDark ? COLORS.BORDER_DARK : COLORS.BORDER_LIGHT,
+  
+  // Pill colors
+  pillBg: isDark ? COLORS.PILL_BG_DARK : COLORS.PILL_BG_LIGHT,
+  pillBgSelected: isDark ? COLORS.PILL_BG_SELECTED_DARK : COLORS.PILL_BG_SELECTED_LIGHT,
+  pillText: isDark ? COLORS.PILL_TEXT_DARK : COLORS.PILL_TEXT_LIGHT,
+  
+  // Radio button colors
+  radioBorder: isDark ? COLORS.RADIO_BORDER_DARK : COLORS.RADIO_BORDER_LIGHT,
+  
+  // Status colors
+  success: COLORS.SUCCESS,
+  error: COLORS.ERROR,
+  warning: COLORS.WARNING,
+  
+  // Shadow
+  shadow: COLORS.SHADOW,
+});
+
+/**
+ * Selection colors based on theme
+ * Returns orange for dark theme, primary blue for light theme
+ */
+export const getSelectionColor = (isDark: boolean) => 
+  isDark ? COLORS.ORANGE : COLORS.PRIMARY;
+
+/**
+ * Button colors based on theme
+ * Returns orange for both themes (as per current design)
+ */
+export const getButtonColor = () => COLORS.ORANGE;
+
+/**
+ * Header colors
+ * Returns primary blue for both themes
+ */
+export const getHeaderColor = () => COLORS.PRIMARY;

@@ -37,7 +37,6 @@ export { default as VectorIconExample } from './VectorIconExample';
 export { default as OrganizationItem } from './OrganizationItem';
 export { default as OrganizationListFooter } from './OrganizationListFooter';
 export { default as OrganizationEmptyState } from './OrganizationEmptyState';
-export { default as ActivityCard } from './ActivityCard';
 export { ProgressOverview } from './ActivityScreen/ProgressOverview';
 export { StatItem } from './ActivityScreen/StatItem';
 export { ActivityHeader } from './ActivityScreen/ActivityHeader';

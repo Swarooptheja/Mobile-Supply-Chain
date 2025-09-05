@@ -23,7 +23,8 @@ const OrganizationScreen: React.FC = () => {
   // Device size detection for responsive design
   const { width: screenWidth } = Dimensions.get('window');
   const isSmallDevice = screenWidth <= 375;
-  const isTablet = screenWidth > 768;
+  const isTablet = screenWidth > 768 && screenWidth <= 1024;
+  const isDesktop = screenWidth > 1024;
 
   // API refresh function for pull-to-refresh
   const refreshOrganizationsFromAPI = async () => {
@@ -105,7 +106,8 @@ const OrganizationScreen: React.FC = () => {
       <View style={[
         styles.content,
         isSmallDevice && styles.smallDeviceContent,
-        isTablet && styles.tabletContent
+        isTablet && styles.tabletContent,
+        isDesktop && styles.desktopContent
       ]}>
         <View style={styles.searchContainer}>
           <SearchBar
@@ -160,16 +162,20 @@ const OrganizationScreen: React.FC = () => {
       <SafeAreaView style={[
         styles.stickyFooter,
         isSmallDevice && styles.smallDeviceFooter,
-        isTablet && styles.tabletFooter
+        isTablet && styles.tabletFooter,
+        isDesktop && styles.desktopFooter
       ]}>
         <Button
-          title={selectedId ? "Confirm Selection" : "Select an Organization"}
+          title="Confirm Organization"
           onPress={handleConfirmSelection}
           disabled={!selectedId || isProcessing}
           fullWidth
-          accessibilityLabel="Confirm organization selection"
+          accessibilityLabel={selectedId ? "Confirm organization selection" : "Select an organization first"}
           size="lg"
-          variant={selectedId ? "solid" : "outline"}
+          variant="solid"
+          colorScheme="primary"
+          style={styles.confirmButton}
+          textStyle={styles.confirmButtonText}
         />
       </SafeAreaView>
     </View>

@@ -1,3 +1,5 @@
+import { useNavigation } from '@react-navigation/native';
+import type { StackNavigationProp } from '@react-navigation/stack';
 import React, { useState } from 'react';
 import {
   Image,
@@ -10,8 +12,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import type { StackNavigationProp } from '@react-navigation/stack';
 
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useForm } from 'react-hook-form';
@@ -20,12 +20,12 @@ import { AppHeader } from '../components/AppHeader';
 import { Button } from '../components/Button';
 import { VectorIcon } from '../components/VectorIcon';
 import { ENV } from '../config/env';
-import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
 import { useAttractiveNotification } from '../context/AttractiveNotificationContext';
+import { useAuth } from '../context/AuthContext';
+import { useTheme, useThemeContext } from '../context/ThemeContext';
 import { ILoginForm } from '../interfaces';
-import { createLoginScreenStyles } from '../styles/LoginScreen.styles';
 import type { RootStackParamList } from '../navigation/AppNavigator';
+import { createLoginScreenStyles } from '../styles/LoginScreen.styles';
 
 // Validation schema
 const loginSchema = yup.object().shape({
@@ -39,6 +39,7 @@ const LoginScreen: React.FC = () => {
   const { login } = useAuth();
   const { showError, showWarning } = useAttractiveNotification();
   const theme = useTheme();
+  const { toggleTheme, themeMode } = useThemeContext();
   const styles = createLoginScreenStyles(theme);
   const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'Login'>>();
 
@@ -84,15 +85,31 @@ const LoginScreen: React.FC = () => {
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.primary} />
       
       {/* Header Section - Using AppHeader for consistency */}
-      <AppHeader title={ENV.APP_NAME} />
+      <AppHeader 
+        title={ENV.APP_NAME} 
+        rightElement={
+          <TouchableOpacity
+            onPress={toggleTheme}
+            style={styles.themeToggleButton}
+            activeOpacity={0.7}
+          >
+            <VectorIcon 
+              name={themeMode === 'dark' ? "light-mode" : "dark-mode"} 
+              size={24} 
+              color={theme.colors.textPrimary} 
+              iconSet="MaterialIcons" 
+            />
+          </TouchableOpacity>
+        }
+      />
 
       {/* Content Area */}
-      <KeyboardAvoidingView 
-        style={styles.keyboardView}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
-      >
-        <View style={styles.content}>
+      <View style={styles.content}>
+        <KeyboardAvoidingView 
+          style={styles.keyboardView}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        >
           {/* White Card with Login Form */}
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Login</Text>
@@ -101,10 +118,18 @@ const LoginScreen: React.FC = () => {
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Username</Text>
               <View style={styles.inputField}>
+                <View style={styles.inputIcon}>
+                  <VectorIcon 
+                    name="person" 
+                    size={18} 
+                    color={theme.colors.textPrimary} 
+                    iconSet="MaterialIcons" 
+                  />
+                </View>
                 <TextInput
                   style={styles.input}
                   placeholder="Enter username"
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={theme.colors.textSecondary}
                   onChangeText={(text) => setValue('username', text)}
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -124,10 +149,18 @@ const LoginScreen: React.FC = () => {
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Password</Text>
               <View style={styles.inputField}>
+                <View style={styles.inputIcon}>
+                  <VectorIcon 
+                    name="lock" 
+                    size={18} 
+                    color={theme.colors.textPrimary} 
+                    iconSet="MaterialIcons" 
+                  />
+                </View>
                 <TextInput
                   style={styles.input}
                   placeholder="Enter password"
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={theme.colors.textSecondary}
                   onChangeText={(text) => setValue('password', text)}
                   secureTextEntry={!showPassword}
                   editable={!isLoading}
@@ -137,15 +170,21 @@ const LoginScreen: React.FC = () => {
                   {...register('password')}
                 />
                 <TouchableOpacity
-                  style={styles.eyeIcon}
+                  style={[styles.eyeIcon, { opacity: 0.7 }]}
                   onPress={() => setShowPassword(!showPassword)}
                   disabled={isLoading}
-                  activeOpacity={0.7}
+                  activeOpacity={1.0} // Full opacity on press for hover effect
+                  onPressIn={() => {
+                    // Brighten icon on press
+                  }}
+                  onPressOut={() => {
+                    // Return to normal opacity
+                  }}
                 >
                   <VectorIcon 
                     name={showPassword ? "visibility" : "visibility-off"} 
-                    size={20} 
-                    color="#6B7280" 
+                    size={18} 
+                    color={theme.colors.textPrimary} // Use primary text color for better visibility
                     iconSet="MaterialIcons" 
                   />
                 </TouchableOpacity>
@@ -157,34 +196,34 @@ const LoginScreen: React.FC = () => {
 
             {/* Login Button */}
             <Button
-              title="LOGIN"
+              title="Login"
               onPress={handleSubmit(handleLogin)}
               loading={isLoading}
               disabled={isLoading}
-              size="lg"
+              size="md"
               variant="solid"
               fullWidth
               style={styles.loginButton}
               textStyle={styles.loginButtonText}
             />
           </View>
+        </KeyboardAvoidingView>
 
-          {/* Bottom Section - Always Visible */}
-          <View style={styles.bottom}>
-            {/* Company Logo and Tagline */}
-            <View style={styles.company}>
-              <View style={styles.logo}>
-                {/* Company Logo - Using actual propel.logo.png image */}
-                <Image
-                  source={require('../assets/images/propel.logo.png')}
-                  style={styles.logoImage}
-                  resizeMode="contain"
-                />
-              </View>
+        {/* Bottom Section - Fixed Logo */}
+        <View style={styles.bottom}>
+          {/* Company Logo and Tagline */}
+          <View style={styles.company}>
+            <View style={styles.logo}>
+              {/* Company Logo - Using actual propel.logo.png image */}
+              <Image
+                source={require('../assets/images/propel.logo.png')}
+                style={styles.logoImage}
+                resizeMode="contain"
+              />
             </View>
           </View>
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </SafeAreaView>
   );
 };

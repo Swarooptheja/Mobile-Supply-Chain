@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { CommonIcon } from './index';
+import { useTheme } from '../context/ThemeContext';
+import { getThemeColors } from '../styles/global.styles';
 
 interface ISearchBarProps {
   value: string;
@@ -15,6 +17,11 @@ export const SearchBar: React.FC<ISearchBarProps> = ({
   placeholder = 'Search...',
   autoFocus = false,
 }) => {
+  const theme = useTheme();
+  const isDark = theme.colors.background === '#121212';
+  const themeColors = getThemeColors(isDark);
+  const styles = createStyles(themeColors);
+
   const handleClear = () => {
     onChangeText('');
   };
@@ -24,13 +31,13 @@ export const SearchBar: React.FC<ISearchBarProps> = ({
       <CommonIcon 
         icon="search"
         size={25} 
-        color="#9CA3AF"
+        color={themeColors.textSecondary}
       />
       <TextInput
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor="#9CA3AF"
+        placeholderTextColor={themeColors.textSecondary}
         style={styles.input}
         returnKeyType="search"
         autoFocus={autoFocus}
@@ -41,7 +48,7 @@ export const SearchBar: React.FC<ISearchBarProps> = ({
           <CommonIcon 
             icon="close"
             size={16} 
-            color="#9CA3AF"
+            color={themeColors.textSecondary}
           />
         </TouchableOpacity>
       )}
@@ -49,33 +56,43 @@ export const SearchBar: React.FC<ISearchBarProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (themeColors: any) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 2, // Increased from 1 to 2 to match vehicle input
-    borderColor: '#E5E7EB',
-    backgroundColor: '#ffffff',
+    borderWidth: 2,
+    borderColor: themeColors.border,
+    backgroundColor: themeColors.surface,
     borderRadius: 10,
-    paddingHorizontal: 16, // Increased from 12 to 16 for better padding
-    paddingVertical: 14, // Increased from 8 to 14 to match vehicle input
-    height: 52, // Increased from 48 to 52 to match vehicle input height
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    height: 52,
     justifyContent: 'center',
+    // Subtle shadow for depth
+    shadowColor: themeColors.shadow,
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
   },
   searchIcon: {
     fontSize: 16,
-    color: '#9CA3AF',
+    color: themeColors.textSecondary,
     marginRight: 8,
   },
   input: {
     flex: 1,
     paddingVertical: 0,
-    fontSize: 16, // Increased from 14 to 16 to match vehicle input
-    height: 36, // Increased from 32 to 36 for better proportion
-    marginLeft: 8, // Added left margin for better spacing from search icon
+    fontSize: 16,
+    height: 36,
+    marginLeft: 8,
+    color: themeColors.textPrimary,
   },
   clear: {
-    color: '#6b7280',
+    color: themeColors.textSecondary,
     fontSize: 16,
     marginLeft: 8,
   },
