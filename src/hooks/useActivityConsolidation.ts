@@ -15,6 +15,7 @@ export interface ConsolidatedApiRecord {
   lastRetryTime: Date | undefined;
   canExpand: boolean;
   activities: IActivity[];
+  apiName: string;
 }
 
 export const useActivityConsolidation = (activities: IActivity[]): ConsolidatedApiRecord[] => {
@@ -103,6 +104,7 @@ export const useActivityConsolidation = (activities: IActivity[]): ConsolidatedA
         lastRetryTime,
         canExpand: canExpand || false,
         activities: groupActivities,
+        apiName: groupActivities[0]?.apiName || ''
       };
     });
   }, [activities]);

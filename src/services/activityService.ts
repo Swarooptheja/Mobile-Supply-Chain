@@ -3,12 +3,14 @@ import { apiService } from '../../services/sharedService';
 import { getCurrentApiConfig } from '../config/api';
 import { dynamicTableService } from './dynamicTableService';
 import { TableNames } from '../constants/tables';
-import { API_ENDPOINTS } from '../config/api';
-import { LOAD_TO_DOCK_QUERIES } from '../constants/queries';
 import { simpleDatabaseService } from './simpleDatabase';
+import { MasterApiService } from './masterApiService';
+import { ConfigApiService } from './configApiService';
+import { TransactionalApiService } from './transactionalApiService';
 
 interface IApiConfig {
   responsibility: string;
+  apiName: string;
   url: string;
   type: 'master' | 'config' | 'transactional';
   requiresOrgId: boolean;
@@ -22,95 +24,15 @@ interface IApiConfig {
 
 
 export class ActivityService {
-  private static readonly MASTER_APIS: Record<string, Omit<IApiConfig, 'responsibility'>> = {
-    ITEM: {
-      url: API_ENDPOINTS.ITEM,
-      type: 'master',
-      requiresOrgId: true,
-      requiresDefaultOrgId: false,
-      tableType: 'table',
-      version: 'EBS/20D',
-      lastSyncTime: true,
-    },
-    ACCOUNT: {
-      url: API_ENDPOINTS.ACCOUNT,
-      type: 'master',
-      requiresOrgId: false,
-      requiresDefaultOrgId: true,
-      tableType: 'json',
-      version: 'EBS/20D',
-    },
-    SUB_INV: {
-      url: API_ENDPOINTS.SUB_INV,
-      type: 'master',
-      requiresOrgId: true,
-      requiresDefaultOrgId: false,
-      tableType: 'json',
-      version: 'EBS/20D',
-      lastSyncTime: true,
-      fullRefresh: true,
-    },
-    LOCATORS: {
-      url: API_ENDPOINTS.LOCATORS,
-      type: 'master',
-      requiresOrgId: true,
-      requiresDefaultOrgId: false,
-      tableType: 'table',
-      version: 'EBS/23A',
-      lastSyncTime: true,
-    },
-  };
-
-  private static readonly CONFIG_APIS: Record<string, Omit<IApiConfig, 'responsibility'>> = {
-    REASON: {
-      url: API_ENDPOINTS.REASON,
-      type: 'config',
-      requiresOrgId: false,
-      requiresDefaultOrgId: false,
-      tableType: 'json',
-      version: 'EBS/20D',
-    },
-    GL_PERIODS: {
-      url: API_ENDPOINTS.GL_PERIODS,
-      type: 'config',
-      requiresOrgId: false,
-      requiresDefaultOrgId: true,
-      tableType: 'json',
-      version: 'EBS/20D',
-    },
-    INVENTORY_PERIODS: {
-      url: API_ENDPOINTS.INVENTORY_PERIODS,
-      type: 'config',
-      requiresOrgId: true,
-      requiresDefaultOrgId: true,
-      tableType: 'json',
-      version: 'EBS/20D',
-      lastSyncTime: false,
-      fullRefresh: false,
-    },
-  };
-
-  private static readonly TRANSACTIONAL_APIS: Record<string, Omit<IApiConfig, 'responsibility'>> = {
-    SHIP_CONFIRM: {
-      url: API_ENDPOINTS.SALES_ORDERS_SHIPPING,
-      type: 'transactional',
-      requiresOrgId: true,
-      requiresDefaultOrgId: false,
-      tableType: 'table',
-      version: 'EBS/23B',
-      lastSyncTime: true,
-      fullRefresh: false,
-      queries: [LOAD_TO_DOCK_QUERIES.CREATE_LOAD_TO_DOCK_TRANSACTION_TABLE]
-    },
-  };
 
   static getMasterApis(responsibilities: string[]): IApiConfig[] {
     console.log('Filtering master APIs for responsibilities:', responsibilities);
+    const masterApis = MasterApiService.getMasterApis();
     const filtered = responsibilities
-      .filter(resp => this.MASTER_APIS[resp])
+      .filter(resp => masterApis[resp])
       .map(resp => ({
         responsibility: resp,
-        ...this.MASTER_APIS[resp],
+        ...masterApis[resp],
       }));
     console.log('Filtered master APIs:', filtered);
     return filtered;
@@ -118,11 +40,12 @@ export class ActivityService {
 
   static getConfigApis(responsibilities: string[]): IApiConfig[] {
     console.log('Filtering config APIs for responsibilities:', responsibilities);
+    const configApis = ConfigApiService.getConfigApis();
     const filtered = responsibilities
-      .filter(resp => this.CONFIG_APIS[resp])
+      .filter(resp => configApis[resp])
       .map(resp => ({
         responsibility: resp,
-        ...this.CONFIG_APIS[resp],
+        ...configApis[resp],
       }));
     console.log('Filtered config APIs:', filtered);
     return filtered;
@@ -130,11 +53,12 @@ export class ActivityService {
 
   static getTransactionalApis(responsibilities: string[]): IApiConfig[] {
     console.log('Filtering transactional APIs for responsibilities:', responsibilities);
+    const transactionalApis = TransactionalApiService.getTransactionalApis();
     const filtered = responsibilities
-      .filter(resp => this.TRANSACTIONAL_APIS[resp])
+      .filter(resp => transactionalApis[resp])
       .map(resp => ({
         responsibility: resp,
-        ...this.TRANSACTIONAL_APIS[resp],
+        ...transactionalApis[resp],
       }));
     console.log('Filtered transactional APIs:', filtered);
     return filtered;
@@ -411,17 +335,17 @@ export class ActivityService {
   }
 
   private static getApiConfig(apiName: string): IApiConfig | null {
-    const masterApi = this.MASTER_APIS[apiName];
+    const masterApi = MasterApiService.getMasterApi(apiName);
     if (masterApi) {
       return { responsibility: apiName, ...masterApi };
     }
 
-    const configApi = this.CONFIG_APIS[apiName];
+    const configApi = ConfigApiService.getConfigApi(apiName);
     if (configApi) {
       return { responsibility: apiName, ...configApi };
     }
 
-    const transactionalApi = this.TRANSACTIONAL_APIS[apiName];
+    const transactionalApi = TransactionalApiService.getTransactionalApi(apiName);
     if (transactionalApi) {
       return { responsibility: apiName, ...transactionalApi };
     }
@@ -539,9 +463,9 @@ export class ActivityService {
     console.log('Validating all API configurations...');
     
     const allApis = {
-      ...this.MASTER_APIS,
-      ...this.CONFIG_APIS,
-      ...this.TRANSACTIONAL_APIS
+      ...MasterApiService.getMasterApis(),
+      ...ConfigApiService.getConfigApis(),
+      ...TransactionalApiService.getTransactionalApis()
     };
 
     Object.entries(allApis).forEach(([apiName, _config]) => {

@@ -47,9 +47,9 @@ export const headerStyles = StyleSheet.create({
   headerTitle: {
     color: '#ffffff',
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '800', // Increased from 600 to 800 for bolder appearance
     textAlign: 'center',
-    letterSpacing: 0.3,
+    letterSpacing: 0.5, // Increased for better readability
     textShadowColor: 'rgba(0, 0, 0, 0.2)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 1,

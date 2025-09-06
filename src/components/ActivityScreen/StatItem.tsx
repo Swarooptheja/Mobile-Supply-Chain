@@ -9,10 +9,10 @@ interface IStatItemProps {
     iconSet: IconSet;
     color: string;
   };
-  value: number;
+  value: string | number;
   label: string;
   containerStyle?: ViewStyle;
-  numberStyle?: TextStyle;
+  valueStyle?: TextStyle;
   labelStyle?: TextStyle;
 }
 
@@ -21,7 +21,7 @@ const StatItem: React.FC<IStatItemProps> = ({
   value, 
   label, 
   containerStyle,
-  numberStyle,
+  valueStyle,
   labelStyle
 }) => {
   return (
@@ -34,7 +34,7 @@ const StatItem: React.FC<IStatItemProps> = ({
           color={icon.color}
         />
       </View>
-      <Text style={[styles.statNumber, numberStyle]}>{value}</Text>
+      <Text style={[styles.statValue, valueStyle]}>{value}</Text>
       <Text style={[styles.statLabel, labelStyle]}>{label}</Text>
     </View>
   );
@@ -49,7 +49,7 @@ const styles = {
   statIconContainer: {
     marginBottom: 2,
   },
-  statNumber: {
+  statValue: {
     fontSize: 16,
     fontWeight: '900' as const,
     marginBottom: 0,

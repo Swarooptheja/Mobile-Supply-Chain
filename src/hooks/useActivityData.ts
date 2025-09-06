@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { useActivityConsolidation } from './useActivityConsolidation';
-import { useActivityStatistics, useTotalRecordsCount } from './useActivityStatistics';
 import { IActivity } from '../types/activity';
 
 /**
@@ -13,8 +12,6 @@ import { IActivity } from '../types/activity';
 export const useActivityData = (activities: IActivity[]) => {
   // Call hooks first (Rules of Hooks requirement)
   const consolidated = useActivityConsolidation(activities);
-  const statistics = useActivityStatistics(consolidated);
-  const totalRecordsCount = useTotalRecordsCount(consolidated);
 
   // Memoize computed values
   const computedValues = useMemo(() => ({
@@ -33,10 +30,8 @@ export const useActivityData = (activities: IActivity[]) => {
     ).length
   }), [consolidated]);
 
-  return {
+  return ({
     consolidated,
-    statistics,
-    totalRecordsCount,
     ...computedValues
-  };
+  });
 };

@@ -4,7 +4,8 @@ import {
   ScrollView,
   StatusBar,
   Text,
-  View
+  View,
+  Dimensions
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -40,9 +41,15 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
   
   const { showError, showSuccess } = useAttractiveNotification();
   const theme = useTheme();
-  const styles = createLoadToDockItemsScreenStyles(theme);
   const insets = useSafeAreaInsets();
   const { defaultOrgId } = useAuth();
+
+  // Device size detection for responsive design
+  const { width: screenWidth } = Dimensions.get('window');
+  const isTablet = screenWidth > 768 && screenWidth <= 1024;
+  const isDesktop = screenWidth > 1024;
+  
+  const styles = createLoadToDockItemsScreenStyles(theme, isTablet, isDesktop);
 
   // Use custom hooks for data management
   const {
@@ -94,8 +101,8 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
         const scannedItem = searchResults[0];
         showSuccess('Item Found', `Scanned: ${barcode}`);
         
-        console.log('🎬 handleBarcodeScanned - Scanned item:', scannedItem.ItemNumber);
-        console.log('🎬 handleBarcodeScanned - Media data:', scannedItem.mediaData);
+        // console.log('🎬 handleBarcodeScanned - Scanned item:', scannedItem.ItemNumber);
+        // console.log('🎬 handleBarcodeScanned - Media data:', scannedItem.mediaData);
         
         // Navigate to item details with media callback
         navigation.navigate('LoadToDockItemDetails', {
@@ -206,7 +213,10 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#1e3a8a" />
+      <StatusBar 
+        barStyle={theme.colors.background === '#121212' ? "light-content" : "dark-content"} 
+        backgroundColor={theme.colors.primary} 
+      />
       
       {/* Header */}
       <LoadToDockHeader
@@ -244,12 +254,12 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
 
       {/* Items List */}
       <View style={styles.itemsSection}>
-        <View style={styles.sectionHeader}>
+        {/* <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Items to Load</Text>
           <Text style={styles.itemCount}>
             {filteredItems.length} of {deliveryItem.itemCount || items.length} items
           </Text>
-        </View>
+        </View> */}
         
         <ScrollView 
           style={styles.itemsList}
@@ -277,11 +287,15 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
         { paddingBottom: Math.max(40, insets.bottom + 20) } // Ensures button is always visible above navigation
       ]}>
         <Button
-          title="LOAD TO DOCK"
+          title="Load To Dock"
           onPress={handleLoadToDock}
-          style={canLoadToDock ? styles.loadToDockButton : styles.disabledButton}
-          textStyle={styles.loadToDockButtonText}
           disabled={!canLoadToDock}
+          size="lg"
+          variant="solid"
+          colorScheme="primary"
+          fullWidth
+          style={styles.loadToDockButton}
+          textStyle={styles.loadToDockButtonText}
         />
       </View>
 

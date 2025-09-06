@@ -313,7 +313,7 @@ export const fontWeight = {
 export const COLORS = {
   // Primary Brand Colors
   PRIMARY: '#1e3a8a', // Header blue color
-  ORANGE: '#FF8C00', // Orange color for buttons and highlights
+  ORANGE: '#FF7032', // Orange color for buttons and highlights
   
   // Text Colors
   TEXT_PRIMARY: '#212121', // Main text color

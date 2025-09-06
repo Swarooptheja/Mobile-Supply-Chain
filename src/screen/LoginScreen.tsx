@@ -48,10 +48,18 @@ const LoginScreen: React.FC = () => {
     formState: { errors },
     register,
     setValue,
+    watch,
   } = useForm<ILoginForm>({
     resolver: yupResolver(loginSchema),
     mode: 'onChange',
+    defaultValues: {
+      username: 'manideep j',
+      password: 'Propel@123',
+    },
   });
+
+  // Watch form values to display them in TextInput
+  const watchedValues = watch();
 
   const handleLogin = async (data: ILoginForm): Promise<void> => {
     if (!data.username?.trim() || !data.password?.trim()) {
@@ -87,20 +95,20 @@ const LoginScreen: React.FC = () => {
       {/* Header Section - Using AppHeader for consistency */}
       <AppHeader 
         title={ENV.APP_NAME} 
-        rightElement={
-          <TouchableOpacity
-            onPress={toggleTheme}
-            style={styles.themeToggleButton}
-            activeOpacity={0.7}
-          >
-            <VectorIcon 
-              name={themeMode === 'dark' ? "light-mode" : "dark-mode"} 
-              size={24} 
-              color={theme.colors.textPrimary} 
-              iconSet="MaterialIcons" 
-            />
-          </TouchableOpacity>
-        }
+        // rightElement={
+        //   <TouchableOpacity
+        //     onPress={toggleTheme}
+        //     style={styles.themeToggleButton}
+        //     activeOpacity={0.7}
+        //   >
+        //     <VectorIcon 
+        //       name={themeMode === 'dark' ? "light-mode" : "dark-mode"} 
+        //       size={24} 
+        //       color={theme.colors.textPrimary} 
+        //       iconSet="MaterialIcons" 
+        //     />
+        //   </TouchableOpacity>
+        // }
       />
 
       {/* Content Area */}
@@ -130,6 +138,7 @@ const LoginScreen: React.FC = () => {
                   style={styles.input}
                   placeholder="Enter username"
                   placeholderTextColor={theme.colors.textSecondary}
+                  value={watchedValues.username || ''}
                   onChangeText={(text) => setValue('username', text)}
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -161,6 +170,7 @@ const LoginScreen: React.FC = () => {
                   style={styles.input}
                   placeholder="Enter password"
                   placeholderTextColor={theme.colors.textSecondary}
+                  value={watchedValues.password || ''}
                   onChangeText={(text) => setValue('password', text)}
                   secureTextEntry={!showPassword}
                   editable={!isLoading}

@@ -7,7 +7,7 @@ import {
   ViewStyle,
   TextStyle,
 } from 'react-native';
-import { CommonIcon, MediaStatusChip } from './index';
+import { CommonIcon } from './index';
 import { ILoadToDockItemDetail } from '../types/loadToDock.interface';
 
 interface LoadToDockItemCardProps {
@@ -25,6 +25,45 @@ interface LoadToDockItemCardProps {
     loadedQuantityRow: ViewStyle;
     quantityInput: ViewStyle;
     mediaStatus: ViewStyle;
+    // Reference design styles
+    pillTag: ViewStyle;
+    pillText: TextStyle;
+    quantitySection: ViewStyle;
+    quantityValue: TextStyle;
+    mediaTabsContainer: ViewStyle;
+    mediaTab: ViewStyle;
+    pendingTab: ViewStyle;
+    completedTab: ViewStyle;
+    mediaTabText: TextStyle;
+    completedTabText: TextStyle;
+    // New styles for reference design
+    referenceCard: ViewStyle;
+    referenceHeader: ViewStyle;
+    referenceItemNumber: TextStyle;
+    referenceArrow: ViewStyle;
+    referenceDescription: TextStyle;
+    referenceQuantitySection: ViewStyle;
+    referenceQuantityRow: ViewStyle;
+    referenceQuantityLabel: TextStyle;
+    referenceQuantityValue: TextStyle;
+    referenceQuantityInput: ViewStyle;
+    referenceActionButtons: ViewStyle;
+    referenceActionButton: ViewStyle;
+    referenceActionButtonPending: ViewStyle;
+    referenceActionButtonCompleted: ViewStyle;
+    referenceActionButtonText: TextStyle;
+    referenceActionButtonIcon: ViewStyle;
+    // New styles for Figma design
+    itemIdContainer: ViewStyle;
+    itemIdText: TextStyle;
+    quantityColumn: ViewStyle;
+    loadedQuantityContainer: ViewStyle;
+    quantityOfText: TextStyle;
+    pendingButtonText: TextStyle;
+    completedButtonText: TextStyle;
+    figmaQuantityRow: ViewStyle;
+    figmaQuantityLabel: TextStyle;
+    figmaQuantityValue: TextStyle;
   };
   onItemPress: (item: ILoadToDockItemDetail) => void;
   onQuantityChange: (deliveryLineId: string, newQuantity: number) => void;
@@ -33,7 +72,7 @@ interface LoadToDockItemCardProps {
 
 const LoadToDockItemCard: React.FC<LoadToDockItemCardProps> = memo(({
   item,
-  index,
+  index: _index,
   styles,
   onItemPress,
   onQuantityChange,
@@ -72,51 +111,79 @@ const LoadToDockItemCard: React.FC<LoadToDockItemCardProps> = memo(({
   return (
     <TouchableOpacity
       key={`${item.DeliveryLineId}-${hasPhotos}-${hasVideo}`}
-      style={[
-        styles.itemCard,
-        isCompleted && styles.completedItemCard
-      ]}
+      style={styles.referenceCard}
       onPress={handlePress}
       activeOpacity={0.7}
     >
-      <View style={styles.itemHeader}>
-        <Text style={styles.itemId}>{index + 1}. {item.ItemNumber}</Text>
-        <TouchableOpacity style={styles.arrowButton}>
+      {/* Item ID Tag */}
+      <View style={styles.itemIdContainer}>
+        <Text style={styles.itemIdText}>{item.ItemNumber}</Text>
+      </View>
+      
+      {/* Item description */}
+      <Text style={styles.referenceDescription}>{item.ItemDesc}</Text>
+      
+      {/* Quantity section - Two column layout */}
+      <View style={styles.referenceQuantitySection}>
+        <View style={styles.figmaQuantityRow}>
+          {/* Left column - Requested */}
+          <View style={styles.quantityColumn}>
+            <Text style={styles.figmaQuantityLabel}>Requested:</Text>
+            <Text style={styles.figmaQuantityValue}>{item.QtyRequested} {item.ItemUom}</Text>
+          </View>
+          
+          {/* Right column - Loaded */}
+          <View style={styles.quantityColumn}>
+            <Text style={styles.figmaQuantityLabel}>Loaded:</Text>
+            <View style={styles.loadedQuantityContainer}>
+              <TextInput
+                style={styles.referenceQuantityInput}
+                value={item.QtyPicked || "0"}
+                onChangeText={handleQuantityChange}
+                keyboardType="numeric"
+                placeholder="0"
+              />
+              <Text style={styles.quantityOfText}> of {item.QtyRequested} {item.ItemUom}</Text>
+            </View>
+          </View>
+        </View>
+      </View>
+      
+      {/* Action buttons at bottom */}
+      <View style={styles.referenceActionButtons}>
+        <TouchableOpacity style={[
+          styles.referenceActionButton,
+          hasPhotos ? styles.referenceActionButtonCompleted : styles.referenceActionButtonPending
+        ]}>
           <CommonIcon 
-            icon="arrowRight"
-            size={16} 
-            color="#6b7280"
+            icon="camera"
+            size={25} 
+            color={hasPhotos ? "#10B981" : "#1e3a8a"}
           />
+          <Text style={[
+            styles.referenceActionButtonText,
+            hasPhotos ? styles.completedButtonText : styles.pendingButtonText
+          ]}>
+            Photos {hasPhotos ? 'uploaded' : 'pending'}
+          </Text>
         </TouchableOpacity>
-      </View>
-      
-      <Text style={styles.itemDescription}>{item.ItemDesc}</Text>
-      
-      <View style={styles.quantityRow}>
-        <Text style={styles.quantityLabel}>Requested: {item.QtyRequested} {item.ItemUom}</Text>
-      </View>
-      
-      <View style={styles.loadedQuantityRow}>
-        <Text style={styles.quantityLabel}>Loaded: </Text>
-        <TextInput
-          style={styles.quantityInput}
-          value={item.QtyPicked || "0"}
-          onChangeText={handleQuantityChange}
-          keyboardType="numeric"
-          placeholder="0"
-        />
-        <Text style={styles.quantityLabel}> of {item.QtyRequested} {item.ItemUom}</Text>
-      </View>
-      
-      <View style={styles.mediaStatus}>
-        <MediaStatusChip
-          type="photos"
-          status={hasPhotos ? 'completed' : 'pending'}
-        />
-        <MediaStatusChip
-          type="video"
-          status={hasVideo ? 'completed' : 'pending'}
-        />
+        
+        <TouchableOpacity style={[
+          styles.referenceActionButton,
+          hasVideo ? styles.referenceActionButtonCompleted : styles.referenceActionButtonPending
+        ]}>
+          <CommonIcon 
+            icon="video"
+            size={25} 
+            color={hasVideo ? "#10B981" : "#1e3a8a"}
+          />
+          <Text style={[
+            styles.referenceActionButtonText,
+            hasVideo ? styles.completedButtonText : styles.pendingButtonText
+          ]}>
+            Videos {hasVideo ? 'uploaded' : 'pending'}
+          </Text>
+        </TouchableOpacity>
       </View>
     </TouchableOpacity>
   );

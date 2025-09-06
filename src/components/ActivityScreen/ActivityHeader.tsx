@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import { AppHeader } from '../AppHeader';
 import { Button } from '../Button';
 import { VectorIcon } from '../VectorIcon';
+import { getButtonColor } from '../../styles/global.styles';
 
 interface ActivityHeaderProps {
   onLogout: () => void;
@@ -35,10 +36,11 @@ export const ActivityHeader: React.FC<ActivityHeaderProps> = React.memo(({ onLog
       rightElement={
         <View style={{ alignItems: 'center' }}>
           <Button
-            title="LOGOUT"
+            title="Logout"
             onPress={handleLogout}
-            colorScheme="danger"
+            colorScheme="primary"
             size="sm"
+            style={{ backgroundColor: getButtonColor() }}
             leftIcon={
               <VectorIcon
                 name="logout"

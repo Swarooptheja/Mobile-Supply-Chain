@@ -76,6 +76,11 @@ export const CommonIcons = {
   settings: { name: 'settings', iconSet: 'MaterialIcons' as IconSet },
   business: { name: 'business', iconSet: 'MaterialIcons' as IconSet },
   lightning: { name: 'flash-on', iconSet: 'MaterialIcons' as IconSet },
+  
+  // Theme icons
+  theme: { name: 'brightness-6', iconSet: 'MaterialIcons' as IconSet },
+  sun: { name: 'wb-sunny', iconSet: 'MaterialIcons' as IconSet },
+  moon: { name: 'nightlight-round', iconSet: 'MaterialIcons' as IconSet },
 };
 
 export const VectorIcon: React.FC<IVectorIconProps> = ({

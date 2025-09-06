@@ -1,6 +1,6 @@
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import React, { useEffect, useRef } from 'react';
-import { Alert, Dimensions, ScrollView } from 'react-native';
+import { Alert, Dimensions, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Import components directly to avoid index file issues
@@ -12,7 +12,6 @@ import { ProgressOverview } from '../components/ActivityScreen/ProgressOverview'
 // Import custom hooks
 import { 
   useSafeValues, 
-  useAutoScroll, 
   useRetryHandler,
   useActivityData
 } from '../hooks';
@@ -21,10 +20,10 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useActivityManager } from '../hooks/useActivityManager';
 import { useActivityScreenState } from '../hooks/useActivityScreenState';
-import { useAttractiveNotification } from '../context/AttractiveNotificationContext';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import type { ConsolidatedApiRecord } from '../hooks/useActivityConsolidation';
 import { createActivityScreenStyles } from '../styles/ActivityScreen.styles';
+import { useTheme } from '../context/ThemeContext';
 
 type ActivityScreenRouteProp = RouteProp<RootStackParamList, 'Activity'>;
 
@@ -50,8 +49,8 @@ const ActivityScreen: React.FC = () => {
   const route = useRoute<ActivityScreenRouteProp>();
   const { logout, defaultOrgId } = useAuth();
   const navigation = useNavigation<any>();
-  const { showSuccess } = useAttractiveNotification();
-  const styles = createActivityScreenStyles();
+  const theme = useTheme();
+  const styles = createActivityScreenStyles(theme);
   
   // Track if the initial process has been started
   const hasInitialProcessStarted = useRef(false);
@@ -77,9 +76,11 @@ const ActivityScreen: React.FC = () => {
   } = useActivityManager();
 
   // Device size detection for responsive design
-  const { width: screenWidth } = Dimensions.get('window');
+  const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
   const isSmallDevice = screenWidth <= 375;
-  const isTablet = screenWidth > 768;
+  const isTablet = screenWidth > 768 && screenWidth <= 1024;
+  const isDesktop = screenWidth > 1024;
+  const isLandscape = screenWidth > screenHeight;
 
   // Use consolidated hook for all activity data (replaces multiple separate hooks)
   const activityData = useActivityData(activities || []);
@@ -93,14 +94,13 @@ const ActivityScreen: React.FC = () => {
     },
     { 
       overallProgress, 
-      statistics: activityData.statistics, 
-      totalRecordsCount: activityData.totalRecordsCount, 
       consolidatedApiRecords: activityData.consolidated 
     }
   );
 
-  // Use custom hook for auto-scrolling (replaces duplicate useEffect logic)
-  const { scrollViewRef, cardRefs, handleAutoScroll } = useAutoScroll();
+  // Simple refs for scroll view and cards
+  const scrollViewRef = useRef<ScrollView>(null);
+  const cardRefs = useRef<{ [key: string]: View | null }>({});
 
   // Use custom hook for retry handling (replaces duplicate retry logic)
   const { handleRetryAllFailed, handleIndividualRetry: handleIndividualRetryFromHook } = useRetryHandler(
@@ -123,12 +123,6 @@ const ActivityScreen: React.FC = () => {
     }
   }, [safeValues.selectedOrgId, safeValues.responsibilities, safeValues.defaultOrgId, startActivityProcess]);
 
-  // Auto-scroll to relevant cards (consolidated logic)
-  useEffect(() => {
-    if (safeValues.consolidatedApiRecords && safeValues.consolidatedApiRecords.length > 0) {
-      handleAutoScroll(safeValues.consolidatedApiRecords, isProcessing);
-    }
-  }, [safeValues.consolidatedApiRecords, isProcessing, handleAutoScroll]);
 
   // Automatically navigate to Dashboard when ALL APIs (master, config, and transactional) are successful
   useEffect(() => {
@@ -138,24 +132,18 @@ const ActivityScreen: React.FC = () => {
         activities.length > 0) {
       
       hasNavigatedToDashboard.current = true;
-      
-      // Show success notification
-      showSuccess(
-        'Synchronization Complete!', 
-        'All data has been successfully synchronized. Redirecting to Dashboard...',
-        2500
-      );
+    
       
       // Navigate to Dashboard after showing success message
       // This gives users time to see the completion state and read the notification
-      setTimeout(() => {
+      // setTimeout(() => {
         navigation.reset({
           index: 0,
           routes: [{ name: 'Dashboard' as never }],
         });
-      }, 2500); // Wait for notification to be visible
+      // }, 2500); // Wait for notification to be visible
     }
-  }, [canProceedToDashboard, isProcessing, activities.length, navigation, showSuccess]);
+  }, [canProceedToDashboard, isProcessing, activities.length, navigation]);
 
   /**
    * Handle logout with confirmation dialog
@@ -215,14 +203,14 @@ const ActivityScreen: React.FC = () => {
         contentContainerStyle={[
           styles.contentContainer,
           isSmallDevice && styles.smallDeviceContent,
-          isTablet && styles.tabletContent
+          isTablet && styles.tabletContent,
+          isDesktop && styles.desktopContent,
+          isLandscape && styles.landscapeContent
         ]}
       >
         {/* Progress Overview Card */}
         <ProgressOverview 
           overallProgress={safeValues.overallProgress}
-          statistics={safeValues.statistics}
-          totalRecordsCount={safeValues.totalRecordsCount}
         />
 
         {/* Activity Card List */}
@@ -238,7 +226,7 @@ const ActivityScreen: React.FC = () => {
         {/* Action Buttons */}
         <ActionButtons
           showRetryButton={showRetryButton}
-          failedCount={safeValues.statistics.failed}
+          failedCount={activityData.failedCount}
           onRetryFailed={handleRetryFailed}
           isProcessing={isProcessing}
         />

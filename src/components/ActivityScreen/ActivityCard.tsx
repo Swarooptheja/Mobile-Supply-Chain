@@ -1,9 +1,11 @@
-import React, { useMemo, useCallback } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import React, { useMemo, useCallback, useEffect, useRef } from 'react';
+import { View, Text, TouchableOpacity, Animated } from 'react-native';
 import { VectorIcon } from '../VectorIcon';
 import { ConsolidatedApiRecord } from '../../hooks/useActivityConsolidation';
 import { createActivityCardStyles } from '../../styles/ActivityScreen.styles';
 import { getCurrentApiConfig } from '../../config/api';
+import { useTheme } from '../../context/ThemeContext';
+import { getButtonColor } from '../../styles/global.styles';
 import { 
   getStatusColor, 
   getStatusIcon, 
@@ -26,7 +28,8 @@ export const ActivityCard: React.FC<ActivityCardProps> = React.memo(({
   onRetry,
   isRetrying
 }) => {
-  const styles = createActivityCardStyles();
+  const theme = useTheme();
+  const styles = createActivityCardStyles(theme);
   
   // Memoize computed styles to prevent recalculation on every render
   const cardStyles = useMemo(() => ({
@@ -76,12 +79,51 @@ export const ActivityCard: React.FC<ActivityCardProps> = React.memo(({
   }, [record.activities]);
 
   // Safe text values with fallbacks
-  const safeName = record.name || 'Unknown API';
+  const safeName = record.apiName || 'Unknown API';
   const safeType = record.type || 'unknown';
   const safeStatus = record.status || 'unknown';
   const safeError = record.error || 'Unknown error occurred';
   const safeInsertedRecords = record.insertedRecords || 0;
   const safeRetryCount = record.retryCount || 0;
+  
+  // Format timestamp with seconds for better accuracy
+  const formatTimestamp = (timestamp: Date | null) => {
+    if (!timestamp) return 'Never';
+    return timestamp.toLocaleTimeString([], { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true 
+    });
+  };
+  
+  // Check if card is in pending state
+  const isPending = safeStatus === 'pending' || safeStatus === 'loading' || safeStatus === 'in_progress';
+  
+  // Spinning animation for pending state
+  const spinValue = useRef(new Animated.Value(0)).current;
+  
+  useEffect(() => {
+    if (isPending) {
+      const spinAnimation = Animated.loop(
+        Animated.timing(spinValue, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        })
+      );
+      spinAnimation.start();
+      
+      return () => spinAnimation.stop();
+    } else {
+      spinValue.setValue(0);
+    }
+  }, [isPending, spinValue]);
+  
+  const spin = spinValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
 
   return (
     <View style={styles.syncCard}>
@@ -118,19 +160,11 @@ export const ActivityCard: React.FC<ActivityCardProps> = React.memo(({
             </View>
           </View>
 
-          {/* Right side info */}
+          {/* Right side info - only timestamp and status */}
           <View style={styles.cardRightSide}>
-            <Text style={styles.cardRecordCount}>{safeInsertedRecords}</Text>
-            <Text style={styles.cardTimestamp}>
-              {record.lastSyncTime ? 
-                record.lastSyncTime.toLocaleTimeString([], { 
-                  hour: '2-digit', 
-                  minute: '2-digit',
-                  hour12: true 
-                }) : 
-                'Never'
-              }
-            </Text>
+                          <Text style={styles.cardTimestamp}>
+                {formatTimestamp(record.lastSyncTime) || 'Never'}
+              </Text>
             <View style={styles.cardStatusRow}>
               <TouchableOpacity
                 style={cardStyles.statusIndicator}
@@ -139,12 +173,23 @@ export const ActivityCard: React.FC<ActivityCardProps> = React.memo(({
                 accessibilityHint={`API ${safeName} is in ${safeStatus} state`}
                 accessibilityRole="button"
               >
-                <VectorIcon
-                  name={getStatusIcon(safeStatus).name}
-                  iconSet={getStatusIcon(safeStatus).iconSet}
-                  size={14}
-                  color="#FFFFFF"
-                />
+                {isPending ? (
+                  <Animated.View style={{ transform: [{ rotate: spin }] }}>
+                    <VectorIcon
+                      name="refresh"
+                      iconSet="MaterialIcons"
+                      size={14}
+                      color="#FFFFFF"
+                    />
+                  </Animated.View>
+                ) : (
+                  <VectorIcon
+                    name={getStatusIcon(safeStatus).name}
+                    iconSet={getStatusIcon(safeStatus).iconSet}
+                    size={14}
+                    color="#FFFFFF"
+                  />
+                )}
               </TouchableOpacity>
               
               {/* Only show chevron for cards that can expand (have errors) */}
@@ -178,6 +223,23 @@ export const ActivityCard: React.FC<ActivityCardProps> = React.memo(({
           </View>
         )}
 
+        {/* Pending state indicator */}
+        {isPending && (
+          <View style={styles.pendingIndicator}>
+            <Animated.View style={[styles.pendingSpinner, { transform: [{ rotate: spin }] }]}>
+              <VectorIcon
+                name="refresh"
+                iconSet="MaterialIcons"
+                size={16}
+                color="#3B82F6"
+              />
+            </Animated.View>
+            <Text style={styles.pendingText}>
+              Processing... Please wait
+            </Text>
+          </View>
+        )}
+
         {/* Success message for non-expandable successful cards */}
         {!record.canExpand && safeStatus === 'success' && (
           <View style={styles.successMessage}>
@@ -186,6 +248,11 @@ export const ActivityCard: React.FC<ActivityCardProps> = React.memo(({
             </Text>
           </View>
         )}
+
+        {/* API name at bottom for all cards */}
+        {/* <View style={styles.apiNameSection}>
+          <Text style={styles.apiNameText}>{safeName}</Text>
+        </View> */}
       </TouchableOpacity>
 
       {/* Expanded content - only show when card is expanded and has errors */}
@@ -215,7 +282,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = React.memo(({
               
               {/* Show full API URL instead of just relative path */}
               <Text style={styles.errorMessage}>
-                {fullApiUrl}
+                {fullApiUrl || 'API endpoint not available'}
               </Text>
                 
 
@@ -233,7 +300,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = React.memo(({
                   <View style={styles.errorMetaItem}>
                     <Text style={styles.errorMetaLabel}>Last Retry:</Text>
                     <Text style={styles.errorMetaValue}>
-                      {record.lastRetryTime.toLocaleString()}
+                      {record.lastRetryTime?.toLocaleString() || 'N/A'}
                     </Text>
                   </View>
                 )}
@@ -241,7 +308,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = React.memo(({
 
               {/* Retry button */}
               <TouchableOpacity 
-                style={styles.retryButton}
+                style={[styles.retryButton, { backgroundColor: getButtonColor() }]}
                 onPress={handleRetry}
                 disabled={isRetrying}
                 accessible={true}
@@ -255,6 +322,28 @@ export const ActivityCard: React.FC<ActivityCardProps> = React.memo(({
               </TouchableOpacity>
             </View>
           )}
+
+          {/* Additional relevant information */}
+          <View style={styles.additionalInfoSection}>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>API Type:</Text>
+              <Text style={styles.infoValue}>{safeType.toUpperCase()}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Organization ID:</Text>
+              <Text style={styles.infoValue}>{record.activities?.[0]?.orgId || 'N/A'}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Total Activities:</Text>
+              <Text style={styles.infoValue}>{record.activities?.length || 0}</Text>
+            </View>
+            {record.lastSyncTime && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Last Sync:</Text>
+                <Text style={styles.infoValue}>{formatTimestamp(record.lastSyncTime) || 'Never'}</Text>
+              </View>
+            )}
+          </View>
         </>
       )}
     </View>

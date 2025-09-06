@@ -2,7 +2,6 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   SafeAreaView,
   StatusBar,
-  StyleSheet,
   View,
   Alert
 } from 'react-native';
@@ -13,6 +12,8 @@ import { MediaCapture, ItemDetailsCard, DynamicTabs, CommonIcon, HeaderButton } 
 import { LoadToDockItemDetailsScreenProps, TabType } from '../types/loadToDock.interface';
 import { IMediaItem } from '../types/media.interface';
 import { useAttractiveNotification } from '../context/AttractiveNotificationContext';
+import { useTheme } from '../context/ThemeContext';
+import { createLoadToDockItemDetailsScreenStyles } from '../styles/LoadToDockItemDetailsScreen.styles';
 
 const LoadToDockItemDetailsScreen: React.FC<LoadToDockItemDetailsScreenProps> = ({ route, navigation }) => {
   const { itemDetail, existingMediaStatus, existingMedia, onMediaSaved } = route.params;
@@ -20,6 +21,8 @@ const LoadToDockItemDetailsScreen: React.FC<LoadToDockItemDetailsScreenProps> = 
   const [capturedMedia, setCapturedMedia] = useState<IMediaItem[]>(existingMedia || []);
   const [canSave, setCanSave] = useState(false);
   const { showError, showSuccess } = useAttractiveNotification();
+  const theme = useTheme();
+  const styles = createLoadToDockItemDetailsScreenStyles(theme);
   
   // Initialize with existing media if available
   useEffect(() => {
@@ -231,15 +234,15 @@ const LoadToDockItemDetailsScreen: React.FC<LoadToDockItemDetailsScreenProps> = 
           tabs={tabs}
           activeTab={activeTab}
           onTabChange={setActiveTab}
-          activeIconStyle={{ color: '#ffffff' }}
-          activeLabelStyle={{ color: '#ffffff' }}
+          activeIconStyle={styles.activeTabIcon}
+          activeLabelStyle={styles.activeTabLabel}
         />
       </View>
 
       {/* Enhanced Save Button */}
       <View style={styles.bottomButtonContainer}>
         <Button
-          title="SAVE & CONTINUE"
+          title="Save & Continue"
           onPress={handleSave}
           style={canSave ? styles.saveButton : styles.disabledButton}
           textStyle={styles.saveButtonText}
@@ -249,76 +252,5 @@ const LoadToDockItemDetailsScreen: React.FC<LoadToDockItemDetailsScreenProps> = 
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-    paddingBottom: 100, // Add bottom padding to prevent content from being hidden behind button
-  },
-  itemDetailsContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 24,
-    paddingBottom: 32,
-  },
-  tabsContainer: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingBottom: 32,
-    marginBottom: 20, // Add margin to ensure content doesn't overlap with button
-  },
-  tabContent: {
-    flex: 1,
-    paddingHorizontal: 0,
-    paddingBottom: 20,
-  },
-  mediaCaptureArea: {
-    backgroundColor: 'transparent',
-    borderWidth: 0,
-    padding: 0,
-    margin: 0,
-    width: '100%',
-  },
-  bottomButtonContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 40, // Increased bottom padding to move button up
-    backgroundColor: '#f3f4f6',
-    borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    zIndex: 1000,
-  },
-  saveButton: {
-    backgroundColor: '#10b981',
-    paddingVertical: 18,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  disabledButton: {
-    backgroundColor: '#9ca3af',
-    paddingVertical: 18,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  saveButtonText: {
-    color: '#ffffff',
-    fontSize: 17,
-    fontWeight: '700',
-    textAlign: 'center',
-    letterSpacing: 0.3,
-  },
-});
 
 export default LoadToDockItemDetailsScreen;

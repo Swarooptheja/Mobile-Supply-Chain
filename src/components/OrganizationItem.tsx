@@ -18,9 +18,14 @@ const OrganizationItem: React.FC<OrganizationItemProps> = memo(({
   const theme = useTheme();
   const styles = createOrganizationScreenStyles(theme);
   
+  // Defensive check for null/undefined item
+  if (!item) {
+    return null;
+  }
+  
   const id = String(item.InventoryOrgId ?? item.id ?? '');
-  const name = item.InventoryOrgName || '';
-  const code = item.InventoryOrgCode || id;
+  const name = item.InventoryOrgName || 'Unknown Organization';
+  const code = item.InventoryOrgCode || id || 'N/A';
 
   const handlePress = () => onSelect(id);
   
@@ -41,16 +46,16 @@ const OrganizationItem: React.FC<OrganizationItemProps> = memo(({
           </View>
           <View style={styles.organizationInfo}>
             <Text style={[styles.organizationName, selected && styles.organizationNameSelected]} numberOfLines={1}>
-              {name}
+              {name || 'Unknown Organization'}
             </Text>
             <Text style={styles.organizationId} numberOfLines={1}>
-              ID: {id}
+              ID: {id || 'N/A'}
             </Text>
           </View>
         </View>
         <View style={[styles.codeBadge, selected && styles.codeBadgeSelected]}>
           <Text style={[styles.codeBadgeText, selected && styles.codeBadgeTextSelected]} numberOfLines={1}>
-            {code}
+            {code || 'N/A'}
           </Text>
         </View>
       </View>

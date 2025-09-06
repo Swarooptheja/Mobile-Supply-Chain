@@ -36,7 +36,17 @@ export async function fetchOrganizationsPaged(params: FetchOrganizationsParams):
 
   const result = await simpleDatabaseService.executeQuery(query, qParams);
   const rows = getDataFromResultSet(result) as OrganizationRow[];
-  return { rows };
+  
+  // Ensure all rows have proper fallback values to prevent null text rendering errors
+  const safeRows = rows.map(row => ({
+    ...row,
+    InventoryOrgId: row.InventoryOrgId ?? row.id ?? '',
+    InventoryOrgName: row.InventoryOrgName || 'Unknown Organization',
+    InventoryOrgCode: row.InventoryOrgCode || row.InventoryOrgId || row.id || 'N/A',
+    BusinessUnitName: row.BusinessUnitName || 'Unknown Business Unit'
+  }));
+  
+  return { rows: safeRows };
 }
 
 

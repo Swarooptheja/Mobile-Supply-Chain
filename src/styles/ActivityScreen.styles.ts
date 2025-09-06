@@ -1,24 +1,50 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Dimensions } from 'react-native';
 
-export const createActivityScreenStyles = () => StyleSheet.create({
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+
+// Responsive scaling functions
+const scale = (size: number) => (size * screenWidth) / 375;
+const verticalScale = (size: number) => (size * screenHeight) / 812;
+const moderateScale = (size: number, factor: number = 0.5) => size + (scale(size) - size) * factor;
+
+// Device breakpoints
+const isSmallDevice = screenWidth <= 375;
+const isTablet = screenWidth > 768 && screenWidth <= 1024;
+const isDesktop = screenWidth > 1024;
+const isLandscape = screenWidth > screenHeight;
+
+export const createActivityScreenStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC', // Light gray background for better contrast
+    backgroundColor: theme.colors.background,
   },
   content: {
     flex: 1,
   },
   contentContainer: {
-    padding: 12, // Reduced from 14 to 12 for more compact look
-    paddingBottom: 80, // Reduced from 100 to 80 for more compact look
+    padding: scale(12),
+    paddingBottom: verticalScale(80),
   },
   smallDeviceContent: {
-    padding: 8, // Reduced from 10 to 8 for more compact look
+    padding: scale(8),
+    paddingBottom: verticalScale(60),
   },
   tabletContent: {
-    padding: 16, // Reduced from 20 to 16 for more compact look
+    padding: scale(16),
+    paddingBottom: verticalScale(100),
     maxWidth: 900,
     alignSelf: 'center',
+  },
+  desktopContent: {
+    padding: scale(20),
+    paddingBottom: verticalScale(120),
+    maxWidth: 1200,
+    alignSelf: 'center',
+  },
+  landscapeContent: {
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(8),
+    paddingBottom: verticalScale(60),
   },
   
   // Header styles - Enhanced with better balance and softer styling
@@ -57,19 +83,30 @@ export const createActivityScreenStyles = () => StyleSheet.create({
     marginLeft: 4,
   },
 
-  // Progress overview styles - Enhanced with better visual hierarchy
+  // Progress overview styles - Clean and modern design
   progressOverview: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14, // Reduced from 16 to 14 for more compact look
-    padding: 10, // Reduced from 12 to 10 for more compact look
-    marginBottom: 10, // Reduced from 12 to 10 for more compact look
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    backgroundColor: theme.colors.surface,
+    borderRadius: scale(8), // More subtle border radius
+    padding: scale(12),
+    marginBottom: scale(8),
+    shadowColor: theme.colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04, // Lighter shadow
+    shadowRadius: 3,
+    elevation: 2, // Reduced elevation
+    borderWidth: 0.5, // Thinner border
+    borderColor: '#F1F5F9', // Lighter border color
+    // Responsive adjustments
+    ...(isTablet && {
+      padding: scale(14),
+      marginBottom: scale(10),
+      borderRadius: scale(10),
+    }),
+    ...(isDesktop && {
+      padding: scale(16),
+      marginBottom: scale(12),
+      borderRadius: scale(12),
+    }),
   },
   progressHeader: {
     flexDirection: 'row',
@@ -78,10 +115,10 @@ export const createActivityScreenStyles = () => StyleSheet.create({
     marginBottom: 6, // Reduced from 8 to 6 for more compact look
   },
   progressIconContainer: {
-    marginRight: 8, // Reduced from 10 to 8 for more compact look
-    padding: 4, // Reduced from 5 to 4 for more compact look
-    backgroundColor: '#DBEAFE', // Light blue background for sync icon
-    borderRadius: 6, // Reduced from 8 to 6 for more compact look
+    marginRight: 6,
+    padding: 3,
+    backgroundColor: '#F0F9FF', // Lighter blue background
+    borderRadius: 4,
   },
   progressIcon: {
     // Icon styling handled in component
@@ -132,22 +169,22 @@ export const createActivityScreenStyles = () => StyleSheet.create({
     alignSelf: 'stretch', // Ensure full width
   },
   progressBar: {
-    height: 12, // Reduced from 14 to 12 for more compact look
-    backgroundColor: '#E2E8F0', // Light gray background for progress bar
-    borderRadius: 8, // More rounded
-    marginBottom: 0, // Remove bottom margin since percentage is centered
+    height: 8, // More compact progress bar
+    backgroundColor: '#F1F5F9', // Lighter background
+    borderRadius: 4, // More subtle rounding
+    marginBottom: 0,
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#CBD5E1',
+    borderWidth: 0.5, // Thinner border
+    borderColor: '#E2E8F0', // Lighter border
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#3B82F6', // Blue progress bar as shown in image
-    borderRadius: 8,
+    backgroundColor: '#3B82F6', // Blue progress bar
+    borderRadius: 4, // Match container radius
     shadowColor: '#3B82F6',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1,
+    shadowOffset: { width: 0, height: 0.5 },
+    shadowOpacity: 0.1, // Lighter shadow
+    shadowRadius: 0.5,
   },
   progressPercentage: {
     fontSize: 11, // Reduced from 12 to 11 for more compact look
@@ -156,102 +193,20 @@ export const createActivityScreenStyles = () => StyleSheet.create({
     textAlign: 'right',
     minWidth: 50, // Ensure consistent width
   },
-  progressStats: {
-    flexDirection: 'row',
-    flexWrap: 'wrap', // Allow wrapping for 2x2 grid
-    justifyContent: 'space-between',
-    gap: 8, // Reduced from 10 to 8 for more compact look
-    marginTop: 4, // Reduced from 6 to 4 for more compact look
-  },
-  statItem: {
-    alignItems: 'center',
-    width: '48%', // Two items per row with gap
-    padding: 8, // Reduced from 10 to 8 for more compact look
-    borderRadius: 6, // Reduced from 8 to 6 for more compact look
-    borderWidth: 1,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-    marginBottom: 4, // Reduced from 6 to 4 for more compact look
-  },
-  statItemCompleted: {
-    backgroundColor: '#D1FAE5', // Light green background
-    borderColor: '#10B981',
-  },
-  statItemFailed: {
-    backgroundColor: '#FEE2E2', // Light red background
-    borderColor: '#EF4444',
-  },
-  statItemTotal: {
-    backgroundColor: '#F8FAFC', // Light gray/white background
-    borderColor: '#E2E8F0',
-  },
-  statItemRecords: {
-    backgroundColor: '#DBEAFE', // Light blue background
-    borderColor: '#3B82F6',
-  },
-  statIconContainer: {
-    marginBottom: 2, // Reduced from 3 to 2 for more compact look
-    padding: 2, // Reduced from 3 to 2 for more compact look
-    backgroundColor: 'rgba(255,255,255,0.7)', // More transparent white for subtle effect
-    borderRadius: 4, // Reduced from 5 to 4 for more compact look
-  },
-  statIcon: {
-    // Icon styling handled in component
-  },
-  statNumber: {
-    fontSize: 16, // Reduced from 18 to 16 for more compact look
-    fontWeight: '900', // Bold numbers as shown in image
-    marginBottom: 0, // Reduced from 1 to 0 for more compact look
-    letterSpacing: 0.3,
-  },
-  statNumberCompleted: {
-    color: '#10B981', // Green text on light green background
-  },
-  statNumberFailed: {
-    color: '#EF4444', // Red text on light red background
-  },
-  statNumberTotal: {
-    color: '#64748B', // Gray text on light gray background
-  },
-  statNumberRecords: {
-    color: '#3B82F6', // Blue text on light blue background
-  },
-  statLabel: {
-    fontSize: 7, // Reduced from 8 to 7 for more compact look
-    textAlign: 'center',
-    fontWeight: '800', // Extra bold as shown in image
-    textTransform: 'uppercase',
-    letterSpacing: 0.6, // Reduced from 0.8 to 0.6 for more compact look
-  },
-  statLabelCompleted: {
-    color: '#10B981', // Green text on light green background
-  },
-  statLabelFailed: {
-    color: '#EF4444', // Red text on light red background
-  },
-  statLabelTotal: {
-    color: '#64748B', // Gray text on light gray background
-  },
-  statLabelRecords: {
-    color: '#3B82F6', // Blue text on light blue background
-  },
 
-  // Sync card styles - Enhanced with better layout and spacing
+  // Sync card styles - Clean and modern design
   syncCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 10, // Reduced from 12 to 10 for more compact look
-    marginBottom: 10, // Reduced from 12 to 10 for more compact look
+    borderRadius: 8, // More subtle border radius
+    marginBottom: 8, // Reduced spacing
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04, // Lighter shadow
+    shadowRadius: 3,
+    elevation: 2, // Reduced elevation
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderWidth: 0.5, // Thinner border
+    borderColor: '#F1F5F9', // Lighter border color
   },
   cardHeaderTouchable: {
     // No additional styling needed - inherits from parent
@@ -265,8 +220,8 @@ export const createActivityScreenStyles = () => StyleSheet.create({
   },
   cardContent: {
     flexDirection: 'row',
-    padding: 12, // Reduced from 16 to 12 for more compact look
-    paddingLeft: 16, // Reduced from 20 to 16 for more compact look (account for accent bar)
+    padding: 12,
+    paddingLeft: 16, // Account for accent bar
   },
   cardHeader: {
     flex: 1,
@@ -275,10 +230,10 @@ export const createActivityScreenStyles = () => StyleSheet.create({
     marginBottom: 8, // Reduced from 12 to 8 for more compact look
   },
   cardIcon: {
-    marginRight: 12, // Reduced from 16 to 12 for more compact look
-    padding: 8, // Reduced from 10 to 8 for more compact look
-    backgroundColor: '#F1F5F9',
-    borderRadius: 8, // Reduced from 10 to 8 for more compact look
+    marginRight: 10,
+    padding: 6,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 6,
   },
   titleContainer: {
     flex: 1,
@@ -301,7 +256,7 @@ export const createActivityScreenStyles = () => StyleSheet.create({
   // Right side card content
   cardRightSide: {
     alignItems: 'flex-end',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     minWidth: 70, // Reduced from 80 to 70 for more compact look
   },
   cardRecordCount: {
@@ -314,7 +269,7 @@ export const createActivityScreenStyles = () => StyleSheet.create({
     fontSize: 11, // Reduced from 12 to 11 for more compact look
     color: '#64748B',
     fontWeight: '500',
-    marginBottom: 4, // Reduced from 6 to 4 for more compact look
+    marginBottom: 8, // Increased to provide space for status indicator
   },
   cardStatusRow: {
     flexDirection: 'row',
@@ -413,16 +368,16 @@ export const createActivityScreenStyles = () => StyleSheet.create({
     alignSelf: 'flex-start', // Ensure it stays at top
   },
   statusIndicator: {
-    width: 36, // Reduced from 40 to 36 for more compact look
-    height: 36, // Reduced from 40 to 36 for more compact look
-    borderRadius: 18, // Reduced from 20 to 18 for more compact look
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
 
   // Error expansion styles - Enhanced for better readability
@@ -660,6 +615,112 @@ export const createActivityScreenStyles = () => StyleSheet.create({
     fontWeight: '500',
     textAlign: 'center',
   },
+
+  // Pending state indicator
+  pendingIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: '#F0F9FF',
+    borderTopWidth: 1,
+    borderTopColor: '#DBEAFE',
+  },
+  pendingSpinner: {
+    marginRight: 8,
+    padding: 4,
+    backgroundColor: '#DBEAFE',
+    borderRadius: 12,
+  },
+  pendingText: {
+    fontSize: 11,
+    color: '#3B82F6',
+    fontWeight: '500',
+  },
+
+  // API name section at bottom
+  apiNameSection: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: scale(12),
+    paddingVertical: scale(8),
+    backgroundColor: theme.colors.pillBg,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+    // Responsive adjustments
+    ...(isTablet && {
+      paddingHorizontal: scale(16),
+      paddingVertical: scale(10),
+    }),
+    ...(isDesktop && {
+      paddingHorizontal: scale(20),
+      paddingVertical: scale(12),
+    }),
+  },
+  apiNameText: {
+    fontSize: moderateScale(12),
+    fontWeight: '600',
+    color: theme.colors.textPrimary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    // Responsive typography
+    ...(isTablet && {
+      fontSize: moderateScale(13),
+    }),
+    ...(isDesktop && {
+      fontSize: moderateScale(14),
+    }),
+  },
+
+  // Additional information section
+  additionalInfoSection: {
+    padding: scale(12),
+    backgroundColor: theme.colors.pillBg,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+    // Responsive adjustments
+    ...(isTablet && {
+      padding: scale(16),
+    }),
+    ...(isDesktop && {
+      padding: scale(20),
+    }),
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: scale(6),
+    paddingVertical: scale(2),
+  },
+  infoLabel: {
+    fontSize: moderateScale(11),
+    color: theme.colors.textSecondary,
+    fontWeight: '500',
+    flex: 1,
+    // Responsive typography
+    ...(isTablet && {
+      fontSize: moderateScale(12),
+    }),
+    ...(isDesktop && {
+      fontSize: moderateScale(13),
+    }),
+  },
+  infoValue: {
+    fontSize: moderateScale(11),
+    color: theme.colors.textPrimary,
+    fontWeight: '600',
+    flex: 1,
+    textAlign: 'right',
+    // Responsive typography
+    ...(isTablet && {
+      fontSize: moderateScale(12),
+    }),
+    ...(isDesktop && {
+      fontSize: moderateScale(13),
+    }),
+  },
   dashboardReadyIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -765,95 +826,33 @@ export const createProgressOverviewStyles = () => StyleSheet.create({
     backgroundColor: '#3B82F6',
     borderRadius: 4,
   },
-  progressStats: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  statItem: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-    backgroundColor: '#F8FAFC',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  statIconContainer: {
-    marginBottom: 4,
-    padding: 4,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 4,
-  },
-  statNumber: {
-    fontSize: 16,
-    fontWeight: '900',
-    marginBottom: 0,
-    letterSpacing: 0.3,
-  },
-  statLabel: {
-    fontSize: 7,
-    textAlign: 'center',
-    fontWeight: '800',
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-  },
-  statItemCompleted: {
-    borderColor: '#D1FAE5',
-    backgroundColor: '#F0FDF4',
-  },
-  statNumberCompleted: {
-    color: '#059669',
-  },
-  statLabelCompleted: {
-    color: '#047857',
-  },
-  statItemFailed: {
-    borderColor: '#FEE2E2',
-    backgroundColor: '#FEF2F2',
-  },
-  statNumberFailed: {
-    color: '#DC2626',
-  },
-  statLabelFailed: {
-    color: '#B91C1C',
-  },
-  statItemTotal: {
-    borderColor: '#E2E8F0',
-    backgroundColor: '#F8FAFC',
-  },
-  statNumberTotal: {
-    color: '#64748B',
-  },
-  statLabelTotal: {
-    color: '#475569',
-  },
-  statItemRecords: {
-    borderColor: '#DBEAFE',
-    backgroundColor: '#F0F9FF',
-  },
-  statNumberRecords: {
-    color: '#3B82F6',
-  },
-  statLabelRecords: {
-    color: '#1D4ED8',
-  },
 });
 
-export const createActivityCardStyles = () => StyleSheet.create({
+export const createActivityCardStyles = (theme: any) => StyleSheet.create({
   syncCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    marginBottom: 10,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    backgroundColor: theme.colors.surface,
+    borderRadius: scale(8), // More subtle border radius
+    marginBottom: scale(8),
+    shadowColor: theme.colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04, // Lighter shadow
+    shadowRadius: 3,
+    elevation: 2, // Reduced elevation
+    borderWidth: 0.5, // Thinner border
+    borderColor: '#F1F5F9', // Lighter border color
     overflow: 'hidden',
+    // Responsive adjustments
+    ...(isTablet && {
+      marginBottom: scale(10),
+      borderRadius: scale(10),
+    }),
+    ...(isDesktop && {
+      marginBottom: scale(12),
+      borderRadius: scale(12),
+    }),
+    ...(isLandscape && {
+      marginBottom: scale(6),
+    }),
   },
   accentBar: {
     position: 'absolute',
@@ -863,7 +862,14 @@ export const createActivityCardStyles = () => StyleSheet.create({
     width: 4,
   },
   cardHeaderTouchable: {
-    padding: 12,
+    padding: scale(12),
+    // Responsive padding
+    ...(isTablet && {
+      padding: scale(16),
+    }),
+    ...(isDesktop && {
+      padding: scale(20),
+    }),
   },
   cardContent: {
     flexDirection: 'row',
@@ -876,24 +882,38 @@ export const createActivityCardStyles = () => StyleSheet.create({
     flex: 1,
   },
   cardIcon: {
-    marginRight: 10,
-    padding: 6,
+    marginRight: 8,
+    padding: 5,
     backgroundColor: '#F8FAFC',
-    borderRadius: 6,
+    borderRadius: 5,
   },
   titleContainer: {
     flex: 1,
   },
   cardTitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: '600',
-    color: '#1E293B',
-    marginBottom: 2,
+    color: theme.colors.textPrimary,
+    marginBottom: scale(2),
+    // Responsive typography
+    ...(isTablet && {
+      fontSize: moderateScale(16),
+    }),
+    ...(isDesktop && {
+      fontSize: moderateScale(18),
+    }),
   },
   cardSubtitle: {
-    fontSize: 10,
+    fontSize: moderateScale(10),
     fontWeight: '500',
     letterSpacing: 0.5,
+    // Responsive typography
+    ...(isTablet && {
+      fontSize: moderateScale(11),
+    }),
+    ...(isDesktop && {
+      fontSize: moderateScale(12),
+    }),
   },
   cardRightSide: {
     alignItems: 'flex-end',
@@ -905,9 +925,16 @@ export const createActivityCardStyles = () => StyleSheet.create({
     marginBottom: 2,
   },
   cardTimestamp: {
-    fontSize: 10,
-    color: '#64748B',
-    marginBottom: 6,
+    fontSize: moderateScale(10),
+    color: theme.colors.textSecondary,
+    marginBottom: scale(6),
+    // Responsive typography
+    ...(isTablet && {
+      fontSize: moderateScale(11),
+    }),
+    ...(isDesktop && {
+      fontSize: moderateScale(12),
+    }),
   },
   cardStatusRow: {
     flexDirection: 'row',
@@ -915,8 +942,8 @@ export const createActivityCardStyles = () => StyleSheet.create({
     gap: 6,
   },
   statusIndicator: {
-    padding: 6,
-    borderRadius: 4,
+    padding: 4,
+    borderRadius: 3,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -927,12 +954,12 @@ export const createActivityCardStyles = () => StyleSheet.create({
     paddingHorizontal: 12,
     paddingBottom: 8,
     borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
-    backgroundColor: '#F8FAFC',
+    borderTopColor: theme.colors.border,
+    backgroundColor: theme.colors.pillBg,
   },
   collapsedSummaryText: {
     fontSize: 11,
-    color: '#64748B',
+    color: theme.colors.textSecondary,
     fontStyle: 'italic',
     textAlign: 'center',
   },
@@ -1046,7 +1073,6 @@ export const createActivityCardStyles = () => StyleSheet.create({
     fontWeight: '600',
   },
   retryButton: {
-    backgroundColor: '#DC2626',
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 6,
@@ -1056,6 +1082,112 @@ export const createActivityCardStyles = () => StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '600',
+  },
+
+  // Pending state indicator
+  pendingIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: '#F0F9FF',
+    borderTopWidth: 1,
+    borderTopColor: '#DBEAFE',
+  },
+  pendingSpinner: {
+    marginRight: 8,
+    padding: 4,
+    backgroundColor: '#DBEAFE',
+    borderRadius: 12,
+  },
+  pendingText: {
+    fontSize: 11,
+    color: '#3B82F6',
+    fontWeight: '500',
+  },
+
+  // API name section at bottom
+  apiNameSection: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: scale(12),
+    paddingVertical: scale(8),
+    backgroundColor: theme.colors.pillBg,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+    // Responsive adjustments
+    ...(isTablet && {
+      paddingHorizontal: scale(16),
+      paddingVertical: scale(10),
+    }),
+    ...(isDesktop && {
+      paddingHorizontal: scale(20),
+      paddingVertical: scale(12),
+    }),
+  },
+  apiNameText: {
+    fontSize: moderateScale(12),
+    fontWeight: '600',
+    color: theme.colors.textPrimary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    // Responsive typography
+    ...(isTablet && {
+      fontSize: moderateScale(13),
+    }),
+    ...(isDesktop && {
+      fontSize: moderateScale(14),
+    }),
+  },
+
+  // Additional information section
+  additionalInfoSection: {
+    padding: scale(12),
+    backgroundColor: theme.colors.pillBg,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+    // Responsive adjustments
+    ...(isTablet && {
+      padding: scale(16),
+    }),
+    ...(isDesktop && {
+      padding: scale(20),
+    }),
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: scale(6),
+    paddingVertical: scale(2),
+  },
+  infoLabel: {
+    fontSize: moderateScale(11),
+    color: theme.colors.textSecondary,
+    fontWeight: '500',
+    flex: 1,
+    // Responsive typography
+    ...(isTablet && {
+      fontSize: moderateScale(12),
+    }),
+    ...(isDesktop && {
+      fontSize: moderateScale(13),
+    }),
+  },
+  infoValue: {
+    fontSize: moderateScale(11),
+    color: theme.colors.textPrimary,
+    fontWeight: '600',
+    flex: 1,
+    textAlign: 'right',
+    // Responsive typography
+    ...(isTablet && {
+      fontSize: moderateScale(12),
+    }),
+    ...(isDesktop && {
+      fontSize: moderateScale(13),
+    }),
   },
 });
 
@@ -1101,42 +1233,5 @@ export const createEmptyStateStyles = () => StyleSheet.create({
     marginLeft: 8,
     flex: 1,
     lineHeight: 16,
-  },
-});
-
-export const createActionButtonsStyles = () => StyleSheet.create({
-  actionSection: {
-    marginBottom: 16,
-    padding: 16,
-    backgroundColor: '#F8FAFC',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  actionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-    justifyContent: 'center',
-  },
-  actionTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#1E293B',
-    textAlign: 'center',
-    marginLeft: 8,
-  },
-  retryHint: {
-    fontSize: 11,
-    color: '#94A3B8',
-    textAlign: 'center',
-    marginTop: 8,
-    fontStyle: 'italic',
-    lineHeight: 14,
   },
 });

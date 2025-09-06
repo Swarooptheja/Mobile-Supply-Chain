@@ -2,9 +2,9 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   SafeAreaView,
   StatusBar,
-  StyleSheet,
   View,
   Alert,
+  Dimensions,
 } from 'react-native';
 import { HeaderButton } from '../components';
 import { AppHeader } from '../components/AppHeader';
@@ -19,9 +19,11 @@ import { loadToDockService } from '../services/loadToDockService';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 import { useSortAndFilter } from '../hooks/useSortAndFilter';
 import { useAttractiveNotification } from '../context/AttractiveNotificationContext';
+import { useTheme } from '../context/ThemeContext';
 import { getSortOptions, getFilterOptions } from '../constants/sortFilterOptions';
 import { useResponsive } from '../hooks/useResponsive';
 import { BUSINESS_CONFIG } from '../config';
+import { createLoadToDockListStyles } from '../styles/LoadToDockListScreen.styles';
 
 interface LoadToDockListScreenProps {
   navigation: any;
@@ -33,6 +35,14 @@ const LoadToDockListScreen: React.FC<LoadToDockListScreenProps> = ({ navigation 
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
   const { showError } = useAttractiveNotification();
   const { headerButtonSpacing } = useResponsive();
+  const theme = useTheme();
+  
+  // Device size detection for responsive design
+  const { width: screenWidth } = Dimensions.get('window');
+  const isTablet = screenWidth > 768 && screenWidth <= 1024;
+  const isDesktop = screenWidth > 1024;
+  
+  const styles = createLoadToDockListStyles(theme, isTablet, isDesktop);
 
   // Sort and filter hook
   const {
@@ -185,7 +195,10 @@ const LoadToDockListScreen: React.FC<LoadToDockListScreenProps> = ({ navigation 
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#1e3a8a" />
+      <StatusBar 
+        barStyle={theme.colors.background === '#121212' ? "light-content" : "dark-content"} 
+        backgroundColor={theme.colors.primary} 
+      />
       
       {/* Header */}
       <AppHeader 
@@ -251,42 +264,5 @@ const LoadToDockListScreen: React.FC<LoadToDockListScreenProps> = ({ navigation 
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  headerRightContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  searchSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
-    gap: 16,
-    minHeight: 64, // Ensure consistent height for alignment
-  },
-  searchBarContainer: {
-    flex: 1,
-    height: 48,
-    justifyContent: 'center',
-  },
-  contentSection: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 16,
-  },
-  itemsList: {
-    flex: 1,
-  },
-  itemsListContent: {
-    paddingBottom: 20,
-  },
-});
 
 export default LoadToDockListScreen;

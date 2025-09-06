@@ -83,6 +83,7 @@ export const useActivityManager = (): UseActivityManagerReturn => {
           canExpand: updates.canExpand !== undefined ? updates.canExpand : activity.canExpand,
           orgId: updates.orgId || activity.orgId,
           defaultOrgId: updates.defaultOrgId || activity.defaultOrgId,
+          apiName: updates.apiName || activity.apiName,
         };
         return { ...activity, ...safeUpdates };
       }
@@ -169,6 +170,7 @@ export const useActivityManager = (): UseActivityManagerReturn => {
         lastRetryTime: undefined,
         orgId: api.requiresOrgId ? 'pending' : undefined,
         defaultOrgId: api.requiresDefaultOrgId ? 'pending' : undefined,
+        apiName: api.apiName,
       })),
       ...configApis.map((api, index) => ({
         id: `config_${api.responsibility || 'unknown'}_${index}`,
@@ -187,6 +189,7 @@ export const useActivityManager = (): UseActivityManagerReturn => {
         lastRetryTime: undefined,
         orgId: api.requiresOrgId ? 'pending' : undefined,
         defaultOrgId: api.requiresDefaultOrgId ? 'pending' : undefined,
+        apiName: api.apiName,
       })),
       ...transactionalApis.map((api, index) => ({
         id: `transactional_${api.responsibility || 'unknown'}_${index}`,
@@ -205,6 +208,7 @@ export const useActivityManager = (): UseActivityManagerReturn => {
         lastRetryTime: undefined,
         orgId: api.requiresOrgId ? 'pending' : undefined,
         defaultOrgId: api.requiresDefaultOrgId ? 'pending' : undefined,
+        apiName: api.apiName,
       })),
     ];
   }, []);
@@ -226,7 +230,7 @@ export const useActivityManager = (): UseActivityManagerReturn => {
       !calledApis.current.has(activity.id)
     );
 
-    if (uncalledActivities.length === 0) {
+    if (!uncalledActivities.length) {
       console.log('All APIs in this group have already been called');
       return;
     }
@@ -406,7 +410,7 @@ export const useActivityManager = (): UseActivityManagerReturn => {
         return;
       }
 
-      showSuccess('Starting Synchronization', `Processing ${initialActivities.length} APIs`);
+      // showSuccess('Starting Synchronization', `Processing ${initialActivities.length} APIs`);
 
       // Log activity details for debugging
       console.log('Activities to process:', initialActivities.map(a => ({

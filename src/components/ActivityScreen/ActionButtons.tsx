@@ -3,6 +3,7 @@ import { View, Text } from 'react-native';
 import { VectorIcon } from '../VectorIcon';
 import { Button } from '../Button';
 import { createActionButtonsStyles } from '../../styles/ActivityScreen.styles';
+import { getButtonColor } from '../../styles/global.styles';
 
 interface ActionButtonsProps {
   showRetryButton: boolean;
@@ -17,7 +18,6 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
   onRetryFailed,
   isProcessing
 }) => {
-  const styles = createActionButtonsStyles();
   
   // Show retry button when there are failures
   if (!showRetryButton) {
@@ -25,16 +25,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
   }
   
   return (
-    <View style={styles.actionSection}>
-      <View style={styles.actionHeader}>
-        <VectorIcon
-          name="refresh"
-          iconSet="MaterialIcons"
-          size={20}
-          color="#3B82F6"
-        />
-        <Text style={styles.actionTitle}>Retry Failed APIs</Text>
-      </View>
+    <View>
       <Button
         title={`Retry ${failedCount || 0} Failed API${(failedCount || 0) !== 1 ? 's' : ''}`}
         onPress={onRetryFailed}
@@ -42,10 +33,9 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
         variant="solid"
         size="lg"
         fullWidth
+        style={{ backgroundColor: getButtonColor() }}
       />
-      <Text style={styles.retryHint}>
-        Tap to retry all failed APIs at once
-      </Text>
+
     </View>
   );
 };

@@ -83,11 +83,11 @@ const OrganizationScreen: React.FC = () => {
   const styles = useMemo(() => createOrganizationScreenStyles(theme), [theme]);
   
   const searchResultsCount = useMemo(() => {
-    if (!searchText || !organizations.length) return null;
+    if (!searchText || !organizations || !organizations.length) return null;
     return `${organizations.length} organization${organizations.length !== 1 ? 's' : ''} found`;
-  }, [searchText, organizations.length]);
+  }, [searchText, organizations]);
 
-  const isInitialLoad = useMemo(() => loading && organizations.length === 0, [loading, organizations.length]);
+  const isInitialLoad = useMemo(() => loading && (!organizations || organizations.length === 0), [loading, organizations]);
 
   // Handle pull-to-refresh
   const handleRefresh = async () => {
@@ -123,15 +123,18 @@ const OrganizationScreen: React.FC = () => {
         </View>
 
         <PullToRefreshFlatList
-          data={organizations}
-          keyExtractor={(item) => String(item.InventoryOrgId ?? item.id)}
-          renderItem={({ item }) => (
-            <OrganizationItem
-              item={item}
-              selected={selectedId === String(item.InventoryOrgId ?? item.id)}
-              onSelect={handleSelectOrganization}
-            />
-          )}
+          data={organizations || []}
+          keyExtractor={(item) => String(item?.InventoryOrgId ?? item?.id ?? '')}
+          renderItem={({ item }) => {
+            if (!item) return null;
+            return (
+              <OrganizationItem
+                item={item}
+                selected={selectedId === String(item?.InventoryOrgId ?? item?.id ?? '')}
+                onSelect={handleSelectOrganization}
+              />
+            );
+          }}
           ItemSeparatorComponent={() => <View style={styles.listSeparator} />}
           contentContainerStyle={styles.listContent}
           onEndReached={handleEndReached}

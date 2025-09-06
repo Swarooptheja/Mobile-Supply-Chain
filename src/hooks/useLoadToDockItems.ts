@@ -24,21 +24,33 @@ export function useLoadToDockItems({ deliveryId, onError }: UseLoadToDockItemsPr
   const mediaStatusRef = useRef<Map<string, MediaStatus>>(new Map());
   // Use ref to track original items for search reset
   const originalItemsRef = useRef<ILoadToDockItemDetail[]>([]);
+  // Use ref to track if data has been loaded to prevent repeated loading
+  const dataLoadedRef = useRef<boolean>(false);
 
-  // Load items when screen comes into focus
+  // Reset data loaded flag when deliveryId changes
+  useEffect(() => {
+    dataLoadedRef.current = false;
+  }, [deliveryId]);
+
+  // Load items when screen comes into focus, but only once
   useFocusEffect(
     useCallback(() => {
+      // Only load data if it hasn't been loaded yet
+      if (dataLoadedRef.current) {
+        return;
+      }
+
       const loadItems = async () => {
         setIsLoading(true);
         try {
           const data = await loadToDockService.getItemsByDeliveryId(deliveryId);
-          console.log('Loading items, count:', data.length);
+          // console.log('Loading items, count:', data.length);
           
           // Merge with existing media status to preserve updates
           const mergedData = data.map(newItem => {
             const storedMediaStatus = mediaStatusRef.current.get(newItem.DeliveryLineId);
             if (storedMediaStatus) {
-              console.log(`🎬 Restoring media status for ${newItem.ItemNumber}:`, storedMediaStatus);
+              // console.log(`🎬 Restoring media status for ${newItem.ItemNumber}:`, storedMediaStatus);
               return { ...newItem, mediaData: storedMediaStatus };
             }
             return newItem;
@@ -47,8 +59,9 @@ export function useLoadToDockItems({ deliveryId, onError }: UseLoadToDockItemsPr
           setItems(mergedData);
           setFilteredItems(mergedData);
           originalItemsRef.current = mergedData;
+          dataLoadedRef.current = true; // Mark data as loaded
         } catch (serviceError) {
-          console.log('Service not available, keeping existing data');
+          // console.log('Service not available, keeping existing data');
         } finally {
           setIsLoading(false);
         }
@@ -68,7 +81,7 @@ export function useLoadToDockItems({ deliveryId, onError }: UseLoadToDockItemsPr
     try {
       setIsLoading(true);
       const searchResults = await loadToDockService.searchItemsByDeliveryId(deliveryId, searchQuery);
-      console.log('Search results count:', searchResults.length);
+      // console.log('Search results count:', searchResults.length);
       setFilteredItems(searchResults);
     } catch (error) {
       console.error('Error searching items:', error);
@@ -80,7 +93,7 @@ export function useLoadToDockItems({ deliveryId, onError }: UseLoadToDockItemsPr
 
   // Update media status for an item
   const updateItemMediaStatus = useCallback((deliveryLineId: string, hasPhotos: boolean, hasVideo: boolean, capturedMedia: IMediaItem[]) => {
-    console.log(`🎬 Updating media status for ${deliveryLineId}:`, { hasPhotos, hasVideo, capturedMediaCount: capturedMedia.length });
+    // console.log(`🎬 Updating media status for ${deliveryLineId}:`, { hasPhotos, hasVideo, capturedMediaCount: capturedMedia.length });
     
     // Store in ref for persistence across re-renders
     mediaStatusRef.current.set(deliveryLineId, { hasPhotos, hasVideo, capturedMedia });
@@ -92,7 +105,7 @@ export function useLoadToDockItems({ deliveryId, onError }: UseLoadToDockItemsPr
           : item
       );
       
-      console.log(`🎬 Updated items for ${deliveryLineId}:`, updatedItems.find(item => item.DeliveryLineId === deliveryLineId));
+      // console.log(`🎬 Updated items for ${deliveryLineId}:`, updatedItems.find(item => item.DeliveryLineId === deliveryLineId));
       return updatedItems;
     };
 
@@ -104,7 +117,7 @@ export function useLoadToDockItems({ deliveryId, onError }: UseLoadToDockItemsPr
 
   // Update item quantity
   const updateItemQuantity = useCallback((deliveryLineId: string, newQuantity: number) => {
-    console.log(`🔢 Updating quantity for ${deliveryLineId}:`, { newQuantity });
+    // console.log(`🔢 Updating quantity for ${deliveryLineId}:`, { newQuantity });
     
     const updateFunction = (prevItems: ILoadToDockItemDetail[]) => 
       prevItems.map(i => 
@@ -118,7 +131,7 @@ export function useLoadToDockItems({ deliveryId, onError }: UseLoadToDockItemsPr
     // Update the original items ref as well
     originalItemsRef.current = updateFunction(originalItemsRef.current);
     
-    console.log(`🔢 Updated quantity for ${deliveryLineId}:`, newQuantity.toString());
+    // console.log(`🔢 Updated quantity for ${deliveryLineId}:`, newQuantity.toString());
   }, []);
 
   // Get current media status for an item

@@ -18,6 +18,7 @@ export interface IActivity {
   defaultOrgId?: string | null;
   retryCount: number;
   lastRetryTime?: Date;
+  apiName: string;
 }
 
 export interface IApiResult {

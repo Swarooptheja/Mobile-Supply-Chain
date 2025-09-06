@@ -16,8 +16,6 @@ export const useSafeValues = (
   },
   data: {
     overallProgress?: { percentage: number };
-    statistics?: { completed: number; failed: number; total: number; processing: number };
-    totalRecordsCount?: number;
     consolidatedApiRecords?: any[];
   }
 ) => {
@@ -26,8 +24,6 @@ export const useSafeValues = (
   const responsibilities = routeParams.responsibilities;
   const defaultOrgId = routeParams.defaultOrgId;
   const overallProgress = data.overallProgress;
-  const statistics = data.statistics;
-  const totalRecordsCount = data.totalRecordsCount;
   const consolidatedApiRecords = data.consolidatedApiRecords;
 
   return useMemo(() => ({
@@ -38,16 +34,12 @@ export const useSafeValues = (
     
     // Data with safe fallbacks
     overallProgress: overallProgress || { percentage: 0 },
-    statistics: statistics || { completed: 0, failed: 0, total: 0, processing: 0 },
-    totalRecordsCount: totalRecordsCount || 0,
     consolidatedApiRecords: consolidatedApiRecords || [],
   }), [
     selectedOrgId,
     responsibilities,
     defaultOrgId,
     overallProgress,
-    statistics,
-    totalRecordsCount,
     consolidatedApiRecords
   ]);
 };
