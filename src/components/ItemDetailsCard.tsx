@@ -31,31 +31,28 @@ const ItemDetailsCard: React.FC<IItemDetailsCardProps> = ({
 
   return (
     <View style={[styles.itemDetailsCard, style]}>
-      {/* Item Information Section */}
-      <View style={styles.itemInfoSection}>
-        <Text style={styles.itemIdentifier}>
-          {itemNumber}
-        </Text>
-        <Text style={styles.itemDescription}>{itemDescription}</Text>
+      {/* Item Number Tag */}
+      <View style={styles.itemTagContainer}>
+        <Text style={styles.itemTag}>{itemNumber}</Text>
       </View>
       
-      {/* Quantity Section */}
+      {/* Item Description */}
+      <Text style={styles.itemDescription}>{itemDescription}</Text>
+      
+      {/* Quantity Section - Two Columns */}
       <View style={styles.quantitySection}>
+        {/* Left Column - Requested */}
         <View style={styles.quantityRow}>
-          <Text style={styles.quantityLabel}>Requested Qty:</Text>
+          <Text style={styles.quantityLabel}>Requested:</Text>
           <Text style={styles.quantityValue}>{qtyRequested} {itemUom}</Text>
         </View>
+        
+        {/* Right Column - Loaded */}
         <View style={styles.quantityRow}>
-          <Text style={styles.quantityLabel}>Loaded Qty:</Text>
+          <Text style={styles.quantityLabel}>Loaded:</Text>
           <View style={styles.loadedQuantityRow}>
-            <Text style={styles.quantityValue}>{qtyPicked}</Text>
+            <Text style={styles.quantityInput}>{qtyPicked}</Text>
             <Text style={styles.quantityLabel}> of {qtyRequested} {itemUom}</Text>
-            {/* Status indicator */}
-            {Number(qtyPicked) === Number(qtyRequested) ? (
-              <Text style={styles.statusIndicator}>✅</Text>
-            ) : (
-              <Text style={styles.statusIndicator}>⚠️</Text>
-            )}
           </View>
         </View>
       </View>

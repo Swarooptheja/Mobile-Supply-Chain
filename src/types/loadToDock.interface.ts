@@ -192,4 +192,5 @@ export interface IUploadDocumentResponse {
     webUrl: string;
     ReturnStatus: 'S' | 'E';
     ReturnMessage: string;
+    MobileTransactionId: number;
 }

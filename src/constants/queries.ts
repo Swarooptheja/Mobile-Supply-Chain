@@ -125,18 +125,18 @@ export const LOAD_TO_DOCK_QUERIES = {
     CREATE_LOAD_TO_DOCK_TRANSACTION_TABLE: `
         CREATE TABLE IF NOT EXISTS ${TableNames.LOAD_TO_DOCK_TRANSACTION_HISTORY} (
             MobileTransactionId TEXT PRIMARY KEY,
-            TransactionDate TEXT NOT NULL,
-            DeliveryLineId TEXT NOT NULL,
-            VehicleNumber TEXT NOT NULL,
-            DockDoor TEXT NOT NULL,
-            LpnNumber TEXT NOT NULL,
-            InventoryOrgId TEXT NOT NULL,
-            UserId INTEGER NOT NULL,
-            ResponsibilityId TEXT NOT NULL,
-            ItemsData TEXT NOT NULL,
+            TransactionDate TEXT,
+            DeliveryLineId TEXT,
+            VehicleNumber TEXT,
+            DockDoor TEXT,
+            LpnNumber TEXT,
+            InventoryOrgId TEXT,
+            UserId INTEGER,
+            ResponsibilityId TEXT,
+            ItemsData TEXT,
             EBSTransactionStatus TEXT DEFAULT 'pending',
             sharePointTransactionStatus TEXT DEFAULT 'pending',
-            CreatedAt TEXT NOT NULL,
+            CreatedAt TEXT,
             Message TEXT,
             UpdatedAt TEXT
         )

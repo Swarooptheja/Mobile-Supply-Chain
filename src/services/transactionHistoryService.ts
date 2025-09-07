@@ -118,7 +118,7 @@ class TransactionHistoryService {
 
       // Add status filter
       if (filter.status && filter.status !== 'all') {
-        conditions.push('EBSTransactionStatus = ?');
+        conditions.push('sharePointTransactionStatus = ?');
         params.push(filter.status);
       }
 
@@ -345,7 +345,7 @@ class TransactionHistoryService {
         transaction.VehicleNumber,
         transaction.DockDoor,
         transaction.LpnNumber,
-        transaction.EBSTransactionStatus,
+        transaction.sharePointTransactionStatus,
         transaction.Message || '',
         transaction.CreatedAt
       ]);
@@ -391,15 +391,15 @@ class TransactionHistoryService {
     return {
       id: transaction.MobileTransactionId,
       timestamp: this.formatTimestamp(transaction.CreatedAt),
-      status: transaction.EBSTransactionStatus,
+      status: transaction.sharePointTransactionStatus,
       deliveryId: transaction.DeliveryLineId,
       vehicleNumber: transaction.VehicleNumber,
       dockDoor: transaction.DockDoor,
       lpnNumber: transaction.LpnNumber,
       message: transaction.Message,
-      isPending: transaction.EBSTransactionStatus === 'pending',
-      isSuccess: transaction.EBSTransactionStatus === 'success',
-      isFailed: transaction.EBSTransactionStatus === 'failed'
+      isPending: transaction.sharePointTransactionStatus === 'pending',
+      isSuccess: transaction.sharePointTransactionStatus === 'success',
+      isFailed: transaction.sharePointTransactionStatus === 'failed'
     };
   }
 

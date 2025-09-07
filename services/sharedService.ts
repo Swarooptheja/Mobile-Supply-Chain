@@ -21,7 +21,7 @@ export async function apiService<T = any>(
   url: string, 
   config: IApiRequestConfig
 ): Promise<IApiResponse<T>> {
-  const { method, headers = {}, body, timeout = 30000 } = config;
+  const { method, headers = {}, body, timeout = 150000 } = config;
   
   try {
     console.log(`Making API request to: ${url}`);

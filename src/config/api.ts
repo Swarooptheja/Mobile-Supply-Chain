@@ -28,6 +28,7 @@ export const API_VERSION = {
   EBS_23A: 'EBS/23A',
   EBS_23B: 'EBS/23B',
   EBS_23C: 'EBS/23C',
+  CLD_25C: 'CLD/25C',
 }
 
 // Current environment - change this to switch between environments
@@ -58,6 +59,7 @@ export const API_ENDPOINTS = {
   GL_PERIODS: `${API_VERSION.EBS_20D}/getGLPeriods`,
   INVENTORY_PERIODS: `${API_VERSION.EBS_20D}/getInventoryPeriods`,
   CREATE_LOAD_TO_DOCK_WMS: `${API_VERSION.EBS_23C}/createLoadtoDockwms`,
+  UPLOAD_DOCUMENTS_TO_PROPELDB: `${API_VERSION.CLD_25C}/uploadDocumentsToPropelDB`,
 };
 
 // API Headers
@@ -69,7 +71,7 @@ export const getApiHeaders = () => ({
 });
 
 // API Timeout (in milliseconds)
-export const API_TIMEOUT = 30000; // 30 seconds
+export const API_TIMEOUT = 150000; // 30 seconds
 
 // Demo credentials (for testing purposes)
 export const DEMO_CREDENTIALS = {

@@ -25,7 +25,7 @@ type TransactionStatus = 'pending' | 'success' | 'failed' | 'all';
 const TransactionHistoryScreen: React.FC<TransactionHistoryScreenProps> = ({ navigation }) => {
   const [selectedStatus, setSelectedStatus] = useState<TransactionStatus>('all');
   
-  const { showError, showSuccess } = useAttractiveNotification();
+  const { showError } = useAttractiveNotification();
   const theme = useTheme();
   const styles = createTransactionHistoryScreenStyles(theme);
   const insets = useSafeAreaInsets();
@@ -143,7 +143,7 @@ const TransactionHistoryScreen: React.FC<TransactionHistoryScreenProps> = ({ nav
   );
 
   const renderTransactionCard = useCallback((transaction: any, index: number) => {
-    const status = transaction.EBSTransactionStatus;
+    const status = transaction.sharePointTransactionStatus;
     const isPending = status === 'pending';
     const isSuccess = status === 'success';
     const isFailed = status === 'failed';

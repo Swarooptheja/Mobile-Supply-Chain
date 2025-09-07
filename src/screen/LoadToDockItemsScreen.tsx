@@ -1,13 +1,14 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useRef } from 'react';
 import {
+  Dimensions,
   SafeAreaView,
   ScrollView,
   StatusBar,
   Text,
-  View,
-  Dimensions
+  View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { getDataFromResultSet } from '../../services/sharedService';
 import {
   DeliveryDetailsCard,
   LoadToDockHeader,
@@ -15,22 +16,23 @@ import {
   SearchAndScanSection,
   VehicleInputSection
 } from '../components';
+import { TransactionBanner } from '../components/TransactionBanner';
 import BarcodeScanner from '../components/BarcodeScanner';
 import { Button } from '../components/Button';
+import { RESPONSIBILITIES } from '../config/api';
+import { LOGIN_QUERIES } from '../constants/queries';
 import { useAttractiveNotification } from '../context/AttractiveNotificationContext';
+import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useLoadToDockItems } from '../hooks/useLoadToDockItems';
 import { useLoadToDockValidation } from '../hooks/useLoadToDockValidation';
 import { useNavigationHandlers } from '../hooks/useNavigationHandlers';
 import { useSearchWithDebounce } from '../hooks/useSearchWithDebounce';
-import { loadToDockService, LoadToDockRequest } from '../services/loadToDockService';
+import { useTransactionBanner } from '../hooks/useTransactionBanner';
+import { LoadToDockRequest, loadToDockService } from '../services/loadToDockService';
+import { simpleDatabaseService } from '../services/simpleDatabase';
 import { createLoadToDockItemsScreenStyles } from '../styles/LoadToDockItemsScreen.styles';
 import { ILoadToDockItemDetail, LoadToDockItemsScreenProps } from '../types/loadToDock.interface';
-import { useAuth } from '../context/AuthContext';
-import { LOGIN_QUERIES } from '../constants/queries';
-import { simpleDatabaseService } from '../services/simpleDatabase';
-import { getDataFromResultSet } from '../../services/sharedService';
-import { RESPONSIBILITIES } from '../config/api';
 
 const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, navigation }) => {
   const { deliveryItem } = route.params;
@@ -43,6 +45,24 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { defaultOrgId } = useAuth();
+
+  // Transaction banner management
+  const {
+    bannerState,
+    showUploading,
+    updateProgress,
+    showSuccess: showBannerSuccess,
+    showError: showBannerError,
+    showOffline,
+    hideBanner,
+  } = useTransactionBanner({
+    autoHide: true,
+    autoHideDelay: 3000,
+    showProgress: true,
+  });
+
+  // Ref to track if transaction is in progress to prevent duplicate calls
+  const isTransactionInProgress = useRef(false);
 
   // Device size detection for responsive design
   const { width: screenWidth } = Dimensions.get('window');
@@ -131,73 +151,148 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
 
 
 
-  const handleLoadToDock = async () => {
+  const handleLoadToDock = useCallback(async () => {
+    // Prevent duplicate calls
+    if (isTransactionInProgress.current) {
+      console.warn('Transaction already in progress, ignoring duplicate call');
+      return;
+    }
+
     try {
       if (!canLoadToDock) {
         showError('Cannot Load to Dock', 'Please ensure all requirements are met');
         return;
       }
 
+      // Set transaction in progress flag
+      isTransactionInProgress.current = true;
 
+      // Show uploading banner
+      showUploading('Preparing documents for upload...', { showProgress: true });
 
-      // Show loading state
-      // Note: isLoading is managed by the useLoadToDockItems hook
+      // Step 1: Validate and prepare data
+      updateProgress(10, 'Validating item requirements...');
 
-      // Prepare request data
-      const userData = await simpleDatabaseService.executeQuery(LOGIN_QUERIES.GET_USER_ID);
-      const userIdArray = getDataFromResultSet(userData);
-
-      const responsibilityData = await simpleDatabaseService.executeQuery(LOGIN_QUERIES.GET_USER_RESPONSIBILITIES);
-      const responsibilityArray = getDataFromResultSet(responsibilityData);
-      const loadToDockResponsibility = responsibilityArray.filter((responsibility: any) => responsibility.RESPONSIBILITY.toLowerCase() === RESPONSIBILITIES.LOAD_TO_DOCK);
-
-
-      const request: LoadToDockRequest = {
-        // deliveryId: deliveryItem.deliveryId,
-        vehicleNumber: vehicleNumber.trim(),
-        dockDoor: 'DOCK001', // You can make this configurable
-        inventoryOrgId: defaultOrgId, // You should get this from user context
-        userId: userIdArray[0].USER_ID || '1001', // You should get this from user context
-        responsibilityId: loadToDockResponsibility[0]?.RESPONSIBILITY_ID || '66732', // Default responsibility ID
-        items: items
-          .filter(item => {
-            const hasMedia = item.mediaData?.hasPhotos && item.mediaData?.hasVideo;
-            const hasQuantity = Number(item.QtyPicked) > 0;
-            return hasMedia && hasQuantity;
-          })
-      };
-
-      if(!request.items) {
-        showError('Error', 'Please add at least one item to load to dock');
-        return;
-      }
-
-      // Process the request
-      const result = await loadToDockService.processLoadToDock(request);
-
-      if (result.success) {
-        if (result.offline) {
-          showSuccess('Data Saved Locally', 'Your data has been saved locally and will sync when you\'re back online.');
-        } else {
-          showSuccess('Success', 'Items loaded to dock successfully!');
-        }
+      // Prepare request data with error handling
+      let userData, responsibilityData;
+      try {
+        userData = await simpleDatabaseService.executeQuery(LOGIN_QUERIES.GET_USER_ID);
+        const userIdArray = getDataFromResultSet(userData);
         
-        // Navigate back to list page
-        navigation.goBack();
-      } else {
-        showError('Error', result.error || 'Failed to load items to dock');
+        if (!userIdArray || userIdArray.length === 0) {
+          throw new Error('User ID not found');
+        }
+
+        // updateProgress(20, 'Preparing transaction data...');
+
+        responsibilityData = await simpleDatabaseService.executeQuery(LOGIN_QUERIES.GET_USER_RESPONSIBILITIES);
+        const responsibilityArray = getDataFromResultSet(responsibilityData);
+        const loadToDockResponsibility = responsibilityArray.filter((responsibility: any) => 
+          responsibility.RESPONSIBILITY.toLowerCase() === RESPONSIBILITIES.LOAD_TO_DOCK
+        );
+
+        // if (!loadToDockResponsibility || loadToDockResponsibility.length === 0) {
+        //   throw new Error('Load to Dock responsibility not found');
+        // }
+
+        // updateProgress(30, 'Validating items and media...');
+
+        // Filter and validate items
+        const validItems = items.filter(item => {
+          const hasMedia = item.mediaData?.hasPhotos && item.mediaData?.hasVideo;
+          const hasQuantity = Number(item.QtyPicked) > 0;
+          return hasMedia && hasQuantity;
+        });
+
+        if (!validItems.length) {
+          throw new Error('No valid items found. Please ensure all items have media and quantity.');
+        }
+
+        // updateProgress(40, 'Creating transaction request...');
+
+        const request: LoadToDockRequest = {
+          vehicleNumber: vehicleNumber.trim(),
+          dockDoor: 'DOCK001',
+          inventoryOrgId: defaultOrgId,
+          userId: userIdArray[0].USER_ID || '1001',
+          responsibilityId: loadToDockResponsibility[0]?.RESPONSIBILITY_ID || '66732',
+          items: validItems
+        };
+
+        updateProgress(50, 'Uploading to cloud storage...');
+
+        // Process the request
+        const result = await loadToDockService.processLoadToDock(request);
+
+        updateProgress(90, 'Finalizing upload...');
+
+        if (result.success) {
+          updateProgress(100, 'Upload complete!');
+          
+          if (result.offline) {
+            showOffline('Data saved locally and will sync when you\'re back online', {
+              autoHide: true,
+              autoHideDelay: 4000
+            });
+          } else {
+            showBannerSuccess('Documents uploaded to cloud storage successfully!', {
+              autoHide: true,
+              autoHideDelay: 3000
+            });
+          }
+          
+          // Auto-navigate after success (with delay for user to see success message)
+          setTimeout(() => {
+            navigation.goBack();
+          }, result.offline ? 4000 : 3000);
+        } else {
+          throw new Error(result.error || 'Failed to upload documents to cloud storage');
+        }
+
+      } catch (dbError) {
+        console.error('Database error:', dbError);
+        throw new Error(`Database error: ${dbError instanceof Error ? dbError.message : 'Unknown database error'}`);
       }
 
     } catch (error) {
       console.error('Error loading to dock:', error);
-      showError('Error', 'Failed to load items to dock');
+      
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'Failed to upload documents to cloud storage';
+      
+      showBannerError(errorMessage, {
+        autoHide: false // Don't auto-hide error banners
+      });
+      
     } finally {
-      // Note: isLoading is managed by the useLoadToDockItems hook
+      // Reset transaction in progress flag
+      isTransactionInProgress.current = false;
     }
-  };
+  }, [
+    canLoadToDock, 
+    showError, 
+    showUploading, 
+    updateProgress, 
+    showOffline, 
+    showBannerSuccess, 
+    showBannerError, 
+    navigation, 
+    vehicleNumber, 
+    defaultOrgId, 
+    items
+  ]);
 
+  // Handle retry for failed transactions
+  const handleRetryTransaction = useCallback(() => {
+    hideBanner();
+    handleLoadToDock();
+  }, [hideBanner, handleLoadToDock]);
 
-
+  // Handle banner dismiss
+  const handleDismissBanner = useCallback(() => {
+    hideBanner();
+  }, [hideBanner]);
 
   const renderItem = useCallback((item: ILoadToDockItemDetail, index: number) => (
     <LoadToDockItemCard
@@ -216,6 +311,20 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
       <StatusBar 
         barStyle={theme.colors.background === '#121212' ? "light-content" : "dark-content"} 
         backgroundColor={theme.colors.primary} 
+      />
+      
+      {/* Transaction Banner */}
+      <TransactionBanner
+        visible={bannerState.visible}
+        status={bannerState.status}
+        message={bannerState.message}
+        showProgress={bannerState.showProgress}
+        progress={bannerState.progress}
+        autoHide={bannerState.autoHide}
+        autoHideDelay={bannerState.autoHideDelay}
+        onDismiss={handleDismissBanner}
+        onRetry={bannerState.status === 'error' ? handleRetryTransaction : undefined}
+        testID="load-to-dock-transaction-banner"
       />
       
       {/* Header */}

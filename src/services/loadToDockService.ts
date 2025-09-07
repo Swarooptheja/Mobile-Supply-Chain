@@ -1,5 +1,5 @@
-import { apiPost, getCurrentServerDate, getDataFromResultSet, getLocalTransactionId } from '../../services/sharedService';
-import { getApiHeaders } from '../config/api';
+import { getCurrentServerDate, getDataFromResultSet, getLocalTransactionId } from '../../services/sharedService';
+import { API_ENDPOINTS, buildApiUrl } from '../config/api';
 import { LOAD_TO_DOCK_QUERIES } from '../constants/queries';
 import { ILoadToDockItem, ILoadToDockItemDetail, ILoadToDockTransaction, ILoadToDockTransactionRequest, ITransactionResponse, IUploadDocumentResponse } from '../types/loadToDock.interface';
 import { IMediaItem } from '../types/media.interface';
@@ -57,6 +57,7 @@ export interface PropelDBFile {
   type: string;
   size: number;
   duration?: number | null;
+  uri: string;
 }
 
 class LoadToDockService {
@@ -419,8 +420,8 @@ class LoadToDockService {
           'pending',
           'pending',
           new Date().toISOString(),
+          '',
           ''
-
         ]);
       }
 
@@ -443,7 +444,8 @@ class LoadToDockService {
           success: true,
         });
       }
-      const transactionResponse = await this.postLoadToDockTransaction(pendingTransactions);
+      // const transactionResponse = await this.postLoadToDockTransaction(pendingTransactions);
+      const transactionResponse = await this.uploadMediaToPropelDB(pendingTransactions);
       console.log('📤 Transaction API response:', transactionResponse);
 
       if (!transactionResponse.success) {
@@ -586,11 +588,11 @@ class LoadToDockService {
       const uploadData = await this.preparePropelDBUploadData(itemsData, mediaContent);
       
       // Upload to PropelDB
-      const uploadResult = await this.postToPropelDB(uploadData);
+      const uploadResult = await this.postToPropelDB(uploadData, transaction.MobileTransactionId);
       
       if (uploadResult.success) {
         const data = uploadResult.data || [];
-        await this.updateTransactionStatus(data, transaction.MobileTransactionId);
+        await this.updateTransactionStatus(data);
 
         // Update transaction status to indicate successful media upload
         // await this.updateTransactionSharePointStatus(transaction.MobileTransactionId, 'success');
@@ -630,7 +632,8 @@ class LoadToDockService {
         base64: media.base64,
         type: media.type,
         size: media.size || 0,
-        duration: media.duration || null
+        duration: media.duration || null,
+        uri: media.uri
       }));
       
       return ({
@@ -646,11 +649,154 @@ class LoadToDockService {
   }
 
   /**
+ * Prepare data for PropelDB upload
+ */
+// private async preparePropelDBUploadData(itemsData: ILoadToDockItemDetail, mediaContent: IMediaItem[]): Promise<PropelDBUploadData> {
+//   try {
+//     // Parse transaction data to extract required fields
+//     // const itemsData: ILoadToDockItemDetail = JSON.parse(transaction.ItemsData);
+    
+//     // Extract customer number from transaction data
+//     // This might need to be adjusted based on your actual data structure
+//     const customerNumber = itemsData.CustomerName || 'CUST2509'; // Default fallback
+    
+//     // Filter out media items that don't have valid base64 data
+//     const validMediaContent = mediaContent.filter(media => {
+//       const hasValidBase64 = media.base64 && media.base64.length > 0;
+//       if (!hasValidBase64) {
+//         console.warn(`⚠️ Skipping media item with invalid base64 data:`, {
+//           type: media.type,
+//           size: media.size,
+//           base64Length: media.base64?.length || 0
+//         });
+//       }
+//       return hasValidBase64;
+//     });
+    
+//     if (validMediaContent.length === 0) {
+//       throw new Error('No valid media content found for upload');
+//     }
+    
+//     // Determine document type based on valid media content
+//     const hasVideo = validMediaContent.some(media => media.type === 'video');
+//     const documentType = hasVideo ? 'video' : 'photo';
+    
+//     // Use delivery ID as document number
+//     const documentNumber = itemsData.DeliveryLineId;
+    
+//     // Prepare files array with base64 data
+//     const files = validMediaContent.map(media => ({
+//       base64: media.base64,
+//       type: media.type,
+//       size: media.size || 0,
+//       duration: media.duration || null
+//     }));
+    
+//     console.log(`📋 Prepared ${files.length} valid files for upload (filtered out ${mediaContent.length - validMediaContent.length} invalid files)`);
+    
+//     return ({
+//       customerNumber,
+//       documentType,
+//       documentNumber,
+//       files
+//     });
+//   } catch (error) {
+//     console.error('❌ Error preparing PropelDB upload data:', error);
+//     throw new Error('Failed to prepare upload data');
+//   }
+// }
+
+  /**
    * POST request to PropelDB document upload API
    */
-  private async postToPropelDB(uploadData: PropelDBUploadData): Promise<{ success: boolean; error?: string, data?: IUploadDocumentResponse[] }> {
+  // private async postToPropelDB(uploadData: PropelDBUploadData, mobileTransactionId: number): Promise<{ success: boolean; error?: string, data?: IUploadDocumentResponse[] }> {
+  //   try {
+  //     const url = buildApiUrl(API_ENDPOINTS.UPLOAD_DOCUMENTS_TO_PROPELDB);
+      
+  //     // Create FormData for multipart form upload
+  //     const formData = new FormData();
+      
+  //     // Add form fields
+  //     formData.append('customerNumber', uploadData.customerNumber);
+  //     formData.append('documentType', uploadData.documentType);
+  //     formData.append('documentNumber', uploadData.documentNumber);
+  //     formData.append('MobileTransactionId', mobileTransactionId);
+      
+  //     // Add files to FormData
+  //     for (let i = 0; i < uploadData.files.length; i++) {
+  //       const file = uploadData.files[i];
+        
+  //       // Process base64 data for file upload
+  //       const base64Data = await this.base64ToBlob(file.base64, file.type);
+        
+  //       // Create file name with timestamp
+  //       const fileName = `${uploadData.documentNumber}_${file.type}_${Date.now()}_${i}.${file.type === 'video' ? 'mp4' : 'jpg'}`;
+        
+  //       // For React Native, create a file object with base64 data
+  //       const fileObject = {
+  //         uri: `data:${file.type === 'video' ? 'video/mp4' : 'image/jpeg'};base64,${base64Data}`,
+  //         type: file.type === 'video' ? 'video/mp4' : 'image/jpeg',
+  //         name: fileName
+  //       };
+        
+  //       formData.append('files', fileObject as any);
+  //     }
+      
+  //     console.log('📤 Uploading to PropelDB:', {
+  //       customerNumber: uploadData.customerNumber,
+  //       documentType: uploadData.documentType,
+  //       documentNumber: uploadData.documentNumber,
+  //       fileobjects: formData,
+  //       fileCount: uploadData.files.length
+  //     });
+      
+  //     // Make the API call
+  //     const response = await fetch(url, {
+  //       method: 'POST',
+  //       body: formData,
+  //       headers: {
+  //         'Accept': 'application/json',
+  //         // Don't set Content-Type header - let fetch set it with boundary for FormData
+  //       }
+  //     });
+
+  //     if (!response.ok) {
+  //       const errorText = await response.text();
+  //       throw new Error(`PropelDB API request failed: ${response.status} - ${errorText}`);
+  //     }
+      
+  //     const result = await response.json();
+  //     console.log('📥 PropelDB API response:', result);
+
+  //     // const response = await apiPost<any>(url, formData, {
+  //     //   ...getApiHeaders()
+  //     // });
+
+  //     if (result.data && result.data.Response) {
+  //       return ({ 
+  //         success: true,
+  //         data: result.data.Response
+  //       });
+  //     } else {
+  //       console.warn('⚠️ PropelDB API response missing expected data:', result.data);
+  //       return ({
+  //         success: false, 
+  //         error: 'PropelDB API request failed - invalid response format',
+  //       });
+  //     }
+      
+  //   } catch (error) {
+  //     console.error('❌ Error posting to PropelDB:', error);
+  //     return {
+  //       success: false,
+  //       error: error instanceof Error ? error.message : 'PropelDB API call failed'
+  //     };
+  //   }
+  // }
+
+  private async postToPropelDB(uploadData: PropelDBUploadData, mobileTransactionId: number): Promise<{ success: boolean; error?: string, data?: IUploadDocumentResponse[] }> {
     try {
-      const url = 'https://linuxserver.propelapps.com/CLD/24D/uploadDocumentsToPropelDB';
+      const url = buildApiUrl(API_ENDPOINTS.UPLOAD_DOCUMENTS_TO_PROPELDB);
       
       // Create FormData for multipart form upload
       const formData = new FormData();
@@ -659,23 +805,30 @@ class LoadToDockService {
       formData.append('customerNumber', uploadData.customerNumber);
       formData.append('documentType', uploadData.documentType);
       formData.append('documentNumber', uploadData.documentNumber);
+      formData.append('MobileTransactionId', mobileTransactionId.toString());
       
       // Add files to FormData
       for (let i = 0; i < uploadData.files.length; i++) {
         const file = uploadData.files[i];
         
-        // Process base64 data for file upload
-        const base64Data = await this.base64ToBlob(file.base64, file.type);
-        
         // Create file name with timestamp
         const fileName = `${uploadData.documentNumber}_${file.type}_${Date.now()}_${i}.${file.type === 'video' ? 'mp4' : 'jpg'}`;
         
-        // For React Native, create a file object with base64 data
+        // For React Native, create a proper file object
         const fileObject = {
-          uri: `data:${file.type === 'video' ? 'video/mp4' : 'image/jpeg'};base64,${base64Data}`,
+          uri: file.uri,
           type: file.type === 'video' ? 'video/mp4' : 'image/jpeg',
           name: fileName
         };
+        
+        console.log(`📎 Adding file ${i}:`, {
+          name: fileName,
+          type: fileObject.type,
+          base64Length: file.base64.length,
+          base64Preview: file.base64.substring(0, 50) + '...',
+          uri: file.uri,
+          uploadData: uploadData
+        });
         
         formData.append('files', fileObject as any);
       }
@@ -684,42 +837,36 @@ class LoadToDockService {
         customerNumber: uploadData.customerNumber,
         documentType: uploadData.documentType,
         documentNumber: uploadData.documentNumber,
-        fileCount: uploadData.files.length
+        fileCount: uploadData.files.length,
+        url: url
       });
       
       // Make the API call
-      // const response = await fetch(url, {
-      //   method: 'POST',
-      //   body: formData,
-      //   headers: {
-      //     // Don't set Content-Type header - let fetch set it with boundary for FormData
-      //     'Cookie': 'CF_AppSession=...' // TODO: Add proper session cookie
-      //   }
-      // });
-
-      const response = await apiPost<any>(url, formData, {
-        ...getApiHeaders()
+      const response = await fetch(url, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          // // 'Accept': 'application/json',
+          // "Content-Type": "multipart/form-data"
+          // // Don't set Content-Type header - let fetch set it with boundary for FormData
+        }
       });
 
-      if (response.data && response.data.Response) {
+      const result = await response.json();
+      console.log('📥 PropelDB API response:', result);
+  
+      if (result?.Response) {
         return ({ 
           success: true,
-          data: response.data.Response
+          data: result.Response
         });
       } else {
+        console.warn('⚠️ PropelDB API response missing expected data:', result.Response);
         return ({
           success: false, 
-          error: 'PropelDB API request failed',
+          error: 'PropelDB API request failed - invalid response format',
         });
       }
-      
-      // if (!response.ok) {
-      //   const errorText = await response.text();
-      //   throw new Error(`PropelDB API request failed: ${response.status} - ${errorText}`);
-      // }
-      
-      // const result = await response.json();
-      // console.log('📥 PropelDB API response:', result);
       
     } catch (error) {
       console.error('❌ Error posting to PropelDB:', error);
@@ -766,13 +913,13 @@ class LoadToDockService {
   /**
    * Update transaction status in database
    */
-  private async updateTransactionStatus(response: IUploadDocumentResponse[], mobileTransactionId: number): Promise<void> {
+  private async updateTransactionStatus(response: IUploadDocumentResponse[]): Promise<void> {
     try {
       const promises = [];
       
       for (let i = 0; i < response.length; i++) {
         const element = response[i];
-        
+        const mobileTransactionId = element.MobileTransactionId;
         // Determine sync status based on ReturnStatus
         let syncStatus = 'pending';
         let syncMessage = element.ReturnMessage || '';

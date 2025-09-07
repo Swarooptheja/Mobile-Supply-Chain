@@ -62,9 +62,15 @@ export const CommonIcons = {
   
   // Status icons
   check: { name: 'check', iconSet: 'MaterialIcons' as IconSet },
+  checkCircle: { name: 'check-circle', iconSet: 'MaterialIcons' as IconSet },
   error: { name: 'error', iconSet: 'MaterialIcons' as IconSet },
   warning: { name: 'warning', iconSet: 'MaterialIcons' as IconSet },
   info: { name: 'info', iconSet: 'MaterialIcons' as IconSet },
+  
+  // Cloud/Upload icons
+  cloudUpload: { name: 'cloud-upload', iconSet: 'MaterialIcons' as IconSet },
+  cloudOff: { name: 'cloud-off', iconSet: 'MaterialIcons' as IconSet },
+  cloudDone: { name: 'cloud-done', iconSet: 'MaterialIcons' as IconSet },
   
   // More options icon
   more: { name: 'more-vert', iconSet: 'MaterialIcons' as IconSet },
@@ -83,7 +89,7 @@ export const CommonIcons = {
   moon: { name: 'nightlight-round', iconSet: 'MaterialIcons' as IconSet },
 };
 
-export const VectorIcon: React.FC<IVectorIconProps> = ({
+const VectorIcon: React.FC<IVectorIconProps> = ({
   name,
   size,
   color,

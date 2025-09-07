@@ -1,102 +1,60 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useCallback } from 'react';
 import {
   SafeAreaView,
   StatusBar,
   View,
-  Alert
+  Alert,
+  ScrollView
 } from 'react-native';
-import { AppHeader } from '../components/AppHeader';
-import { Button } from '../components/Button';
-import { MediaCapture, ItemDetailsCard, DynamicTabs, CommonIcon, HeaderButton } from '../components';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { 
+  AppHeader, 
+  Button, 
+  ItemDetailsCard, 
+  HeaderButton, 
+  MediaSelectionModal,
+  MediaUploadSection,
+  MediaPreviewGrid,
+  MediaEmptyState
+} from '../components';
 
-import { LoadToDockItemDetailsScreenProps, TabType } from '../types/loadToDock.interface';
-import { IMediaItem } from '../types/media.interface';
+import { LoadToDockItemDetailsScreenProps } from '../types/loadToDock.interface';
 import { useAttractiveNotification } from '../context/AttractiveNotificationContext';
 import { useTheme } from '../context/ThemeContext';
+import { useMediaCapture } from '../hooks/useMediaCapture';
+import { useMediaModals } from '../hooks/useMediaModals';
 import { createLoadToDockItemDetailsScreenStyles } from '../styles/LoadToDockItemDetailsScreen.styles';
+import { getHeaderColor } from '../styles/global.styles';
 
 const LoadToDockItemDetailsScreen: React.FC<LoadToDockItemDetailsScreenProps> = ({ route, navigation }) => {
-  const { itemDetail, existingMediaStatus, existingMedia, onMediaSaved } = route.params;
-  const [activeTab, setActiveTab] = useState<TabType>('photos');
-  const [capturedMedia, setCapturedMedia] = useState<IMediaItem[]>(existingMedia || []);
-  const [canSave, setCanSave] = useState(false);
+  const { itemDetail, existingMedia, onMediaSaved } = route.params;
   const { showError, showSuccess } = useAttractiveNotification();
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const styles = createLoadToDockItemDetailsScreenStyles(theme);
   
-  // Initialize with existing media if available
-  useEffect(() => {
-    if (existingMedia && existingMedia.length > 0) {
-      console.log('🎬 Initializing with existing media:', existingMedia);
-      console.log('🎬 Media breakdown:', {
-        total: existingMedia.length,
-        photos: existingMedia.filter(m => m && m.type === 'photo').length,
-        videos: existingMedia.filter(m => m && m.type === 'video').length,
-        photoIds: existingMedia.filter(m => m && m.type === 'photo').map(m => m.id),
-        videoIds: existingMedia.filter(m => m && m.type === 'video').map(m => m.id)
-      });
-      setCapturedMedia(existingMedia);
-      
-      // Set initial media status based on existing media
-      const photosExist = existingMedia.some(media => media && media.type === 'photo');
-      const videosExist = existingMedia.some(media => media && media.type === 'video');
-      setCanSave(photosExist && videosExist);
-    } else if (existingMediaStatus) {
-      console.log('🎬 Initializing with existing media status:', existingMediaStatus);
-      // Set initial state based on existing media status
-      setCanSave(existingMediaStatus.hasPhotos && existingMediaStatus.hasVideo);
-    }
-  }, [existingMedia, existingMediaStatus]);
-  
-  // Memoize filtered media arrays to prevent unnecessary re-renders
-  const photoMedia = useMemo(() => {
-    const photos = capturedMedia.filter(media => media && media.type === 'photo');
-    console.log('🎬 photoMedia memoized:', photos.length, 'photos');
-    return photos;
-  }, [capturedMedia]);
-  
-  const videoMedia = useMemo(() => {
-    const videos = capturedMedia.filter(media => media && media.type === 'video');
-    console.log('🎬 videoMedia memoized:', videos.length, 'videos');
-    return videos;
-  }, [capturedMedia]);
+  // Custom hooks for media handling
+  const {
+    capturedMedia,
+    photoMedia,
+    videoMedia,
+    canSave,
+    removeMedia,
+    handleCameraCapture,
+    handleGallerySelection,
+  } = useMediaCapture({
+    existingMedia,
+    onError: showError,
+  });
 
-  // Check if we can save whenever capturedMedia changes
-  useEffect(() => {
-    const photosExist = photoMedia.length > 0;
-    const videosExist = videoMedia.length > 0;
-    
-    console.log('Media status check:', {
-      photoMediaLength: photoMedia.length,
-      videoMediaLength: videoMedia.length,
-      photosExist,
-      videosExist,
-      canSave: photosExist && videosExist,
-      existingMediaStatus
-    });
-    
-    setCanSave(photosExist && videosExist);
-  }, [capturedMedia, photoMedia.length, videoMedia.length, existingMediaStatus]);
-
-  const handlePhotoCaptured = useCallback((media: IMediaItem[]) => {
-    setCapturedMedia(prev => {
-      // Remove existing photos and add new photos
-      const otherMedia = prev.filter(item => item.type !== 'photo');
-      return [...otherMedia, ...media];
-    });
-  }, []);
-
-  const handleVideoCaptured = useCallback((media: IMediaItem[]) => {
-    setCapturedMedia(prev => {
-      // Remove existing videos and add new videos
-      const otherMedia = prev.filter(item => item.type !== 'video');
-      return [...otherMedia, ...media];
-    });
-  }, []);
-
-  const handleMediaRemoved = useCallback((mediaId: string) => {
-    setCapturedMedia(prev => prev.filter(item => item.id !== mediaId));
-  }, []);
+  const {
+    showPhotoModal,
+    showVideoModal,
+    openPhotoModal,
+    openVideoModal,
+    closePhotoModal,
+    closeVideoModal,
+  } = useMediaModals();
 
   const handleSave = useCallback(async () => {
     try {
@@ -105,24 +63,17 @@ const LoadToDockItemDetailsScreen: React.FC<LoadToDockItemDetailsScreenProps> = 
         return;
       }
 
-      console.info('capturedMedia', capturedMedia);
-
       showSuccess('Success', 'Media captured and saved successfully!');
       
       // Call the callback with media data before navigating back
       if (onMediaSaved) {
-        // Use current media state directly instead of state variables
-        const currentHasPhotos = photoMedia.length > 0;
-        const currentHasVideo = videoMedia.length > 0;
-        
         const mediaData = {
           deliveryLineId: itemDetail.DeliveryLineId,
-          hasPhotos: currentHasPhotos,
-          hasVideo: currentHasVideo,
+          hasPhotos: photoMedia.length > 0,
+          hasVideo: videoMedia.length > 0,
           itemNumber: itemDetail.ItemNumber,
           capturedMedia
         };
-        console.log('Calling onMediaSaved with:', mediaData);
         onMediaSaved(mediaData);
       }
       
@@ -142,61 +93,33 @@ const LoadToDockItemDetailsScreen: React.FC<LoadToDockItemDetailsScreenProps> = 
     navigation.navigate('Dashboard');
   }, [navigation]);
 
-  // Dynamic tabs configuration with enhanced visual indicators
-  const tabs = useMemo(() => [
-    {
-      id: 'photos',
-      label: 'PHOTOS',
-      icon: (
-        <CommonIcon 
-          icon="camera"
-          size={25} 
-          color={activeTab === 'photos' ? '#ffffff' : '#6b7280'}
-        />
-      ),
-      content: (
-        <View style={styles.tabContent}>
-          <MediaCapture
-            key={`photos-${existingMedia?.filter(m => m && m.type === 'photo').length || 0}`}
-            mediaType="photo"
-            maxPhotos={10}
-            onMediaCaptured={handlePhotoCaptured}
-            onMediaRemoved={handleMediaRemoved}
-            existingMedia={existingMedia?.filter(m => m && m.type === 'photo') || []}
-            style={styles.mediaCaptureArea}
-          />
-        </View>
-      )
-    },
-    {
-      id: 'video',
-      label: 'VIDEO',
-      icon: (
-        <CommonIcon 
-          icon="video"
-          size={25} 
-          color={activeTab === 'video' ? '#ffffff' : '#6b7280'}
-        />
-      ),
-      content: (
-        <View style={styles.tabContent}>
-          <MediaCapture
-            key={`videos-${existingMedia?.filter(m => m && m.type === 'video').length || 0}`}
-            mediaType="video"
-            maxVideos={5}
-            onMediaCaptured={handleVideoCaptured}
-            onMediaRemoved={handleMediaRemoved}
-            existingMedia={existingMedia?.filter(m => m && m.type === 'video') || []}
-            style={styles.mediaCaptureArea}
-          />
-        </View>
-      )
-    }
-  ], [activeTab, existingMedia, handlePhotoCaptured, handleVideoCaptured, handleMediaRemoved]);
+  // Modal handlers
+  const handlePhotoCameraPress = useCallback(() => {
+    closePhotoModal();
+    handleCameraCapture('photo');
+  }, [closePhotoModal, handleCameraCapture]);
+
+  const handlePhotoGalleryPress = useCallback(() => {
+    closePhotoModal();
+    handleGallerySelection('photo');
+  }, [closePhotoModal, handleGallerySelection]);
+
+  const handleVideoCameraPress = useCallback(() => {
+    closeVideoModal();
+    handleCameraCapture('video');
+  }, [closeVideoModal, handleCameraCapture]);
+
+  const handleVideoGalleryPress = useCallback(() => {
+    closeVideoModal();
+    handleGallerySelection('video');
+  }, [closeVideoModal, handleGallerySelection]);
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#1e3a8a" />
+      <StatusBar 
+        barStyle={theme.colors.background === '#121212' ? "light-content" : "dark-content"} 
+        backgroundColor={getHeaderColor()} 
+      />
       
       {/* Header */}
       <AppHeader 
@@ -217,36 +140,70 @@ const LoadToDockItemDetailsScreen: React.FC<LoadToDockItemDetailsScreenProps> = 
         }
       />
 
-      {/* Item Details with Enhanced Spacing */}
-      <View style={styles.itemDetailsContainer}>
-        <ItemDetailsCard
-          itemNumber={itemDetail.ItemNumber}
-          itemDescription={itemDetail.ItemDesc}
-          qtyRequested={itemDetail.QtyRequested}
-          qtyPicked={itemDetail.QtyPicked}
-          itemUom={itemDetail.ItemUom}
-        />
-      </View>
+      <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+        {/* Item Details Card */}
+        <View style={styles.itemDetailsContainer}>
+          <ItemDetailsCard
+            itemNumber={itemDetail.ItemNumber}
+            itemDescription={itemDetail.ItemDesc}
+            qtyRequested={itemDetail.QtyRequested}
+            qtyPicked={itemDetail.QtyPicked}
+            itemUom={itemDetail.ItemUom}
+          />
+        </View>
 
-      {/* Dynamic Media Tabs with Enhanced Visual Indicators */}
-      <View style={styles.tabsContainer}>
-        <DynamicTabs
-          tabs={tabs}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          activeIconStyle={styles.activeTabIcon}
-          activeLabelStyle={styles.activeTabLabel}
+        {/* Upload Buttons Section */}
+        <MediaUploadSection
+          onPhotoUpload={openPhotoModal}
+          onVideoUpload={openVideoModal}
         />
-      </View>
 
-      {/* Enhanced Save Button */}
-      <View style={styles.bottomButtonContainer}>
+        {/* Media Preview Section */}
+        {capturedMedia.length > 0 ? (
+          <MediaPreviewGrid
+            media={capturedMedia}
+            onRemove={removeMedia}
+          />
+        ) : (
+          <MediaEmptyState />
+        )}
+      </ScrollView>
+
+      {/* Photo Selection Modal */}
+      <MediaSelectionModal
+        visible={showPhotoModal}
+        onClose={closePhotoModal}
+        onCameraPress={handlePhotoCameraPress}
+        onGalleryPress={handlePhotoGalleryPress}
+        title="Upload Photos"
+        mediaType="photo"
+      />
+
+      {/* Video Selection Modal */}
+      <MediaSelectionModal
+        visible={showVideoModal}
+        onClose={closeVideoModal}
+        onCameraPress={handleVideoCameraPress}
+        onGalleryPress={handleVideoGalleryPress}
+        title="Upload Videos"
+        mediaType="video"
+      />
+
+      {/* Save Button */}
+      <View style={[
+        styles.bottomButtonContainer,
+        { paddingBottom: Math.max(40, insets.bottom + 20) } // Ensures button is always visible above navigation
+      ]}>
         <Button
           title="Save & Continue"
           onPress={handleSave}
-          style={canSave ? styles.saveButton : styles.disabledButton}
-          textStyle={styles.saveButtonText}
           disabled={!canSave}
+          size="lg"
+          variant="solid"
+          colorScheme="primary"
+          fullWidth
+          style={styles.saveButton}
+          textStyle={styles.saveButtonText}
         />
       </View>
     </SafeAreaView>
