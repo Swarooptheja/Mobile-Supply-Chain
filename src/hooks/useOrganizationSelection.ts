@@ -28,9 +28,15 @@ export const useOrganizationSelection = () => {
       
       // Navigate to Activity Screen for comprehensive API synchronization
       if (responsibilities.length) {
-        navigation.navigate('Activity', {
-          selectedOrgId: selectedId,
-          responsibilities: [...responsibilities, ...MASTER_RESPOSIBILITIES, ...CONFIG_RESPOSIBILITIES],
+        navigation.reset({
+          index: 0,
+          routes: [{
+            name: 'Activity',
+            params: {
+              selectedOrgId: selectedId,
+              responsibilities: [...responsibilities, ...MASTER_RESPOSIBILITIES, ...CONFIG_RESPOSIBILITIES],
+            }
+          }],
         });
       } else if (responsibilitiesError) {
         showError('Error', `Failed to get user responsibilities: ${responsibilitiesError}`);

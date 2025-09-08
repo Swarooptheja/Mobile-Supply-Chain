@@ -24,7 +24,16 @@ export type Theme = {
     error: string;
     white: string;
     success: string;
+    // Additional colors for transaction status
+    warning: string;
+    warningBackground: string;
+    warningText: string;
+    successBackground: string;
+    successText: string;
+    errorBackground: string;
+    errorText: string;
   };
+  isDark: boolean;
 };
 
 const lightTheme: Theme = {
@@ -49,7 +58,16 @@ const lightTheme: Theme = {
     error: '#dc2626',
     white: '#ffffff',
     success: '#059669',
+    // Additional colors for transaction status
+    warning: '#f59e0b',
+    warningBackground: '#fef3c7',
+    warningText: '#92400e',
+    successBackground: '#d1fae5',
+    successText: '#065f46',
+    errorBackground: '#fee2e2',
+    errorText: '#991b1b',
   },
+  isDark: false,
 };
 
 const darkTheme: Theme = {
@@ -74,7 +92,16 @@ const darkTheme: Theme = {
     error: '#FF5252', // Material red for errors
     white: '#FFFFFF', // Pure white
     success: '#4CAF50', // Green for success
+    // Additional colors for transaction status
+    warning: '#FFB74D',
+    warningBackground: '#2D1B00',
+    warningText: '#FFCC02',
+    successBackground: '#1B5E20',
+    successText: '#A5D6A7',
+    errorBackground: '#3E2723',
+    errorText: '#EF9A9A',
   },
+  isDark: true,
 };
 
 type ThemeMode = 'light' | 'dark' | 'system';

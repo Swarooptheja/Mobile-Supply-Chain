@@ -13,6 +13,7 @@ import { createOrganizationScreenStyles } from '../styles/OrganizationScreen.sty
 import { OrganizationEmptyState, OrganizationItem, OrganizationListFooter, SearchBar } from '../components';
 import { AppHeader } from '../components/AppHeader';
 import { Button } from '../components/Button';
+import AuthGuard from '../components/AuthGuard';
 
 const OrganizationScreen: React.FC = () => {
   const { defaultOrgId } = useAuth();
@@ -100,8 +101,9 @@ const OrganizationScreen: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <AppHeader title="Select Organization" />
+    <AuthGuard allowBack={false}>
+      <View style={styles.container}>
+        <AppHeader title="Select Organization" />
 
       <View style={[
         styles.content,
@@ -181,7 +183,8 @@ const OrganizationScreen: React.FC = () => {
           textStyle={styles.confirmButtonText}
         />
       </SafeAreaView>
-    </View>
+      </View>
+    </AuthGuard>
   );
 };
 

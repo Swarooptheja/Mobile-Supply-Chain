@@ -46,6 +46,7 @@ export const CommonIcons = {
   arrowRight: { name: 'arrow-right', iconSet: 'Fontisto' as IconSet },
   // Action icons
   refresh: { name: 'refresh', iconSet: 'MaterialIcons' as IconSet },
+  sync: { name: 'sync', iconSet: 'MaterialIcons' as IconSet },
   search: { name: 'search', iconSet: 'MaterialIcons' as IconSet },
   add: { name: 'add', iconSet: 'MaterialIcons' as IconSet },
   edit: { name: 'edit', iconSet: 'MaterialIcons' as IconSet },

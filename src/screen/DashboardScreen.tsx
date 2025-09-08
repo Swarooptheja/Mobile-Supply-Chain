@@ -7,6 +7,7 @@ import NavigationDrawer from '../components/NavigationDrawer';
 import { useNavigationDrawer } from '../hooks';
 import { HeaderButton, VectorIcon } from '../components';
 import { createDashboardStyles } from '../styles/DashboardScreen.styles';
+import AuthGuard from '../components/AuthGuard';
 
 interface DashboardScreenProps {
   navigation: any;
@@ -30,22 +31,23 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <AppHeader 
-        title="Dashboard" 
-        leftElement={
-          <HeaderButton
-            icon="menu"
-            onPress={openDrawer}
-          />
-        }
-        rightElement={
-          <HeaderButton
-            icon={theme.colors.background === '#121212' ? "sun" : "moon"}
-            onPress={toggleTheme}
-          />
-        }
-      />
+    <AuthGuard allowBack={true}>
+      <SafeAreaView style={styles.container}>
+        <AppHeader 
+          title="Dashboard" 
+          leftElement={
+            <HeaderButton
+              icon="menu"
+              onPress={openDrawer}
+            />
+          }
+          rightElement={
+            <HeaderButton
+              icon={theme.colors.background === '#121212' ? "sun" : "moon"}
+              onPress={toggleTheme}
+            />
+          }
+        />
       
       <ScrollView 
         style={styles.content} 
@@ -143,7 +145,8 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
         userName={userName}
         onMenuItemPress={handleMenuItemPress}
       />
-    </SafeAreaView>
+      </SafeAreaView>
+    </AuthGuard>
   );
 };
 

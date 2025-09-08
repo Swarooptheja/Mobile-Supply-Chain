@@ -8,6 +8,7 @@ import { ActivityHeader } from '../components/ActivityScreen/ActivityHeader';
 import { ActivityCardList } from '../components/ActivityScreen/ActivityCardList';
 import { ActionButtons } from '../components/ActivityScreen/ActionButtons';
 import { ProgressOverview } from '../components/ActivityScreen/ProgressOverview';
+import AuthGuard from '../components/AuthGuard';
 
 // Import custom hooks
 import { 
@@ -192,9 +193,10 @@ const ActivityScreen: React.FC = () => {
   const showRetryButton = activityData.hasErrors || activityData.hasFailures;
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header with title and logout button */}
-      <ActivityHeader onLogout={handleLogout} />
+    <AuthGuard allowBack={false}>
+      <SafeAreaView style={styles.container}>
+        {/* Header with title and logout button */}
+        <ActivityHeader onLogout={handleLogout} />
 
       <ScrollView 
         ref={scrollViewRef}
@@ -231,7 +233,8 @@ const ActivityScreen: React.FC = () => {
           isProcessing={isProcessing}
         />
       </ScrollView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </AuthGuard>
   );
 };
 

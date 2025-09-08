@@ -1,50 +1,80 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  Dimensions,
+  RefreshControl,
   SafeAreaView,
   ScrollView,
   StatusBar,
   Text,
-  View,
-  TouchableOpacity,
-  RefreshControl
+  View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { HeaderButton, SearchBar, StatusFilter, SyncButton, TransactionBanner, TransactionCard } from '../components';
 import { AppHeader } from '../components/AppHeader';
-import { HeaderButton } from '../components';
+import { TransactionStatus } from '../components/StatusFilter';
 import { useAttractiveNotification } from '../context/AttractiveNotificationContext';
 import { useTheme } from '../context/ThemeContext';
+import { useTransactionBanner } from '../hooks/useTransactionBanner';
 import { useTransactionHistory } from '../hooks/useTransactionHistory';
+import { useTransactionSync } from '../hooks/useTransactionSync';
+import { TransactionHistoryItem } from '../services/transactionHistoryService';
 import { createTransactionHistoryScreenStyles } from '../styles/TransactionHistoryScreen.styles';
 
 interface TransactionHistoryScreenProps {
   navigation: any;
 }
 
-type TransactionStatus = 'pending' | 'success' | 'failed' | 'all';
-
 const TransactionHistoryScreen: React.FC<TransactionHistoryScreenProps> = ({ navigation }) => {
   const [selectedStatus, setSelectedStatus] = useState<TransactionStatus>('all');
   
   const { showError } = useAttractiveNotification();
   const theme = useTheme();
-  const styles = createTransactionHistoryScreenStyles(theme);
   const insets = useSafeAreaInsets();
+
+  // Device size detection for responsive design
+  const { width: screenWidth } = Dimensions.get('window');
+  const isTablet = screenWidth > 768 && screenWidth <= 1024;
+  const isDesktop = screenWidth > 1024;
+  
+  const styles = createTransactionHistoryScreenStyles(theme, isTablet, isDesktop);
+
+  // Transaction banner management
+  const {
+    bannerState,
+    hideBanner,
+  } = useTransactionBanner({
+    autoHide: true,
+    autoHideDelay: 3000,
+    showProgress: true,
+  });
+
+  // Transaction sync management
+  const {
+    isSyncing,
+    hasPendingTransactions,
+    pendingCount,
+    syncAllPendingTransactions,
+    refreshPendingStatus,
+    syncError,
+    clearSyncError,
+  } = useTransactionSync();
 
   // Use the custom hook for transaction history management
   const {
-    transactions,
     filteredTransactions,
     stats,
     isLoading,
     isRefreshing,
     error,
+    searchTerm,
     refreshTransactions,
     filterTransactions,
+    searchTransactions,
     clearError
   } = useTransactionHistory({
     autoLoad: true,
     initialFilter: { status: 'all' },
-    pageSize: 50
+    pageSize: isTablet ? 30 : 20
   });
 
   // Handle errors from the hook
@@ -55,183 +85,42 @@ const TransactionHistoryScreen: React.FC<TransactionHistoryScreenProps> = ({ nav
     }
   }, [error, showError, clearError]);
 
-  const handleRefresh = async () => {
-    await refreshTransactions();
-  };
+  // Handle sync errors
+  useEffect(() => {
+    if (syncError) {
+      showError('Sync Error', syncError);
+      clearSyncError();
+    }
+  }, [syncError, showError, clearSyncError]);
 
-  const handleStatusFilter = async (status: TransactionStatus) => {
+  // Memoized handlers for performance
+  const handleRefresh = useCallback(async () => {
+    await Promise.all([
+      refreshTransactions(),
+      refreshPendingStatus()
+    ]);
+  }, [refreshTransactions, refreshPendingStatus]);
+
+  const handleStatusFilter = useCallback(async (status: TransactionStatus) => {
     setSelectedStatus(status);
     await filterTransactions({ status: status === 'all' ? undefined : status });
-  };
+  }, [filterTransactions]);
 
-  const getStatusCount = (status: TransactionStatus): number => {
-    if (!stats) return 0;
-    
-    switch (status) {
-      case 'all':
-        return stats.total;
-      case 'pending':
-        return stats.pending;
-      case 'success':
-        return stats.success;
-      case 'failed':
-        return stats.failed;
-      default:
-        return 0;
-    }
-  };
+  const handleSearch = useCallback(async (searchText: string) => {
+    await searchTransactions(searchText);
+  }, [searchTransactions]);
 
-  const formatTimestamp = (timestamp: string): string => {
-    try {
-      const date = new Date(timestamp);
-      return date.toLocaleString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-      });
-    } catch (error) {
-      return timestamp;
-    }
-  };
+  const handleTransactionPress = useCallback((transaction: TransactionHistoryItem) => {
+    // Navigate to transaction details if needed
+    console.log('Transaction pressed:', transaction.MobileTransactionId);
+  }, []);
 
-  const renderStatusFilter = () => (
-    <View style={styles.filterContainer}>
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filterScrollContent}
-      >
-        {[
-          { key: 'all', label: 'All', count: getStatusCount('all') },
-          { key: 'pending', label: 'Pending', count: getStatusCount('pending') },
-          { key: 'success', label: 'Success', count: getStatusCount('success') },
-          { key: 'failed', label: 'Failed', count: getStatusCount('failed') }
-        ].map((filter) => (
-          <TouchableOpacity
-            key={filter.key}
-            style={[
-              styles.filterButton,
-              selectedStatus === filter.key && styles.filterButtonActive
-            ]}
-            onPress={() => handleStatusFilter(filter.key as TransactionStatus)}
-            activeOpacity={0.7}
-          >
-            <Text style={[
-              styles.filterButtonText,
-              selectedStatus === filter.key && styles.filterButtonTextActive
-            ]}>
-              {filter.label}
-            </Text>
-            <View style={[
-              styles.filterBadge,
-              selectedStatus === filter.key && styles.filterBadgeActive
-            ]}>
-              <Text style={[
-                styles.filterBadgeText,
-                selectedStatus === filter.key && styles.filterBadgeTextActive
-              ]}>
-                {filter.count}
-              </Text>
-            </View>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-    </View>
-  );
+  const handleDismissBanner = useCallback(() => {
+    hideBanner();
+  }, [hideBanner]);
 
-  const renderTransactionCard = useCallback((transaction: any, index: number) => {
-    const status = transaction.sharePointTransactionStatus;
-    const isPending = status === 'pending';
-    const isSuccess = status === 'success';
-    const isFailed = status === 'failed';
-
-    return (
-      <View key={`${transaction.MobileTransactionId}-${index}`} style={styles.transactionCard}>
-        {/* Header with status */}
-        <View style={styles.transactionHeader}>
-          <View style={styles.transactionInfo}>
-            <Text style={styles.transactionId}>
-              ID: {transaction.MobileTransactionId}
-            </Text>
-            <Text style={styles.transactionTimestamp}>
-              {formatTimestamp(transaction.CreatedAt)}
-            </Text>
-          </View>
-          <View style={[
-            styles.statusBadge,
-            isPending && styles.statusBadgePending,
-            isSuccess && styles.statusBadgeSuccess,
-            isFailed && styles.statusBadgeFailed
-          ]}>
-            <Text style={[
-              styles.statusText,
-              isPending && styles.statusTextPending,
-              isSuccess && styles.statusTextSuccess,
-              isFailed && styles.statusTextFailed
-            ]}>
-              {status.toUpperCase()}
-            </Text>
-          </View>
-        </View>
-
-        {/* Transaction Details */}
-        <View style={styles.transactionDetails}>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Delivery ID:</Text>
-            <Text style={styles.detailValue}>{transaction.DeliveryLineId}</Text>
-          </View>
-          
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Vehicle Number:</Text>
-            <Text style={styles.detailValue}>{transaction.VehicleNumber}</Text>
-          </View>
-          
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Dock Door:</Text>
-            <Text style={styles.detailValue}>{transaction.DockDoor}</Text>
-          </View>
-          
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>LPN Number:</Text>
-            <Text style={styles.detailValue}>{transaction.LpnNumber}</Text>
-          </View>
-        </View>
-
-        {/* Status-specific content */}
-        {isPending && (
-          <View style={styles.pendingContainer}>
-            <View style={styles.pendingIndicator}>
-              <View style={styles.pendingDot} />
-              <Text style={styles.pendingText}>Transaction is being processed...</Text>
-            </View>
-          </View>
-        )}
-
-        {isSuccess && (
-          <View style={styles.successContainer}>
-            <Text style={styles.successText}>✓ Transaction completed successfully</Text>
-            {transaction.Message && (
-              <Text style={styles.messageText}>{transaction.Message}</Text>
-            )}
-          </View>
-        )}
-
-        {isFailed && (
-          <View style={styles.failedContainer}>
-            <Text style={styles.failedText}>✗ Transaction failed</Text>
-            {transaction.Message && (
-              <Text style={styles.errorMessageText}>{transaction.Message}</Text>
-            )}
-          </View>
-        )}
-      </View>
-    );
-  }, [styles]);
-
-  const renderEmptyState = () => (
+  // Memoized empty state
+  const renderEmptyState = useMemo(() => (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyTitle}>No Transactions Found</Text>
       <Text style={styles.emptySubtitle}>
@@ -241,17 +130,66 @@ const TransactionHistoryScreen: React.FC<TransactionHistoryScreenProps> = ({ nav
         }
       </Text>
     </View>
-  );
+  ), [selectedStatus, styles]);
 
-  const renderLoadingState = () => (
+  // Memoized loading state
+  const renderLoadingState = useMemo(() => (
     <View style={styles.loadingContainer}>
       <Text style={styles.loadingText}>Loading transactions...</Text>
     </View>
-  );
+  ), [styles]);
+
+  // Memoized transaction list
+  const renderTransactionList = useMemo(() => {
+    if (isLoading) {
+      return renderLoadingState;
+    }
+
+    if (filteredTransactions.length === 0) {
+      return renderEmptyState;
+    }
+
+    return filteredTransactions.map((transaction, index) => (
+      <TransactionCard
+        key={`${transaction.MobileTransactionId}-${index}`}
+        transaction={transaction}
+        theme={theme}
+        isTablet={isTablet}
+        isDesktop={isDesktop}
+        onPress={handleTransactionPress}
+        testID={`transaction-${transaction.MobileTransactionId}`}
+      />
+    ));
+  }, [
+    isLoading, 
+    filteredTransactions, 
+    renderLoadingState, 
+    renderEmptyState, 
+    theme, 
+    isTablet, 
+    isDesktop, 
+    handleTransactionPress
+  ]);
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#1e3a8a" />
+      <StatusBar 
+        barStyle={theme.isDark ? "light-content" : "dark-content"} 
+        backgroundColor={theme.colors.primary} 
+      />
+      
+      {/* Transaction Banner */}
+      <TransactionBanner
+        visible={bannerState.visible}
+        status={bannerState.status}
+        message={bannerState.message}
+        showProgress={bannerState.showProgress}
+        progress={bannerState.progress}
+        autoHide={bannerState.autoHide}
+        autoHideDelay={bannerState.autoHideDelay}
+        onDismiss={handleDismissBanner}
+        testID="transaction-history-banner"
+      />
       
       {/* Header */}
       <AppHeader 
@@ -262,10 +200,37 @@ const TransactionHistoryScreen: React.FC<TransactionHistoryScreenProps> = ({ nav
             onPress={() => navigation.goBack()}
           />
         }
+        rightElement={
+          hasPendingTransactions ? (
+            <SyncButton
+              onPress={syncAllPendingTransactions}
+              isSyncing={isSyncing}
+              pendingCount={pendingCount}
+              testID="transaction-sync-button"
+            />
+          ) : null
+        }
       />
 
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <SearchBar
+          value={searchTerm}
+          onChangeText={handleSearch}
+          placeholder="Search transactions..."
+        />
+      </View>
+
       {/* Status Filter */}
-      {renderStatusFilter()}
+      <StatusFilter
+        selectedStatus={selectedStatus}
+        stats={stats}
+        theme={theme}
+        isTablet={isTablet}
+        isDesktop={isDesktop}
+        onStatusChange={handleStatusFilter}
+        testID="status-filter"
+      />
 
       {/* Transactions List */}
       <ScrollView 
@@ -278,21 +243,14 @@ const TransactionHistoryScreen: React.FC<TransactionHistoryScreenProps> = ({ nav
           <RefreshControl
             refreshing={isRefreshing}
             onRefresh={handleRefresh}
-            colors={['#1e3a8a']}
-            tintColor="#1e3a8a"
+            colors={[theme.colors.primary]}
+            tintColor={theme.colors.primary}
           />
         }
         showsVerticalScrollIndicator={false}
+        testID="transactions-scroll-view"
       >
-        {isLoading ? (
-          renderLoadingState()
-        ) : filteredTransactions.length === 0 ? (
-          renderEmptyState()
-        ) : (
-          filteredTransactions.map((transaction, index) => 
-            renderTransactionCard(transaction, index)
-          )
-        )}
+        {renderTransactionList}
       </ScrollView>
     </SafeAreaView>
   );

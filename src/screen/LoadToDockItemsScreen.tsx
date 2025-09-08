@@ -33,6 +33,7 @@ import { LoadToDockRequest, loadToDockService } from '../services/loadToDockServ
 import { simpleDatabaseService } from '../services/simpleDatabase';
 import { createLoadToDockItemsScreenStyles } from '../styles/LoadToDockItemsScreen.styles';
 import { ILoadToDockItemDetail, LoadToDockItemsScreenProps } from '../types/loadToDock.interface';
+import { realTimeSyncTransactionService } from '../services/realTimeSyncTransactionService';
 
 const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, navigation }) => {
   const { deliveryItem } = route.params;
@@ -222,7 +223,14 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
         updateProgress(50, 'Uploading to cloud storage...');
 
         // Process the request
-        const result = await loadToDockService.processLoadToDock(request);
+        const data = await loadToDockService.storeLoadToDockTransaction(request);
+        
+        if(!data.success) {
+          return;
+        };
+
+        // const result = await loadToDockService.processLoadToDock();
+        const result = await realTimeSyncTransactionService.syncTransaction(RESPONSIBILITIES.LOAD_TO_DOCK);
 
         updateProgress(90, 'Finalizing upload...');
 

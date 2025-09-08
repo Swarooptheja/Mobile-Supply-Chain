@@ -33,13 +33,59 @@ const AppNavigator: React.FC = () => {
           headerShown: false,
         }}
       >
-        <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="Organization" component={OrganizationScreen} />
-        <Stack.Screen name="Activity" component={ActivityScreen} />
-        <Stack.Screen name="Dashboard" component={DashboardScreen} />
-        <Stack.Screen name="LoadToDock" component={LoadToDockNavigator} />
-        <Stack.Screen name="TransactionHistory" component={TransactionHistoryScreen} />
-        <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
+        <Stack.Screen 
+          name="Login" 
+          component={LoginScreen}
+          options={{
+            gestureEnabled: false, // Disable swipe back gesture
+            headerLeft: () => null, // Remove back button
+          }}
+        />
+        <Stack.Screen 
+          name="Organization" 
+          component={OrganizationScreen}
+          options={{
+            gestureEnabled: false, // Disable swipe back gesture
+            headerLeft: () => null, // Remove back button
+          }}
+        />
+        <Stack.Screen 
+          name="Activity" 
+          component={ActivityScreen}
+          options={{
+            gestureEnabled: false, // Disable swipe back gesture
+            headerLeft: () => null, // Remove back button
+          }}
+        />
+        <Stack.Screen 
+          name="Dashboard" 
+          component={DashboardScreen}
+          options={{
+            gestureEnabled: false, // Disable swipe back gesture
+            headerLeft: () => null, // Remove back button
+          }}
+        />
+        <Stack.Screen 
+          name="LoadToDock" 
+          component={LoadToDockNavigator}
+          options={{
+            gestureEnabled: true, // Allow back navigation in main app
+          }}
+        />
+        <Stack.Screen 
+          name="TransactionHistory" 
+          component={TransactionHistoryScreen}
+          options={{
+            gestureEnabled: true, // Allow back navigation in main app
+          }}
+        />
+        <Stack.Screen 
+          name="MainTabs" 
+          component={BottomTabNavigator}
+          options={{
+            gestureEnabled: true, // Allow back navigation in main app
+          }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

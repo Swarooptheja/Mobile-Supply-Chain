@@ -19,6 +19,7 @@ import * as yup from 'yup';
 import { AppHeader } from '../components/AppHeader';
 import { Button } from '../components/Button';
 import { VectorIcon } from '../components/VectorIcon';
+import AuthGuard from '../components/AuthGuard';
 import { ENV } from '../config/env';
 import { useAttractiveNotification } from '../context/AttractiveNotificationContext';
 import { useAuth } from '../context/AuthContext';
@@ -72,8 +73,11 @@ const LoginScreen: React.FC = () => {
       // Pass a callback that will be called after successful login and notification
       await login({ username: data.username.trim(), password: data.password }, () => {
         // This callback will be executed after the success notification is shown
-        // Now navigate to the Organization screen
-        navigation.navigate('Organization');
+        // Reset navigation stack to prevent back navigation to login
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Organization' as never }],
+        });
       });
     } catch (error) {
       // Show attractive error notification
@@ -89,27 +93,28 @@ const LoginScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.primary} />
-      
-      {/* Header Section - Using AppHeader for consistency */}
-      <AppHeader 
-        title={ENV.APP_NAME} 
-        // rightElement={
-        //   <TouchableOpacity
-        //     onPress={toggleTheme}
-        //     style={styles.themeToggleButton}
-        //     activeOpacity={0.7}
-        //   >
-        //     <VectorIcon 
-        //       name={themeMode === 'dark' ? "light-mode" : "dark-mode"} 
-        //       size={24} 
-        //       color={theme.colors.textPrimary} 
-        //       iconSet="MaterialIcons" 
-        //     />
-        //   </TouchableOpacity>
-        // }
-      />
+    <AuthGuard allowBack={false}>
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor={theme.colors.primary} />
+        
+        {/* Header Section - Using AppHeader for consistency */}
+        <AppHeader 
+          title={ENV.APP_NAME} 
+          // rightElement={
+          //   <TouchableOpacity
+          //     onPress={toggleTheme}
+          //     style={styles.themeToggleButton}
+          //     activeOpacity={0.7}
+          //   >
+          //     <VectorIcon 
+          //       name={themeMode === 'dark' ? "light-mode" : "dark-mode"} 
+          //       size={24} 
+          //       color={theme.colors.textPrimary} 
+          //       iconSet="MaterialIcons" 
+          //     />
+          //   </TouchableOpacity>
+          // }
+        />
 
       {/* Content Area */}
       <View style={styles.content}>
@@ -234,7 +239,8 @@ const LoginScreen: React.FC = () => {
           </View>
         </View>
       </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </AuthGuard>
   );
 };
 

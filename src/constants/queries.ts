@@ -261,28 +261,28 @@ export const TRANSACTION_HISTORY_QUERIES = {
     GET_TRANSACTION_STATS: `
         SELECT 
             COUNT(*) as total,
-            SUM(CASE WHEN EBSTransactionStatus = 'pending' THEN 1 ELSE 0 END) as pending,
-            SUM(CASE WHEN EBSTransactionStatus = 'success' THEN 1 ELSE 0 END) as success,
-            SUM(CASE WHEN EBSTransactionStatus = 'failed' THEN 1 ELSE 0 END) as failed
+            SUM(CASE WHEN sharePointTransactionStatus = 'pending' THEN 1 ELSE 0 END) as pending,
+            SUM(CASE WHEN sharePointTransactionStatus = 'success' THEN 1 ELSE 0 END) as success,
+            SUM(CASE WHEN sharePointTransactionStatus = 'failed' THEN 1 ELSE 0 END) as failed
         FROM ${TableNames.LOAD_TO_DOCK_TRANSACTION_HISTORY}
     `,
 
     GET_TRANSACTION_COUNT_BY_STATUS: `
-        SELECT EBSTransactionStatus as status, COUNT(*) as count
+        SELECT sharePointTransactionStatus as status, COUNT(*) as count
         FROM ${TableNames.LOAD_TO_DOCK_TRANSACTION_HISTORY}
-        GROUP BY EBSTransactionStatus
+        GROUP BY sharePointTransactionStatus
     `,
 
     // Status management
     GET_PENDING_TRANSACTIONS: `
         SELECT * FROM ${TableNames.LOAD_TO_DOCK_TRANSACTION_HISTORY} 
-        WHERE EBSTransactionStatus = 'pending'
+        WHERE sharePointTransactionStatus = 'pending'
         ORDER BY CreatedAt ASC
     `,
 
     UPDATE_TRANSACTION_STATUS: `
         UPDATE ${TableNames.LOAD_TO_DOCK_TRANSACTION_HISTORY} 
-        SET EBSTransactionStatus = ?, Message = ?, UpdatedAt = ?
+        SET sharePointTransactionStatus = ?, Message = ?, UpdatedAt = ?
         WHERE MobileTransactionId = ?
     `,
 

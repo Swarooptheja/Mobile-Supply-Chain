@@ -173,13 +173,25 @@ class TransactionHistoryService {
       const result = await simpleDatabaseService.executeQuery(TRANSACTION_HISTORY_QUERIES.GET_TRANSACTION_STATS);
       const stats = getDataFromResultSet(result)[0];
       
-      return {
+      // Debug logging to help identify count issues
+      if (__DEV__) {
+        console.log('TransactionHistoryService - Raw stats from DB:', stats);
+        console.log('TransactionHistoryService - Query used:', TRANSACTION_HISTORY_QUERIES.GET_TRANSACTION_STATS);
+      }
+      
+      const processedStats = {
         total: stats?.total || 0,
         pending: stats?.pending || 0,
         success: stats?.success || 0,
         failed: stats?.failed || 0,
         lastUpdated: new Date().toISOString()
       };
+      
+      if (__DEV__) {
+        console.log('TransactionHistoryService - Processed stats:', processedStats);
+      }
+      
+      return processedStats;
     } catch (error) {
       console.error('Error fetching transaction stats:', error);
       throw new Error('Failed to fetch transaction statistics');

@@ -369,40 +369,38 @@ class LoadToDockService {
   /**
    * Main method to process Load to Dock with offline/online handling
    */
-  async processLoadToDock(request: LoadToDockRequest): Promise<LoadToDockResult> {
-    try {
-      // Step 1: Store in transaction history table
-      await this.storeLoadToDockTransaction(request);
+  // async processLoadToDock(): Promise<LoadToDockResult> {
+  //   try {
 
-      // Step 2: Check network status
-      const isOnline = await networkService.isOnline();
-      console.log('🌐 Network status:', isOnline ? 'ONLINE' : 'OFFLINE');
+  //     // Step 2: Check network status
+  //     // const isOnline = await networkService.isOnline();
+  //     // console.log('🌐 Network status:', isOnline ? 'ONLINE' : 'OFFLINE');
 
-      if (!isOnline) {
-        // Step 3a: OFFLINE - Show message and stop
-        return ({
-          success: true,
-          offline: true,
-          error: 'Data saved locally. Will sync when online.'
-        });
-      }
+  //     // if (!isOnline) {
+  //     //   // Step 3a: OFFLINE - Show message and stop
+  //     //   return ({
+  //     //     success: true,
+  //     //     offline: true,
+  //     //     error: 'Data saved locally. Will sync when online.'
+  //     //   });
+  //     // }
 
-      // Step 3b: ONLINE - Proceed with API calls
-      return await this.processOnlineLoadToDock();
+  //     // Step 3b: ONLINE - Proceed with API calls
+  //     return await this.processOnlineLoadToDock();
 
-    } catch (error) {
-      console.error('❌ Error in Load to Dock process:', error);
-      return({
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-  }
+  //   } catch (error) {
+  //     console.error('❌ Error in Load to Dock process:', error);
+  //     return({
+  //       success: false,
+  //       error: error instanceof Error ? error.message : 'Unknown error'
+  //     });
+  //   }
+  // }
 
   /**
    * Store Load to Dock transaction in local database
    */
-  private async storeLoadToDockTransaction(request: LoadToDockRequest): Promise<void> {    
+ async storeLoadToDockTransaction(request: LoadToDockRequest): Promise<{success: boolean, error?: string}> {    
     try {
       // Store individual item transactions
       for (const item of request?.items) {
@@ -424,6 +422,9 @@ class LoadToDockService {
           ''
         ]);
       }
+      return ({
+        success: true,
+      })
 
     } catch (error) {
       console.error('Error storing transaction:', error);
@@ -434,7 +435,7 @@ class LoadToDockService {
   /**
    * Process Load to Dock when online
    */
-  private async processOnlineLoadToDock(): Promise<LoadToDockResult> {
+  async processOnlineLoadToDock(): Promise<LoadToDockResult> {
     try {
       // Step 4: POST API Transaction to EBS
       const pendingTransactions: ILoadToDockTransactionRequest[] = await this.getPendingLoadToDockTransactions();
