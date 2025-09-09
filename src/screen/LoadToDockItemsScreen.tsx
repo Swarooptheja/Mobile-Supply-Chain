@@ -10,8 +10,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getDataFromResultSet } from '../../services/sharedService';
 import {
+  AppHeader,
   DeliveryDetailsCard,
-  LoadToDockHeader,
+  HeaderButton,
   LoadToDockItemCard,
   SearchAndScanSection,
   VehicleInputSection
@@ -335,12 +336,28 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
         testID="load-to-dock-transaction-banner"
       />
       
-      {/* Header */}
-      <LoadToDockHeader
-        deliveryId={deliveryItem.deliveryId}
-        onBack={() => navigation.goBack()}
-        onHome={handleBackToDashboard}
+
+<AppHeader 
+    title={`Pick Slip #${deliveryItem.deliveryId}`}
+    leftElement={
+      <HeaderButton
+        icon="back"
+        onPress={() => navigation.goBack()}
+        backgroundColor={'#1e3a8a'}
       />
+    }
+    rightElement={
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        <HeaderButton
+          icon="home"
+          onPress={handleBackToDashboard}
+          backgroundColor={'#1e3a8a'}
+
+          
+        />
+      </View>
+    }
+  />
 
       {/* Delivery Details */}
       <DeliveryDetailsCard

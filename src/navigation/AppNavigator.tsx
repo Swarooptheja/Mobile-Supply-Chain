@@ -59,7 +59,7 @@ const AppNavigator: React.FC = () => {
         />
         <Stack.Screen 
           name="Dashboard" 
-          component={DashboardScreen}
+          component={BottomTabNavigator}
           options={{
             gestureEnabled: false, // Disable swipe back gesture
             headerLeft: () => null, // Remove back button

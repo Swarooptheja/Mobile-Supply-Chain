@@ -128,14 +128,14 @@ const LoadToDockItemDetailsScreen: React.FC<LoadToDockItemDetailsScreenProps> = 
           <HeaderButton
             icon="back"
             onPress={handleBackToItems}
-            backgroundColor="rgba(255, 255, 255, 0.2)"
+            backgroundColor={'#1e3a8a'}
           />
         }
         rightElement={
           <HeaderButton
             icon="home"
             onPress={handleNavigateToDashboard}
-            backgroundColor="rgba(255, 255, 255, 0.2)"
+            backgroundColor={'#1e3a8a'}
           />
         }
       />

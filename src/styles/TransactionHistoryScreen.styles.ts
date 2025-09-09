@@ -16,6 +16,7 @@ export const createTransactionHistoryScreenStyles = (
   contentContainer: {
     paddingHorizontal: isTablet ? 32 : 20,
     paddingTop: isTablet ? 24 : 20,
+    paddingBottom: 120, // Responsive padding for bottom navigation
   },
   searchContainer: {
     paddingHorizontal: isTablet ? 32 : 20,

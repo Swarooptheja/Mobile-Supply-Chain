@@ -5,10 +5,11 @@ import {
   View,
   Alert,
   Dimensions,
+  StyleSheet,
 } from 'react-native';
 import { HeaderButton } from '../components';
 import { AppHeader } from '../components/AppHeader';
-import { SearchBar } from '../components';
+import { SearchBar, BarcodeInputField } from '../components';
 import InfiniteScrollList from '../components/InfiniteScrollList';
 import LoadToDockItem from '../components/LoadToDockItem';
 import BarcodeScanner from '../components/BarcodeScanner';
@@ -31,8 +32,10 @@ interface LoadToDockListScreenProps {
 
 const LoadToDockListScreen: React.FC<LoadToDockListScreenProps> = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [barcodeInput, setBarcodeInput] = useState('');
   const [showSortFilterModal, setShowSortFilterModal] = useState(false);
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
+  const [isSearchEnabled, setIsSearchEnabled] = useState(false);
   const { showError } = useAttractiveNotification();
   const { headerButtonSpacing } = useResponsive();
   const theme = useTheme();
@@ -104,6 +107,14 @@ const LoadToDockListScreen: React.FC<LoadToDockListScreenProps> = ({ navigation 
     return () => clearTimeout(timer);
   }, []); // Empty dependency array - only run once on mount
 
+  const handleToggleSearch = useCallback(() => {
+    setIsSearchEnabled(prev => !prev);
+    // Clear search query when disabling search
+    if (isSearchEnabled) {
+      setSearchQuery('');
+    }
+  }, [isSearchEnabled]);
+
   const handleScanDeliveryId = async () => {
     try {
       setShowBarcodeScanner(true);
@@ -112,22 +123,41 @@ const LoadToDockListScreen: React.FC<LoadToDockListScreenProps> = ({ navigation 
     }
   };
 
-  const handleBarcodeScanned = async (barcode: string) => {
+  const handleBarcodeScanned = useCallback(async (barcode: string) => {
     try {
       // Search for the barcode in SQLite database
       const searchResults = await loadToDockService.searchByBarcode(barcode);
       if (searchResults && searchResults.length) {
         // Found matching records, navigate to Items Page with the first result
         const matchedItem = searchResults[0];
+        // Clear the input field before navigation
+        setBarcodeInput('');
         navigation.navigate('LoadToDockItems', { deliveryItem: matchedItem });
-            
       } else {
+        // No match found, show error and clear input
         showError('No Match Found', `No delivery items found for barcode: ${barcode}`);
+        setBarcodeInput('');
       }
     } catch (error) {
+      // Error occurred, show error and clear input
       showError('Error', 'Failed to search for barcode in database');
+      setBarcodeInput('');
     }
-  };
+  }, [navigation, showError]);
+
+  const handleBarcodeInputChange = useCallback((text: string) => {
+    setBarcodeInput(text);
+  }, []);
+
+  const handleBarcodeInputScanned = useCallback(async (barcode: string) => {
+    // This is called when the BarcodeInputField detects a scanned barcode
+    await handleBarcodeScanned(barcode);
+  }, [handleBarcodeScanned]);
+
+  const handleScanComplete = useCallback(() => {
+    // This is called after the barcode scan is complete (success or failure)
+    // The input field will be cleared automatically by the BarcodeInputField component
+  }, []);
 
   const handleRefreshData = async () => {
     try {
@@ -202,7 +232,7 @@ const LoadToDockListScreen: React.FC<LoadToDockListScreenProps> = ({ navigation 
       
       {/* Header */}
       <AppHeader 
-        title="Load to Dock"
+        title="Deliveries"
         leftElement={
           <HeaderButton
             icon="back"
@@ -212,17 +242,43 @@ const LoadToDockListScreen: React.FC<LoadToDockListScreenProps> = ({ navigation 
         rightElement={headerRightElement}
       />
 
-      {/* Search and Actions Section */}
-      <View style={styles.searchSection}>
-        <View style={styles.searchBarContainer}>
-          <SearchBar
-            placeholder="Search"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
+      {/* Barcode Input and Search Section */}
+      <View style={styles.barcodeSection}>
+        <View style={styles.barcodeInputContainer}>
+          <BarcodeInputField
+            value={barcodeInput}
+            onChangeText={handleBarcodeInputChange}
+            onBarcodeScanned={handleBarcodeInputScanned}
+            onScanComplete={handleScanComplete}
+            placeholder="Scan or enter barcode"
+            autoFocus={true}
+            label="Barcode Scanner"
+          />
+          <HeaderButton
+            icon={"search"}
+            onPress={handleToggleSearch}
+            style={StyleSheet.flatten([
+              styles.searchButton,
+              isSearchEnabled && styles.searchButtonActive
+            ])}
           />
         </View>
-        <ScanButton onPress={handleScanDeliveryId} />
       </View>
+
+      {/* Search Bar Section - Only shown when search is enabled */}
+      {isSearchEnabled && (
+        <View style={styles.searchSection}>
+          <View style={styles.searchBarContainer}>
+            <SearchBar
+              placeholder="Search deliveries"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              autoFocus={true}
+            />
+          </View>
+          <ScanButton onPress={handleScanDeliveryId} />
+        </View>
+      )}
 
       {/* Load to Dock Items List with Infinite Scroll */}
       <View style={styles.contentSection}>

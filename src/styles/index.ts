@@ -6,6 +6,7 @@ export * from './LoginScreen.styles';
 export * from './OrganizationScreen.styles';
 export * from './header.styles';
 export * from './LoadToDockItemsScreen.styles';
+export * from './BarcodeInputField.styles';
 
 // You can add more style exports here as you create them
 // export * from './Button.styles';

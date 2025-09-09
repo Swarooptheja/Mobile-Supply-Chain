@@ -3,8 +3,6 @@ import { View, Text, SafeAreaView, ScrollView, TouchableOpacity } from 'react-na
 import { useAuth } from '../context/AuthContext';
 import { useTheme, useThemeContext } from '../context/ThemeContext';
 import { AppHeader } from '../components/AppHeader';
-import NavigationDrawer from '../components/NavigationDrawer';
-import { useNavigationDrawer } from '../hooks';
 import { HeaderButton, VectorIcon } from '../components';
 import { createDashboardStyles } from '../styles/DashboardScreen.styles';
 import AuthGuard from '../components/AuthGuard';
@@ -17,7 +15,6 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
   const { user } = useAuth();
   const theme = useTheme();
   const { toggleTheme } = useThemeContext();
-  const { isDrawerVisible, openDrawer, closeDrawer, handleMenuItemPress } = useNavigationDrawer();
   const userName = user?.name || user?.username || 'User';
   
   const styles = createDashboardStyles(theme);
@@ -33,21 +30,9 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
   return (
     <AuthGuard allowBack={true}>
       <SafeAreaView style={styles.container}>
-        <AppHeader 
-          title="Dashboard" 
-          leftElement={
-            <HeaderButton
-              icon="menu"
-              onPress={openDrawer}
-            />
-          }
-          rightElement={
-            <HeaderButton
-              icon={theme.colors.background === '#121212' ? "sun" : "moon"}
-              onPress={toggleTheme}
-            />
-          }
-        />
+      <AppHeader 
+        title="Home"
+      />
       
       <ScrollView 
         style={styles.content} 
@@ -137,14 +122,6 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
           </View>
         </View>
       </ScrollView>
-
-      {/* Navigation Drawer */}
-      <NavigationDrawer
-        isVisible={isDrawerVisible}
-        onClose={closeDrawer}
-        userName={userName}
-        onMenuItemPress={handleMenuItemPress}
-      />
       </SafeAreaView>
     </AuthGuard>
   );

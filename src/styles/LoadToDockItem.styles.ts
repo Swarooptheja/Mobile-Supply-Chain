@@ -4,24 +4,31 @@ import { scale, moderateScale } from 'react-native-size-matters';
 export const createLoadToDockItemStyles = (theme: any, isTablet: boolean, isDesktop: boolean) => StyleSheet.create({
   loadItemCard: {
     backgroundColor: theme.colors.surface,
-    borderRadius: scale(4), // Reduced from 8 to 4 for less rounded corners
-    padding: scale(12),
-    marginBottom: scale(8),
+    borderRadius: scale(8), // Increased from 4 to 8 for better appearance
+    paddingVertical: scale(12), // Reduced vertical padding to decrease height
+    paddingHorizontal: scale(20), // Increased horizontal padding for more width
+    marginBottom: scale(10), // Reduced margin for tighter spacing
     shadowColor: theme.colors.shadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: theme.colors.shadow === '#000000' ? 0.08 : 0.04,
-    shadowRadius: 2,
-    elevation: 2,
-    borderLeftWidth: 4, // Increased from 3 to 4 for better visibility
+    shadowOffset: { width: 0, height: 2 }, // Increased shadow offset
+    shadowOpacity: theme.colors.shadow === '#000000' ? 0.12 : 0.08, // Increased shadow opacity
+    shadowRadius: 4, // Increased shadow radius
+    elevation: 3, // Increased elevation
+    borderLeftWidth: 5, // Increased from 4 to 5 for better visibility
     borderLeftColor: theme.colors.background === '#121212' ? theme.colors.primary : '#1e3a8a', // Match header color
+    minHeight: scale(75), // Reduced minimum height for more compact cards
+    width: '100%', // Ensure full width utilization
     // Responsive sizing
     ...(isTablet && {
-      padding: scale(14),
-      marginBottom: scale(10),
+      paddingVertical: scale(14),
+      paddingHorizontal: scale(24),
+      marginBottom: scale(12),
+      minHeight: scale(85),
     }),
     ...(isDesktop && {
-      padding: scale(16),
-      marginBottom: scale(12),
+      paddingVertical: scale(16),
+      paddingHorizontal: scale(28),
+      marginBottom: scale(14),
+      minHeight: scale(95),
     }),
   },
   inProgressCard: {
@@ -34,7 +41,7 @@ export const createLoadToDockItemStyles = (theme: any, isTablet: boolean, isDesk
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: scale(8),
+    marginBottom: scale(8), // Reduced for more compact layout
     // Responsive spacing
     ...(isTablet && {
       marginBottom: scale(10),
@@ -128,6 +135,17 @@ export const createLoadToDockItemStyles = (theme: any, isTablet: boolean, isDesk
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
+    paddingTop: scale(2), // Reduced padding for more compact layout
+    paddingHorizontal: scale(6), // Increased horizontal padding for better width utilization
+    // Responsive spacing
+    ...(isTablet && {
+      paddingTop: scale(3),
+      paddingHorizontal: scale(8),
+    }),
+    ...(isDesktop && {
+      paddingTop: scale(4),
+      paddingHorizontal: scale(10),
+    }),
   },
   leftContent: {
     flex: 1,
@@ -135,6 +153,17 @@ export const createLoadToDockItemStyles = (theme: any, isTablet: boolean, isDesk
   rightContent: {
     alignItems: 'flex-end',
     justifyContent: 'flex-end',
+    minWidth: scale(100), // Increased minimum width for better layout
+    paddingLeft: scale(16), // Added left padding to create more space
+    // Responsive sizing
+    ...(isTablet && {
+      minWidth: scale(120),
+      paddingLeft: scale(20),
+    }),
+    ...(isDesktop && {
+      minWidth: scale(140),
+      paddingLeft: scale(24),
+    }),
   },
   dockValue: {
     fontSize: moderateScale(12),
@@ -156,30 +185,30 @@ export const createLoadToDockItemStyles = (theme: any, isTablet: boolean, isDesk
     fontSize: moderateScale(14),
     color: theme.colors.textSecondary,
     fontWeight: '500',
-    marginBottom: scale(2),
+    marginBottom: scale(1), // Reduced margin for more compact layout
     // Responsive typography
     ...(isTablet && {
       fontSize: moderateScale(15),
-      marginBottom: scale(3),
+      marginBottom: scale(2),
     }),
     ...(isDesktop && {
       fontSize: moderateScale(16),
-      marginBottom: scale(4),
+      marginBottom: scale(3),
     }),
   },
   value: {
     fontSize: moderateScale(12),
     color: theme.colors.textPrimary,
     fontWeight: '600',
-    marginBottom: scale(4),
+    marginBottom: scale(2), // Reduced margin for more compact layout
     // Responsive typography
     ...(isTablet && {
       fontSize: moderateScale(13),
-      marginBottom: scale(5),
+      marginBottom: scale(3),
     }),
     ...(isDesktop && {
       fontSize: moderateScale(14),
-      marginBottom: scale(6),
+      marginBottom: scale(4),
     }),
   },
 });

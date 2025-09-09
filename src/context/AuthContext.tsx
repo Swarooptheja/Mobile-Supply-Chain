@@ -1,6 +1,6 @@
 import React, { createContext, ReactNode, useContext, useState } from 'react';
 import { loginApi, getInventoryOrganizationsApi, getInventoryOrganizationsMetadataApi } from '../services/api';
-import { IAuthContext, ILoginCredentials } from '../types/auth';
+import { IAuthContext, ILoginCredentials, IUser, IUserResponse } from '../types/auth';
 import { useDynamicTables } from '../hooks';
 import { TableNames } from '../constants/tables';
 import { useAttractiveNotification } from '../context/AttractiveNotificationContext';
@@ -20,6 +20,7 @@ export const AuthProvider: React.FC<IAuthProviderProps> = ({ children }) => {
   const { showSuccess, showError } = useAttractiveNotification();
   const [defaultOrgId, setDefaultOrgId] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [user, setUser] = useState<IUserResponse | null>(null);
  
   const login = async (credentials: ILoginCredentials, onSuccess?: () => void): Promise<void> => {
     try {
@@ -65,6 +66,10 @@ export const AuthProvider: React.FC<IAuthProviderProps> = ({ children }) => {
           showError('Login Failed', 'Default Organization ID not found');
           return;
         };
+
+        const fullNameData = await simpleDatabaseService.executeQuery(LOGIN_QUERIES.GET_FULL_NAME);
+        const fullNameArray = getDataFromResultSet(fullNameData);
+        setUser(fullNameArray[0] ?? null);
         
         // Fetch org metadata and data, then create table and insert for offline use
         try {
@@ -137,6 +142,7 @@ export const AuthProvider: React.FC<IAuthProviderProps> = ({ children }) => {
     defaultOrgId,
     isAuthenticated,
     logout,
+    user,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,6 +1,5 @@
 export { useDynamicTables } from './useDynamicTables';
 export { useRefreshData, useOrganizationRefresh, useDashboardRefresh } from './useRefreshData';
-export { useNavigationDrawer } from './useNavigationDrawer';
 export { useInfiniteScroll } from './useInfiniteScroll';
 export { useBarcodeScanner } from './useBarcodeScanner';
 export { useMediaCapture } from './useMediaCapture';
@@ -17,4 +16,5 @@ export { useSafeValues } from './useSafeValues';
 export { useRetryHandler } from './useRetryHandler';
 export { useTransactionHistory } from './useTransactionHistory';
 export { useTransactionSync } from './useTransactionSync';
+export { useDatabaseOperations } from './useDatabaseOperations';
 

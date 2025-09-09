@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
 import { useResponsive } from '../hooks/useResponsive';
-import { headerStyles, headerColors, headerSpacing } from '../styles/header.styles';
+import { headerSpacing, headerStyles } from '../styles/header.styles';
 
 interface AppHeaderProps {
 	title?: string;
@@ -20,7 +20,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({ title, leftElement, rightElement,
 
 	return (
 		<View style={[
-			headerStyles.headerContainer, 
+			headerStyles.headerContainer,
 			styles.container,
 			variant === 'syncActivity' && headerStyles.syncActivityHeader
 		]}>

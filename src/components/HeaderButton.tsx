@@ -21,7 +21,7 @@ const HeaderButton: React.FC<IHeaderButtonProps> = ({
   icon,
   size,
   color = headerColors.icon, // Use consistent header icon color
-  backgroundColor = 'transparent', // Transparent background for better header consistency
+  backgroundColor = headerColors.primary, // Use header background color for consistency
   style,
   testID,
   disabled = false

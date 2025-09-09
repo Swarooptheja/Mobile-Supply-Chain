@@ -31,7 +31,7 @@ export const createDashboardStyles = (theme: any) => StyleSheet.create({
     }),
   },
   scrollContent: {
-    paddingBottom: scale(20),
+    paddingBottom: scale(120), // Responsive padding for bottom navigation
   },
   
   // Welcome Section
