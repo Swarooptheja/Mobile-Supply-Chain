@@ -46,23 +46,21 @@ const TabIcon: React.FC<{ routeName: string; color: string; size: number }> = ({
 
 const BottomTabNavigator: React.FC = () => {
   const theme = useTheme();
-  const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+  const { width: screenWidth } = Dimensions.get('window');
   
   // Responsive sizing
   const isTablet = screenWidth > 768 && screenWidth <= 1024;
   const isDesktop = screenWidth > 1024;
-  const isSmallDevice = screenWidth <= 375;
   
-  // Responsive dimensions
+  // Responsive dimensions - Increased heights for better spacing
   const tabBarHeight = Platform.OS === 'ios' 
-    ? (isDesktop ? 100 : isTablet ? 90 : 85)
-    : (isDesktop ? 80 : isTablet ? 75 : 70);
+    ? (isDesktop ? 140 : isTablet ? 130 : 120)
+    : (isDesktop ? 120 : isTablet ? 110 : 105);
     
-  const iconSize = isDesktop ? 28 : isTablet ? 24 : 22;
   const fontSize = isDesktop ? 13 : isTablet ? 12 : 11;
   const paddingBottom = Platform.OS === 'ios' 
-    ? (isDesktop ? 30 : isTablet ? 25 : 20)
-    : (isDesktop ? 15 : isTablet ? 12 : 10);
+    ? (isDesktop ? 40 : isTablet ? 35 : 30)
+    : (isDesktop ? 25 : isTablet ? 20 : 18);
 
   const getTabIcon = (routeName: string, color: string, size: number) => (
     <TabIcon routeName={routeName} color={color} size={size} />
@@ -89,6 +87,10 @@ const BottomTabNavigator: React.FC = () => {
           },
           shadowOpacity: theme.isDark ? 0.3 : 0.1,
           shadowRadius: 4,
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
         },
         tabBarLabelStyle: {
           fontSize,

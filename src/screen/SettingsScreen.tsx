@@ -1,13 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Alert,
   Dimensions,
   Modal,
   SafeAreaView,
+  ScrollView,
   Switch,
   Text,
   TouchableOpacity,
-  View
+  View,
+  Animated,
+  Platform
 } from 'react-native';
 import { VectorIcon, AppHeader, HeaderButton } from '../components';
 import { useAuth } from '../context/AuthContext';
@@ -26,15 +29,38 @@ const SettingsScreen: React.FC = () => {
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   
   const { width: screenWidth } = Dimensions.get('window');
+  const isSmallMobile = screenWidth <= 375;
+  const isMobile = screenWidth > 375 && screenWidth <= 768;
   const isTablet = screenWidth > 768 && screenWidth <= 1024;
   const isDesktop = screenWidth > 1024;
+  const isLargeDesktop = screenWidth > 1440;
   
   const styles = createSettingsScreenStyles(theme);
   
   // Responsive icon sizes
-  const iconSize = isDesktop ? 24 : isTablet ? 22 : 20;
+  const iconSize = isLargeDesktop ? 28 : isDesktop ? 24 : isTablet ? 22 : 20;
+  
+  // Animation values
+  const fadeAnim = useState(new Animated.Value(0))[0];
+  const slideAnim = useState(new Animated.Value(50))[0];
 
-  const handleLogout = (): void => {
+  // Animation effect
+  React.useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  const handleLogout = useCallback((): void => {
     Alert.alert(
       'Logout',
       'Are you sure you want to logout?',
@@ -63,9 +89,9 @@ const SettingsScreen: React.FC = () => {
         },
       ]
     );
-  };
+  }, [logout, navigation]);
 
-  const handleLogoutAndClearDB = (): void => {
+  const handleLogoutAndClearDB = useCallback((): void => {
     if (isClearing || isSyncing) {
       Alert.alert('Please wait', 'Database is being processed. Please wait...');
       return;
@@ -102,48 +128,55 @@ const SettingsScreen: React.FC = () => {
         },
       ]
     );
-  };
+  }, [isClearing, isSyncing, clearDatabaseWithSync, logout, navigation]);
 
-  const handleLanguageChange = (): void => {
+  const handleLanguageChange = useCallback((): void => {
     setShowLanguageDropdown(true);
-  };
+  }, []);
 
-  const handleLanguageSelect = (language: string) => {
+  const handleLanguageSelect = useCallback((language: string) => {
     setSelectedLanguage(language);
     setShowLanguageDropdown(false);
-  };
+  }, []);
 
-  const handleInvOrgPress = (): void => {
+  const handleInvOrgPress = useCallback((): void => {
     navigation.navigate('Organization' as never);
-  };
+  }, [navigation]);
 
-  const renderSettingItem = (
+  const renderSettingItem = useCallback((
     icon: string,
     title: string,
     rightElement?: React.ReactNode,
     onPress?: () => void,
-    showDivider: boolean = true
+    showDivider: boolean = true,
+    isDestructive: boolean = false,
+    accessibilityLabel?: string
   ) => (
     <TouchableOpacity
       style={[styles.settingItem, !showDivider && styles.lastSettingItem]}
       onPress={onPress}
       disabled={!onPress}
       activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel || title}
+      accessibilityHint={onPress ? 'Double tap to activate' : undefined}
     >
       <View style={styles.settingLeft}>
         <View style={styles.settingIconContainer}>
           <VectorIcon
             name={icon}
             size={iconSize}
-            color={theme.colors.textPrimary}
+            color={isDestructive ? (theme.colors.error || "#ef4444") : theme.colors.textSecondary}
             iconSet="MaterialIcons"
           />
         </View>
-        <Text style={styles.settingTitle}>{title}</Text>
+        <Text style={[styles.settingTitle, isDestructive && styles.destructiveText]}>
+          {title}
+        </Text>
       </View>
       {rightElement && <View style={styles.settingRight}>{rightElement}</View>}
     </TouchableOpacity>
-  );
+  ), [iconSize, theme.colors, styles]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -158,112 +191,135 @@ const SettingsScreen: React.FC = () => {
         }
       />
 
-      {/* Profile Section */}
-      <View style={styles.profileSection}>
-        <View style={styles.profileAvatar}>
-          <Text style={styles.profileInitials}>
-            {user?.FULL_NAME?.split(' ').map(n => n[0]).join('').toUpperCase() || 'JS'}
-          </Text>
-        </View>
-        <Text style={styles.profileName}>
-          {user?.FULL_NAME || 'John, Mr. Smith'}
-        </Text>
-      </View>
-
-      {/* Settings List */}
-      <View style={styles.settingsCard}>
-        <Text style={styles.settingsTitle}>Settings</Text>
-        
-        {/* Dark Mode */}
-        {renderSettingItem(
-          'dark-mode',
-          'Dark Mode',
-          <Switch
-            value={themeMode === 'dark'}
-            onValueChange={toggleTheme}
-            trackColor={{ false: '#e9ecef', true: theme.colors.primary }}
-            thumbColor={themeMode === 'dark' ? '#ffffff' : '#f4f3f4'}
-          />
-        )}
-
-        {/* Inv Org Switch */}
-        {renderSettingItem(
-          'business',
-          'Inv Org',
-          <VectorIcon
-            name="chevron-right"
-            size={iconSize}
-            color={theme.colors.textSecondary}
-            iconSet="MaterialIcons"
-          />,
-          handleInvOrgPress
-        )}
-
-        {/* Language */}
-        {renderSettingItem(
-          'language',
-          'Language',
-          <View style={styles.languageContainer}>
-            <Text style={styles.languageText}>{selectedLanguage}</Text>
-            <VectorIcon
-              name="keyboard-arrow-down"
-              size={iconSize}
-              color={theme.colors.textSecondary}
-              iconSet="MaterialIcons"
-            />
-          </View>,
-          handleLanguageChange
-        )}
-
-        {/* About */}
-        {renderSettingItem(
-          'info',
-          'About',
-          <VectorIcon
-            name="chevron-right"
-            size={iconSize}
-            color={theme.colors.textSecondary}
-            iconSet="MaterialIcons"
-          />,
-          () => {
-            // Handle about navigation
-            Alert.alert('About', 'App Version 1.0.0\nBuild 2024.01.15');
-          },
-          false
-        )}
-      </View>
-
-      {/* Logout Buttons */}
-      <View style={styles.logoutButtonsContainer}>
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <VectorIcon
-            name="exit-to-app"
-            size={iconSize}
-            color={theme.colors.white}
-            iconSet="MaterialIcons"
-          />
-          <Text style={styles.logoutButtonText}>Logout</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={[styles.clearDbButton, (isClearing || isSyncing) && styles.disabledButton]} 
-          onPress={handleLogoutAndClearDB}
-          disabled={isClearing || isSyncing}
+      <ScrollView 
+        style={styles.scrollContainer} 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: Platform.OS === 'ios' ? 20 : 0 }}
+      >
+        <Animated.View
+          style={{
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }],
+          }}
         >
-          <VectorIcon
-            name={(isClearing || isSyncing) ? "hourglass-empty" : "delete-forever"}
-            size={iconSize}
-            color={theme.colors.white}
-            iconSet="MaterialIcons"
-          />
-          <Text style={styles.clearDbButtonText}>
-            {isSyncing ? 'Syncing...' : isClearing ? 'Clearing...' : 'Logout + ClearDB'}
-          </Text>
-        </TouchableOpacity>
-      </View>
+          {/* Profile Section */}
+          <View style={styles.profileSection}>
+            <View style={styles.profileAvatar}>
+              <VectorIcon
+                name="person"
+                size={isLargeDesktop ? 56 : isDesktop ? 48 : isTablet ? 44 : 40}
+                color="#ffffff"
+                iconSet="MaterialIcons"
+              />
+            </View>
+            <Text style={styles.profileName}>
+              {user?.FULL_NAME || 'John, Mr. Smith'}
+            </Text>
+          </View>
 
-      {/* Version Info */}
-      <Text style={styles.versionText}>Version - LoadToDock.V1.25C</Text>
+          {/* Settings List */}
+          <View style={styles.settingsCard}>
+            {/* Theme */}
+            {renderSettingItem(
+              'brightness-6',
+              'Theme',
+              <Switch
+                value={themeMode === 'dark'}
+                onValueChange={toggleTheme}
+                trackColor={{ 
+                  false: theme.colors.border, 
+                  true: theme.colors.primary 
+                }}
+                thumbColor={themeMode === 'dark' ? '#ffffff' : '#f4f3f4'}
+                accessibilityLabel="Toggle dark mode"
+              />,
+              undefined,
+              true,
+              false,
+              'Toggle theme between light and dark mode'
+            )}
+
+            {/* Inventory Org */}
+            {renderSettingItem(
+              'business',
+              'Inventory Org',
+              <VectorIcon
+                name="chevron-right"
+                size={iconSize}
+                color={theme.colors.textSecondary}
+                iconSet="MaterialIcons"
+              />,
+              handleInvOrgPress,
+              true,
+              false,
+              'Navigate to organization selection'
+            )}
+
+            {/* Language */}
+            {renderSettingItem(
+              'language',
+              'Language',
+              <View style={styles.languageContainer}>
+                <Text style={styles.languageText}>{selectedLanguage}</Text>
+                <VectorIcon
+                  name="keyboard-arrow-down"
+                  size={iconSize}
+                  color={theme.colors.textSecondary}
+                  iconSet="MaterialIcons"
+                />
+              </View>,
+              handleLanguageChange,
+              true,
+              false,
+              'Select language preference'
+            )}
+
+            {/* About */}
+            {renderSettingItem(
+              'info',
+              'About',
+              <VectorIcon
+                name="chevron-right"
+                size={iconSize}
+                color={theme.colors.textSecondary}
+                iconSet="MaterialIcons"
+              />,
+              () => {
+                // Handle about navigation
+                Alert.alert('About', 'App Version 1.0.0\nBuild 2024.01.15');
+              },
+              true,
+              false,
+              'View app information and version'
+            )}
+
+            {/* Logout */}
+            {renderSettingItem(
+              'exit-to-app',
+              'Logout',
+              undefined,
+              handleLogout,
+              true,
+              true,
+              'Sign out of the application'
+            )}
+
+            {/* Logout + Clear Data */}
+            {renderSettingItem(
+              'exit-to-app',
+              'Logout + Clear Data',
+              undefined,
+              handleLogoutAndClearDB,
+              false,
+              true,
+              'Sign out and clear all local data'
+            )}
+          </View>
+
+          {/* Version Info */}
+          <Text style={styles.versionText}>Version - MSCA2025A-V1.1.0</Text>
+        </Animated.View>
+      </ScrollView>
 
       {/* Language Dropdown Modal */}
       <Modal
@@ -271,11 +327,14 @@ const SettingsScreen: React.FC = () => {
         transparent={true}
         animationType="fade"
         onRequestClose={() => setShowLanguageDropdown(false)}
+        statusBarTranslucent={true}
       >
         <TouchableOpacity
           style={styles.modalOverlay}
           activeOpacity={1}
           onPress={() => setShowLanguageDropdown(false)}
+          accessibilityRole="button"
+          accessibilityLabel="Close language selection"
         >
           <View style={styles.dropdownContainer}>
             <Text style={styles.dropdownTitle}>Select Language</Text>
@@ -287,6 +346,9 @@ const SettingsScreen: React.FC = () => {
                   selectedLanguage === language && styles.dropdownItemSelected
                 ]}
                 onPress={() => handleLanguageSelect(language)}
+                accessibilityRole="button"
+                accessibilityLabel={`Select ${language} language`}
+                accessibilityState={{ selected: selectedLanguage === language }}
               >
                 <Text style={[
                   styles.dropdownItemText,

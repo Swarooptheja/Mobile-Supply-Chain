@@ -1,9 +1,8 @@
 import React from 'react';
 import { View, Text, SafeAreaView, ScrollView, TouchableOpacity } from 'react-native';
-import { useAuth } from '../context/AuthContext';
-import { useTheme, useThemeContext } from '../context/ThemeContext';
+import { useTheme } from '../context/ThemeContext';
 import { AppHeader } from '../components/AppHeader';
-import { HeaderButton, VectorIcon } from '../components';
+import { VectorIcon } from '../components';
 import { createDashboardStyles } from '../styles/DashboardScreen.styles';
 import AuthGuard from '../components/AuthGuard';
 
@@ -12,10 +11,7 @@ interface DashboardScreenProps {
 }
 
 const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
-  const { user } = useAuth();
   const theme = useTheme();
-  const { toggleTheme } = useThemeContext();
-  const userName = user?.name || user?.username || 'User';
   
   const styles = createDashboardStyles(theme);
 

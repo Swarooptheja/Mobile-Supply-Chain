@@ -3,71 +3,91 @@ import { Theme } from '../context/ThemeContext';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-// Device type detection
+// Device type detection with more granular breakpoints
+const isSmallMobile = screenWidth <= 375;
+const isMobile = screenWidth > 375 && screenWidth <= 768;
 const isTablet = screenWidth > 768 && screenWidth <= 1024;
 const isDesktop = screenWidth > 1024;
-const isSmallDevice = screenWidth <= 375;
+const isLargeDesktop = screenWidth > 1440;
+
+// Responsive values
+const getResponsiveValue = (mobile: number, tablet: number, desktop: number) => {
+  if (isDesktop) return desktop;
+  if (isTablet) return tablet;
+  return mobile;
+};
+
+const getResponsiveFontSize = (mobile: number, tablet: number, desktop: number) => {
+  if (isLargeDesktop) return desktop + 2;
+  if (isDesktop) return desktop;
+  if (isTablet) return tablet;
+  return mobile;
+};
 
 export const createSettingsScreenStyles = (theme: Theme) => {
   return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background === '#121212' ? theme.colors.primary : '#1e3a8a', // Same as header color
+    backgroundColor: theme.colors.background,
+  },
+  scrollContainer: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
   },
   profileSection: {
     alignItems: 'center',
-    paddingVertical: isDesktop ? 32 : isTablet ? 28 : 24,
-    backgroundColor: theme.colors.background === '#121212' ? theme.colors.primary : '#1e3a8a',
-    marginTop: -20, // Overlap with header for better visual
+    paddingVertical: getResponsiveValue(24, 32, 40),
+    backgroundColor: theme.colors.background,
+    paddingTop: getResponsiveValue(20, 24, 32),
+    paddingHorizontal: getResponsiveValue(16, 24, 32),
   },
     profileAvatar: {
-      width: isDesktop ? 100 : isTablet ? 90 : 80,
-      height: isDesktop ? 100 : isTablet ? 90 : 80,
-      borderRadius: isDesktop ? 50 : isTablet ? 45 : 40,
-      backgroundColor: theme.colors.white,
+      width: getResponsiveValue(80, 96, 112),
+      height: getResponsiveValue(80, 96, 112),
+      borderRadius: getResponsiveValue(40, 48, 56),
+      backgroundColor: theme.colors.background === '#121212' ? theme.colors.primary : '#1e3a8a',
       justifyContent: 'center',
       alignItems: 'center',
-      marginBottom: isDesktop ? 16 : isTablet ? 14 : 12,
-    },
-    profileInitials: {
-      fontSize: isDesktop ? 40 : isTablet ? 36 : 32,
-      fontWeight: 'bold',
-      color: theme.colors.primary,
-    },
-    profileName: {
-      fontSize: isDesktop ? 22 : isTablet ? 20 : 18,
-      fontWeight: '600',
-      color: theme.colors.white,
-    },
-    settingsCard: {
-      backgroundColor: theme.colors.surface,
-      marginHorizontal: isDesktop ? 32 : isTablet ? 24 : 20,
-      marginTop: -20, // Overlap with header
-      borderRadius: isDesktop ? 16 : isTablet ? 14 : 12,
+      marginBottom: getResponsiveValue(12, 16, 20),
       shadowColor: theme.colors.shadow,
       shadowOffset: {
         width: 0,
-        height: 2,
+        height: getResponsiveValue(2, 4, 6),
       },
-      shadowOpacity: theme.isDark ? 0.3 : 0.1,
-      shadowRadius: isDesktop ? 8 : isTablet ? 6 : 4,
-      elevation: isDesktop ? 8 : isTablet ? 6 : 5,
+      shadowOpacity: theme.isDark ? 0.3 : 0.15,
+      shadowRadius: getResponsiveValue(4, 6, 8),
+      elevation: getResponsiveValue(4, 6, 8),
     },
-    settingsTitle: {
-      fontSize: isDesktop ? 22 : isTablet ? 20 : 18,
-      fontWeight: 'bold',
+    profileName: {
+      fontSize: getResponsiveFontSize(18, 20, 22),
+      fontWeight: '600',
       color: theme.colors.textPrimary,
-      paddingHorizontal: isDesktop ? 28 : isTablet ? 24 : 20,
-      paddingTop: isDesktop ? 28 : isTablet ? 24 : 20,
-      paddingBottom: isDesktop ? 16 : isTablet ? 14 : 12,
+      textAlign: 'center',
+      maxWidth: '100%',
+    },
+    settingsCard: {
+      backgroundColor: theme.colors.surface,
+      marginHorizontal: getResponsiveValue(0, 16, 32),
+      marginTop: getResponsiveValue(0, 8, 16),
+      borderRadius: getResponsiveValue(0, 12, 16),
+      shadowColor: theme.colors.shadow,
+      shadowOffset: {
+        width: 0,
+        height: getResponsiveValue(2, 4, 6),
+      },
+      shadowOpacity: theme.isDark ? 0.2 : 0.1,
+      shadowRadius: getResponsiveValue(4, 6, 8),
+      elevation: getResponsiveValue(2, 4, 6),
+      overflow: 'hidden',
     },
     settingItem: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: isDesktop ? 28 : isTablet ? 24 : 20,
-      paddingVertical: isDesktop ? 20 : isTablet ? 18 : 16,
+      paddingHorizontal: getResponsiveValue(20, 24, 32),
+      paddingVertical: getResponsiveValue(16, 20, 24),
       borderBottomWidth: 1,
       borderBottomColor: theme.colors.border,
+      minHeight: getResponsiveValue(56, 64, 72),
     },
     lastSettingItem: {
       borderBottomWidth: 0,
@@ -78,116 +98,87 @@ export const createSettingsScreenStyles = (theme: Theme) => {
       flex: 1,
     },
     settingIconContainer: {
-      width: isDesktop ? 28 : isTablet ? 26 : 24,
-      height: isDesktop ? 28 : isTablet ? 26 : 24,
+      width: getResponsiveValue(24, 28, 32),
+      height: getResponsiveValue(24, 28, 32),
       justifyContent: 'center',
       alignItems: 'center',
-      marginRight: isDesktop ? 20 : isTablet ? 18 : 16,
+      marginRight: getResponsiveValue(16, 20, 24),
     },
     settingTitle: {
-      fontSize: isDesktop ? 18 : isTablet ? 17 : 16,
+      fontSize: getResponsiveFontSize(16, 17, 18),
       color: theme.colors.textPrimary,
       fontWeight: '500',
+      flex: 1,
+    },
+    destructiveText: {
+      color: theme.colors.error || '#ef4444',
     },
     settingRight: {
-      marginLeft: isDesktop ? 20 : isTablet ? 18 : 16,
+      marginLeft: getResponsiveValue(12, 16, 20),
     },
     languageContainer: {
       flexDirection: 'row',
       alignItems: 'center',
     },
     languageText: {
-      fontSize: isDesktop ? 18 : isTablet ? 17 : 16,
+      fontSize: getResponsiveFontSize(15, 16, 17),
       color: theme.colors.textSecondary,
-      marginRight: isDesktop ? 12 : isTablet ? 10 : 8,
-    },
-    logoutButtonsContainer: {
-      marginHorizontal: isDesktop ? 32 : isTablet ? 24 : 20,
-      marginTop: isDesktop ? 28 : isTablet ? 24 : 20,
-      gap: isDesktop ? 16 : isTablet ? 14 : 12,
-    },
-    logoutButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: '#6c757d',
-      paddingVertical: isDesktop ? 20 : isTablet ? 18 : 16,
-      borderRadius: isDesktop ? 12 : isTablet ? 10 : 8,
-    },
-    logoutButtonText: {
-      color: theme.colors.white,
-      fontSize: isDesktop ? 18 : isTablet ? 17 : 16,
-      fontWeight: '600',
-      marginLeft: isDesktop ? 12 : isTablet ? 10 : 8,
-    },
-    clearDbButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: '#dc3545',
-      paddingVertical: isDesktop ? 20 : isTablet ? 18 : 16,
-      borderRadius: isDesktop ? 12 : isTablet ? 10 : 8,
-    },
-    clearDbButtonText: {
-      color: theme.colors.white,
-      fontSize: isDesktop ? 18 : isTablet ? 17 : 16,
-      fontWeight: '600',
-      marginLeft: isDesktop ? 12 : isTablet ? 10 : 8,
-    },
-    disabledButton: {
-      opacity: 0.6,
+      marginRight: getResponsiveValue(6, 8, 10),
+      fontWeight: '500',
     },
     versionText: {
-      fontSize: isDesktop ? 14 : isTablet ? 13 : 12,
+      fontSize: getResponsiveFontSize(12, 14, 16),
       color: theme.colors.textSecondary,
       textAlign: 'center',
-      marginTop: isDesktop ? 20 : isTablet ? 18 : 16,
-      marginBottom: isDesktop ? 140 : isTablet ? 130 : 120, // Responsive margin for bottom navigation
+      marginTop: getResponsiveValue(20, 24, 32),
+      marginBottom: getResponsiveValue(24, 32, 40),
+      marginHorizontal: getResponsiveValue(16, 24, 32),
+      fontWeight: '500',
     },
     // Dropdown Modal Styles
     modalOverlay: {
       flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      backgroundColor: theme.isDark ? 'rgba(0, 0, 0, 0.7)' : 'rgba(0, 0, 0, 0.5)',
       justifyContent: 'center',
       alignItems: 'center',
     },
     dropdownContainer: {
       backgroundColor: theme.colors.surface,
-      borderRadius: isDesktop ? 16 : isTablet ? 14 : 12,
-      padding: isDesktop ? 24 : isTablet ? 20 : 16,
-      marginHorizontal: isDesktop ? 40 : isTablet ? 32 : 20,
-      minWidth: isDesktop ? 300 : isTablet ? 280 : 250,
-      maxWidth: 400,
+      borderRadius: getResponsiveValue(12, 16, 20),
+      padding: getResponsiveValue(20, 24, 32),
+      marginHorizontal: getResponsiveValue(24, 32, 48),
+      minWidth: getResponsiveValue(280, 320, 360),
+      maxWidth: getResponsiveValue(350, 400, 450),
       shadowColor: theme.colors.shadow,
       shadowOffset: {
         width: 0,
-        height: 4,
+        height: getResponsiveValue(8, 12, 16),
       },
-      shadowOpacity: theme.isDark ? 0.4 : 0.2,
-      shadowRadius: 8,
-      elevation: 10,
+      shadowOpacity: theme.isDark ? 0.4 : 0.25,
+      shadowRadius: getResponsiveValue(16, 20, 24),
+      elevation: getResponsiveValue(16, 20, 24),
     },
     dropdownTitle: {
-      fontSize: isDesktop ? 20 : isTablet ? 18 : 16,
-      fontWeight: 'bold',
+      fontSize: getResponsiveFontSize(16, 18, 20),
+      fontWeight: '600',
       color: theme.colors.textPrimary,
-      marginBottom: isDesktop ? 20 : isTablet ? 16 : 12,
+      marginBottom: getResponsiveValue(16, 20, 24),
       textAlign: 'center',
     },
     dropdownItem: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      paddingVertical: isDesktop ? 16 : isTablet ? 14 : 12,
-      paddingHorizontal: isDesktop ? 16 : isTablet ? 14 : 12,
-      borderRadius: isDesktop ? 8 : isTablet ? 6 : 4,
-      marginBottom: isDesktop ? 8 : isTablet ? 6 : 4,
+      paddingVertical: getResponsiveValue(14, 16, 18),
+      paddingHorizontal: getResponsiveValue(14, 16, 18),
+      borderRadius: getResponsiveValue(8, 10, 12),
+      marginBottom: getResponsiveValue(2, 4, 6),
     },
     dropdownItemSelected: {
       backgroundColor: theme.colors.primary + '20', // 20% opacity
     },
     dropdownItemText: {
-      fontSize: isDesktop ? 18 : isTablet ? 17 : 16,
+      fontSize: getResponsiveFontSize(15, 16, 17),
       color: theme.colors.textPrimary,
       fontWeight: '500',
     },
