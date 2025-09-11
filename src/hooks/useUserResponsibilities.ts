@@ -47,18 +47,18 @@ export const useUserResponsibilities = (): UseUserResponsibilitiesReturn => {
         .map(row => row.RESPONSIBILITY)
         .filter(Boolean) // Remove null/undefined values
         .map(resp => {
-          console.log('Processing responsibility:', resp);
           // Map responsibility names to API keys
           const responsibilityMap: Record<string, string> = {
             'SHIP CONFIRM': 'SHIP_CONFIRM',
           };
           
-          const mappedResp = responsibilityMap[resp] || resp;
-          console.log(`Mapped responsibility "${resp}" to "${mappedResp}"`);
-          return mappedResp;
+          return responsibilityMap[resp] || resp;
         });
 
-      console.log('Final mapped responsibilities:', userResponsibilities);
+      // Only log in development mode
+      if (__DEV__) {
+        console.log('User responsibilities loaded:', userResponsibilities.length, 'responsibilities');
+      }
       setResponsibilities(userResponsibilities);
     } catch (err) {
       console.error('Error fetching user responsibilities:', err);

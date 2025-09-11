@@ -3,6 +3,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { useAttractiveNotification } from '../context/AttractiveNotificationContext';
 import { useUserResponsibilities } from './useUserResponsibilities';
+import { useOrganization } from '../context/OrganizationContext';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import { CONFIG_RESPOSIBILITIES, MASTER_RESPOSIBILITIES } from '../config/api';
 
@@ -10,18 +11,18 @@ import { CONFIG_RESPOSIBILITIES, MASTER_RESPOSIBILITIES } from '../config/api';
 export const useOrganizationSelection = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'Organization'>>();
   const { showError } = useAttractiveNotification();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const { selectedOrgId, setSelectedOrgId } = useOrganization();
   const [isProcessing, setIsProcessing] = useState(false);
   const { responsibilities, error: responsibilitiesError } = useUserResponsibilities();
 
   // Handle organization selection
   const handleSelectOrganization = useCallback((id: string) => {
-    setSelectedId(id);
-  }, []);
+    setSelectedOrgId(id);
+  }, [setSelectedOrgId]);
 
   // Handle organization confirmation and navigation
   const handleConfirmSelection = useCallback(async () => {
-    if (!selectedId) return;
+    if (!selectedOrgId) return;
 
     try {
       setIsProcessing(true);
@@ -33,7 +34,7 @@ export const useOrganizationSelection = () => {
           routes: [{
             name: 'Activity',
             params: {
-              selectedOrgId: selectedId,
+              selectedOrgId: selectedOrgId,
               responsibilities: [...responsibilities, ...MASTER_RESPOSIBILITIES, ...CONFIG_RESPOSIBILITIES],
             }
           }],
@@ -49,15 +50,15 @@ export const useOrganizationSelection = () => {
     } finally {
       setIsProcessing(false);
     }
-  }, [selectedId, navigation, showError, responsibilities, responsibilitiesError]);
+  }, [selectedOrgId, navigation, showError, responsibilities, responsibilitiesError]);
 
   // Clear selection
   const clearSelection = useCallback(() => {
-    setSelectedId(null);
-  }, []);
+    setSelectedOrgId(null);
+  }, [setSelectedOrgId]);
 
   return {
-    selectedId,
+    selectedId: selectedOrgId,
     isProcessing,
     handleSelectOrganization,
     handleConfirmSelection,

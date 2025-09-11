@@ -5,7 +5,7 @@ import { IApiRequestConfig, IApiResponse, ResultSet } from "./sharedService.inte
 
 export function getDataFromResultSet(resultSet: ResultSet[]): any[] {
     // Add safety checks for undefined or null resultSet
-    if (!resultSet || !resultSet[0].rows.length) {
+    if (!resultSet || !resultSet[0]?.rows?.length) {
         console.warn('getDataFromResultSet: resultSet or resultSet.rows is undefined/null');
         return [];
     }

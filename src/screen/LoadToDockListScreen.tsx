@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   SafeAreaView,
   StatusBar,
@@ -17,7 +17,7 @@ import SortAndFilter from '../components/SortAndFilter';
 import { ScanButton } from '../components';
 import { ILoadToDockItem } from '../types/loadToDock.interface';
 import { loadToDockService } from '../services/loadToDockService';
-import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
+import { useLoadToDockSearch } from '../hooks/useLoadToDockSearch';
 import { useSortAndFilter } from '../hooks/useSortAndFilter';
 import { useAttractiveNotification } from '../context/AttractiveNotificationContext';
 import { useTheme } from '../context/ThemeContext';
@@ -25,13 +25,14 @@ import { getSortOptions, getFilterOptions } from '../constants/sortFilterOptions
 import { useResponsive } from '../hooks/useResponsive';
 import { BUSINESS_CONFIG } from '../config';
 import { createLoadToDockListStyles } from '../styles/LoadToDockListScreen.styles';
+import { useLoadToDockRefresh } from '../hooks/useLoadToDockRefresh';
+import { RefreshProgressIndicator } from '../components/RefreshProgressIndicator';
 
 interface LoadToDockListScreenProps {
   navigation: any;
 }
 
 const LoadToDockListScreen: React.FC<LoadToDockListScreenProps> = ({ navigation }) => {
-  const [searchQuery, setSearchQuery] = useState('');
   const [barcodeInput, setBarcodeInput] = useState('');
   const [showSortFilterModal, setShowSortFilterModal] = useState(false);
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
@@ -40,12 +41,41 @@ const LoadToDockListScreen: React.FC<LoadToDockListScreenProps> = ({ navigation 
   const { headerButtonSpacing } = useResponsive();
   const theme = useTheme();
   
-  // Device size detection for responsive design
-  const { width: screenWidth } = Dimensions.get('window');
-  const isTablet = screenWidth > 768 && screenWidth <= 1024;
-  const isDesktop = screenWidth > 1024;
+  // Use optimized search hook
+  const {
+    searchQuery,
+    setSearchQuery,
+    data: loadToDockItems,
+    isLoading,
+    isLoadingMore,
+    hasMore,
+    error,
+    loadMore,
+    refresh,
+    reset
+  } = useLoadToDockSearch();
   
-  const styles = createLoadToDockListStyles(theme, isTablet, isDesktop);
+  // Add the new refresh hook
+  const {
+    isRefreshing,
+    refreshProgress,
+    refreshShipConfirmData,
+    cancelRefresh
+  } = useLoadToDockRefresh();
+  
+  // Device size detection for responsive design - memoized to prevent recalculation
+  const deviceInfo = useMemo(() => {
+    const { width: screenWidth } = Dimensions.get('window');
+    return {
+      isTablet: screenWidth > 768 && screenWidth <= 1024,
+      isDesktop: screenWidth > 1024,
+    };
+  }, []);
+  
+  const styles = useMemo(() => 
+    createLoadToDockListStyles(theme, deviceInfo.isTablet, deviceInfo.isDesktop),
+    [theme, deviceInfo.isTablet, deviceInfo.isDesktop]
+  );
 
   // Sort and filter hook
   const {
@@ -55,65 +85,13 @@ const LoadToDockListScreen: React.FC<LoadToDockListScreenProps> = ({ navigation 
     hasActiveFilters,
   } = useSortAndFilter([]);
 
-  // Infinite scroll hook for main data
-  const {
-    data: loadToDockItems,
-    isLoading,
-    isLoadingMore,
-    hasMore,
-    error,
-    loadMore,
-    refresh,
-    reset
-  } = useInfiniteScroll({
-    pageSize: BUSINESS_CONFIG.PAGINATION.LOAD_TO_DOCK_PAGE_SIZE,
-    onLoadMore: useCallback(async (page: number, pageSize: number) => {
-      if (searchQuery.trim()) {
-        return await loadToDockService.searchLoadToDockItemsPaginated(searchQuery, page, pageSize);
-      } else {
-        return await loadToDockService.getLoadToDockItemsPaginated(page, pageSize);
-      }
-    }, [searchQuery]),
-    onError: useCallback((error: Error) => {
-      Alert.alert('Error', `Failed to load data: ${error.message}`);
-    }, [])
-  });
-
-  // Store refresh function in ref to avoid dependency issues
-  const refreshRef = useRef(refresh);
-  refreshRef.current = refresh;
-
-  // Reset and refresh data when search query changes
-  useEffect(() => {
-    reset();
-    if (!searchQuery.trim()) {
-      refresh();
-    } else {
-      // Debounce search to avoid too many API calls
-      const timeoutId = setTimeout(() => {
-        refresh();
-      }, BUSINESS_CONFIG.PAGINATION.LOAD_TO_DOCK_SEARCH_DEBOUNCE_MS);
-      
-      return () => clearTimeout(timeoutId);
-    }
-  }, [searchQuery, reset, refresh]);
-
-  // Initial load when component mounts
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      refreshRef.current();
-    }, 100); // Small delay to ensure proper initialization
-    
-    return () => clearTimeout(timer);
-  }, []); // Empty dependency array - only run once on mount
-
   const handleToggleSearch = useCallback(() => {
     setIsSearchEnabled(prev => !prev);
     // Clear search query when disabling search
     if (isSearchEnabled) {
       setSearchQuery('');
     }
-  }, [isSearchEnabled]);
+  }, [isSearchEnabled, setSearchQuery]);
 
   const handleScanDeliveryId = async () => {
     try {
@@ -161,10 +139,22 @@ const LoadToDockListScreen: React.FC<LoadToDockListScreenProps> = ({ navigation 
 
   const handleRefreshData = async () => {
     try {
-      Alert.alert('Refresh', 'Refreshing data from SHIP_CONFIRM APIs...');
-      // TODO: Call SHIP_CONFIRM responsibility APIs here
-      // For now, just refresh the data
-      await refresh();
+      // Show progress alert with cancel option
+      // Alert.alert(
+      //   'Refreshing Data', 
+      //   'Refreshing data from SHIP_CONFIRM APIs...',
+      //   [
+      //     {
+      //       text: 'Cancel',
+      //       onPress: cancelRefresh,
+      //       style: 'cancel'
+      //     }
+      //   ]
+      // );
+      
+      // Call the refresh service
+      await refreshShipConfirmData();
+      
     } catch (error) {
       Alert.alert('Error', 'Failed to refresh data');
     }
@@ -189,8 +179,11 @@ const LoadToDockListScreen: React.FC<LoadToDockListScreenProps> = ({ navigation 
     }
   }, [updateSortAndFilter]);
 
-  // Get the data to display (either filtered/sorted or original)
-  const displayData = hasActiveFilters ? filteredAndSortedData : loadToDockItems;
+  // Get the data to display (either filtered/sorted or original) - memoized
+  const displayData = useMemo(() => 
+    hasActiveFilters ? filteredAndSortedData : loadToDockItems,
+    [hasActiveFilters, filteredAndSortedData, loadToDockItems]
+  );
 
   const handleBackToDashboard = useCallback(() => {
     navigation.navigate('Dashboard');
@@ -209,8 +202,8 @@ const LoadToDockListScreen: React.FC<LoadToDockListScreenProps> = ({ navigation 
     `${item.deliveryId}-${index}`, []
   );
 
-  // Header right elements with refresh and three-dot menu
-  const headerRightElement = (
+  // Header right elements with refresh and three-dot menu - memoized
+  const headerRightElement = useMemo(() => (
     <View style={[styles.headerRightContainer, { gap: headerButtonSpacing }]}>
       <HeaderButton
         icon="refresh"
@@ -221,7 +214,7 @@ const LoadToDockListScreen: React.FC<LoadToDockListScreenProps> = ({ navigation 
         onPress={() => setShowSortFilterModal(true)}
       />
     </View>
-  );
+  ), [styles.headerRightContainer, headerButtonSpacing, handleRefreshData]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -240,6 +233,13 @@ const LoadToDockListScreen: React.FC<LoadToDockListScreenProps> = ({ navigation 
           />
         }
         rightElement={headerRightElement}
+      />
+
+      {/* Refresh Progress Indicator */}
+      <RefreshProgressIndicator 
+        progress={refreshProgress}
+        visible={isRefreshing}
+        showDetails={true}
       />
 
       {/* Barcode Input and Search Section */}

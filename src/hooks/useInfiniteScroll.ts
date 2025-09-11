@@ -44,12 +44,10 @@ export function useInfiniteScroll<T>({
 
   const loadMore = useCallback(async () => {
     if (isLoadingMoreRef.current || !hasMore) {
-      console.log('useInfiniteScroll: LoadMore skipped - loading:', isLoadingMoreRef.current, 'hasMore:', hasMore);
       return;
     }
 
     try {
-      console.log('useInfiniteScroll: Starting loadMore, page:', currentPage);
       isLoadingMoreRef.current = true;
       setIsLoadingMore(true);
       setError(null);
@@ -63,7 +61,6 @@ export function useInfiniteScroll<T>({
       abortControllerRef.current = new AbortController();
 
       const newData = await onLoadMoreRef.current(currentPage, pageSize);
-      console.log('useInfiniteScroll: LoadMore completed, got', newData.length, 'items');
       
       if (newData.length < pageSize) {
         setHasMore(false);
@@ -74,7 +71,6 @@ export function useInfiniteScroll<T>({
         setCurrentPage(prev => prev + 1);
       }
     } catch (error) {
-      console.error('useInfiniteScroll: LoadMore error:', error);
       if (error instanceof Error && error.name !== 'AbortError') {
         const errorObj = error instanceof Error ? error : new Error('Unknown error occurred');
         setError(errorObj);
@@ -83,18 +79,15 @@ export function useInfiniteScroll<T>({
     } finally {
       setIsLoadingMore(false);
       isLoadingMoreRef.current = false;
-      console.log('useInfiniteScroll: LoadMore finished');
     }
   }, [currentPage, pageSize, hasMore]);
 
   const refresh = useCallback(async () => {
     if (isRefreshingRef.current) {
-      console.log('useInfiniteScroll: Refresh already in progress, skipping');
       return;
     }
     
     try {
-      console.log('useInfiniteScroll: Starting refresh');
       isRefreshingRef.current = true;
       setIsLoading(true);
       setError(null);
@@ -110,7 +103,6 @@ export function useInfiniteScroll<T>({
       abortControllerRef.current = new AbortController();
 
       const newData = await onLoadMoreRef.current(1, pageSize);
-      console.log('useInfiniteScroll: Refresh completed, got', newData.length, 'items');
       
       if (newData.length < pageSize) {
         setHasMore(false);
@@ -118,7 +110,6 @@ export function useInfiniteScroll<T>({
 
       setData(newData);
     } catch (error) {
-      console.error('useInfiniteScroll: Refresh error:', error);
       if (error instanceof Error && error.name !== 'AbortError') {
         const errorObj = error instanceof Error ? error : new Error('Unknown error occurred');
         setError(errorObj);
@@ -127,7 +118,6 @@ export function useInfiniteScroll<T>({
     } finally {
       setIsLoading(false);
       isRefreshingRef.current = false;
-      console.log('useInfiniteScroll: Refresh finished');
     }
   }, [pageSize]);
 

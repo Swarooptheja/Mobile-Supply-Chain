@@ -8,7 +8,7 @@
 import React, { useState } from 'react';
 import { StatusBar, useColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { AuthProvider, ThemeProvider } from './src/context';
+import { AuthProvider, ThemeProvider, OrganizationProvider } from './src/context';
 import { AttractiveNotificationProvider } from './src/context/AttractiveNotificationContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import SimpleDatabaseInitializer from './src/components/SimpleDatabaseInitializer';
@@ -29,7 +29,9 @@ function App() {
         <AttractiveNotificationProvider>
           <SimpleDatabaseInitializer onInitializationComplete={handleDatabaseInitialization}>
             <AuthProvider>
-              <AppNavigator />
+              <OrganizationProvider>
+                <AppNavigator />
+              </OrganizationProvider>
             </AuthProvider>
           </SimpleDatabaseInitializer>
         </AttractiveNotificationProvider>
