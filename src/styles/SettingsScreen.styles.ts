@@ -34,6 +34,10 @@ export const createSettingsScreenStyles = (theme: Theme) => {
     flex: 1,
     backgroundColor: theme.colors.background,
   },
+  scrollContentContainer: {
+    flexGrow: 1,
+    paddingBottom: getResponsiveValue(40, 50, 60),
+  },
   profileSection: {
     alignItems: 'center',
     paddingVertical: getResponsiveValue(24, 32, 40),
@@ -130,10 +134,11 @@ export const createSettingsScreenStyles = (theme: Theme) => {
       fontSize: getResponsiveFontSize(12, 14, 16),
       color: theme.colors.textSecondary,
       textAlign: 'center',
-      marginTop: getResponsiveValue(20, 24, 32),
-      marginBottom: getResponsiveValue(24, 32, 40),
+      marginTop: getResponsiveValue(24, 32, 40),
+      marginBottom: getResponsiveValue(16, 20, 24),
       marginHorizontal: getResponsiveValue(16, 24, 32),
       fontWeight: '500',
+      paddingVertical: getResponsiveValue(8, 12, 16),
     },
     // Dropdown Modal Styles
     modalOverlay: {

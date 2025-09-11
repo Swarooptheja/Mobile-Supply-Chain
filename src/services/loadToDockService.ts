@@ -3,7 +3,6 @@ import { API_ENDPOINTS, buildApiUrl } from '../config/api';
 import { LOAD_TO_DOCK_QUERIES } from '../constants/queries';
 import { ILoadToDockItem, ILoadToDockItemDetail, ILoadToDockTransaction, ILoadToDockTransactionRequest, ITransactionResponse, IUploadDocumentResponse } from '../types/loadToDock.interface';
 import { IMediaItem } from '../types/media.interface';
-import { networkService } from './networkService';
 import { simpleDatabaseService } from './simpleDatabase';
 import { transactionHistoryService } from './transactionHistoryService';
 
@@ -87,10 +86,29 @@ class LoadToDockService {
   /**
    * Get paginated Load to Dock items from SQLite database
    */
-  async getLoadToDockItemsPaginated(page: number, pageSize: number): Promise<ILoadToDockItem[]> {
+  async getLoadToDockItemsPaginated(page: number, pageSize: number, sortBy?: string | null): Promise<ILoadToDockItem[]> {
     try {
       const offset = (page - 1) * pageSize;
-      const result = await simpleDatabaseService.executeQuery(LOAD_TO_DOCK_QUERIES.GET_ITEMS_PAGINATED, [pageSize, offset]);
+      
+      let query: string;
+      let params: any[];
+      
+      if (sortBy) {
+        // Determine if it's an ascending sort
+        const isAscending = sortBy.includes('-asc');
+        if (isAscending) {
+          query = LOAD_TO_DOCK_QUERIES.GET_ITEMS_PAGINATED_WITH_SORT_ASC;
+          params = [sortBy, sortBy, sortBy, sortBy, pageSize, offset];
+        } else {
+          query = LOAD_TO_DOCK_QUERIES.GET_ITEMS_PAGINATED_WITH_SORT;
+          params = [sortBy, sortBy, sortBy, sortBy, sortBy, sortBy, sortBy, sortBy, pageSize, offset];
+        }
+      } else {
+        query = LOAD_TO_DOCK_QUERIES.GET_ITEMS_PAGINATED;
+        params = [pageSize, offset];
+      }
+      
+      const result = await simpleDatabaseService.executeQuery(query, params);
       const loadToDockItems = getDataFromResultSet(result);
       return loadToDockItems.map((row: any) => ({
         deliveryId: row.DeliveryId.toString(),
@@ -179,12 +197,30 @@ class LoadToDockService {
   /**
    * Search Load to Dock items with pagination
    */
-  async searchLoadToDockItemsPaginated(searchTerm: string, page: number, pageSize: number): Promise<ILoadToDockItem[]> {
+  async searchLoadToDockItemsPaginated(searchTerm: string, page: number, pageSize: number, sortBy?: string | null): Promise<ILoadToDockItem[]> {
     try {
       const searchPattern = `%${searchTerm}%`;
       const offset = (page - 1) * pageSize;
-      const result = await simpleDatabaseService.executeQuery(LOAD_TO_DOCK_QUERIES.SEARCH_ITEMS_PAGINATED, [searchPattern, searchPattern, searchPattern, pageSize, offset]);
       
+      let query: string;
+      let params: any[];
+      
+      if (sortBy) {
+        // Determine if it's an ascending sort
+        const isAscending = sortBy.includes('-asc');
+        if (isAscending) {
+          query = LOAD_TO_DOCK_QUERIES.SEARCH_ITEMS_PAGINATED_WITH_SORT_ASC;
+          params = [searchPattern, searchPattern, searchPattern, sortBy, sortBy, sortBy, sortBy, pageSize, offset];
+        } else {
+          query = LOAD_TO_DOCK_QUERIES.SEARCH_ITEMS_PAGINATED_WITH_SORT;
+          params = [searchPattern, searchPattern, searchPattern, sortBy, sortBy, sortBy, sortBy, sortBy, sortBy, sortBy, sortBy, pageSize, offset];
+        }
+      } else {
+        query = LOAD_TO_DOCK_QUERIES.SEARCH_ITEMS_PAGINATED;
+        params = [searchPattern, searchPattern, searchPattern, pageSize, offset];
+      }
+      
+      const result = await simpleDatabaseService.executeQuery(query, params);
       const items = getDataFromResultSet(result);
       return items.map((row: any) => ({
         deliveryId: row.DeliveryId.toString(),

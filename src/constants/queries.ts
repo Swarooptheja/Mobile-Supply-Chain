@@ -37,6 +37,44 @@ export const LOAD_TO_DOCK_QUERIES = {
         LIMIT ? OFFSET ?
     `,
 
+    GET_ITEMS_PAGINATED_WITH_SORT: `
+        SELECT 
+            s.*,
+            (SELECT COUNT(*) FROM ${TableNames.SHIPPING_ORDERS} WHERE DeliveryId = s.DeliveryId) as ItemCount
+        FROM ${TableNames.SHIPPING_ORDERS} s
+        GROUP BY s.DeliveryId
+        ORDER BY 
+            CASE 
+                WHEN ? = 'last-update-date-desc' THEN s.LastUpdateDate
+                WHEN ? = 'last-update-date-asc' THEN s.LastUpdateDate
+                WHEN ? = 'delivery-date-desc' THEN s.DeliveryDate
+                WHEN ? = 'delivery-date-asc' THEN s.DeliveryDate
+                WHEN ? = 'ship-date-desc' THEN s.ShipDate
+                WHEN ? = 'ship-date-asc' THEN s.ShipDate
+                WHEN ? = 'items-count-desc' THEN (SELECT COUNT(*) FROM ${TableNames.SHIPPING_ORDERS} WHERE DeliveryId = s.DeliveryId)
+                WHEN ? = 'items-count-asc' THEN (SELECT COUNT(*) FROM ${TableNames.SHIPPING_ORDERS} WHERE DeliveryId = s.DeliveryId)
+                ELSE s.ShipDate
+            END DESC
+        LIMIT ? OFFSET ?
+    `,
+
+    GET_ITEMS_PAGINATED_WITH_SORT_ASC: `
+        SELECT 
+            s.*,
+            (SELECT COUNT(*) FROM ${TableNames.SHIPPING_ORDERS} WHERE DeliveryId = s.DeliveryId) as ItemCount
+        FROM ${TableNames.SHIPPING_ORDERS} s
+        GROUP BY s.DeliveryId
+        ORDER BY 
+            CASE 
+                WHEN ? = 'last-update-date-asc' THEN s.LastUpdateDate
+                WHEN ? = 'delivery-date-asc' THEN s.DeliveryDate
+                WHEN ? = 'ship-date-asc' THEN s.ShipDate
+                WHEN ? = 'items-count-asc' THEN (SELECT COUNT(*) FROM ${TableNames.SHIPPING_ORDERS} WHERE DeliveryId = s.DeliveryId)
+                ELSE s.ShipDate
+            END ASC
+        LIMIT ? OFFSET ?
+    `,
+
     GET_ITEMS_BY_DELIVERY_ID: `
         SELECT *
         FROM ${TableNames.SHIPPING_ORDERS} 
@@ -74,6 +112,46 @@ export const LOAD_TO_DOCK_QUERIES = {
         WHERE (s.DeliveryId LIKE ? OR s.DeliveryLineId LIKE ? OR s.CustomerName LIKE ?)
         GROUP BY s.DeliveryId
         ORDER BY s.ShipDate DESC
+        LIMIT ? OFFSET ?
+    `,
+
+    SEARCH_ITEMS_PAGINATED_WITH_SORT: `
+        SELECT DISTINCT
+            s.*,
+            (SELECT COUNT(*) FROM ${TableNames.SHIPPING_ORDERS} WHERE DeliveryId = s.DeliveryId) as ItemCount
+        FROM ${TableNames.SHIPPING_ORDERS} s
+        WHERE (s.DeliveryId LIKE ? OR s.DeliveryLineId LIKE ? OR s.CustomerName LIKE ?)
+        GROUP BY s.DeliveryId
+        ORDER BY 
+            CASE 
+                WHEN ? = 'last-update-date-desc' THEN s.LastUpdateDate
+                WHEN ? = 'last-update-date-asc' THEN s.LastUpdateDate
+                WHEN ? = 'delivery-date-desc' THEN s.DeliveryDate
+                WHEN ? = 'delivery-date-asc' THEN s.DeliveryDate
+                WHEN ? = 'ship-date-desc' THEN s.ShipDate
+                WHEN ? = 'ship-date-asc' THEN s.ShipDate
+                WHEN ? = 'items-count-desc' THEN (SELECT COUNT(*) FROM ${TableNames.SHIPPING_ORDERS} WHERE DeliveryId = s.DeliveryId)
+                WHEN ? = 'items-count-asc' THEN (SELECT COUNT(*) FROM ${TableNames.SHIPPING_ORDERS} WHERE DeliveryId = s.DeliveryId)
+                ELSE s.ShipDate
+            END DESC
+        LIMIT ? OFFSET ?
+    `,
+
+    SEARCH_ITEMS_PAGINATED_WITH_SORT_ASC: `
+        SELECT DISTINCT
+            s.*,
+            (SELECT COUNT(*) FROM ${TableNames.SHIPPING_ORDERS} WHERE DeliveryId = s.DeliveryId) as ItemCount
+        FROM ${TableNames.SHIPPING_ORDERS} s
+        WHERE (s.DeliveryId LIKE ? OR s.DeliveryLineId LIKE ? OR s.CustomerName LIKE ?)
+        GROUP BY s.DeliveryId
+        ORDER BY 
+            CASE 
+                WHEN ? = 'last-update-date-asc' THEN s.LastUpdateDate
+                WHEN ? = 'delivery-date-asc' THEN s.DeliveryDate
+                WHEN ? = 'ship-date-asc' THEN s.ShipDate
+                WHEN ? = 'items-count-asc' THEN (SELECT COUNT(*) FROM ${TableNames.SHIPPING_ORDERS} WHERE DeliveryId = s.DeliveryId)
+                ELSE s.ShipDate
+            END ASC
         LIMIT ? OFFSET ?
     `,
 

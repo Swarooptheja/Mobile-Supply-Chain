@@ -62,8 +62,18 @@ export const COMMON_FILTER_OPTIONS: IFilterOption[] = [
   }
 ];
 
-// Load to Dock specific sort options
+// Load to Dock specific sort options - LastUpdateDate, DeliveryDate, ShipDate, and Items Count
 export const LOAD_TO_DOCK_SORT_OPTIONS: ISortOption[] = [
+  {
+    id: 'last-update-date-newest',
+    label: 'Last Update Date (Newest First)',
+    value: 'last-update-date-desc'
+  },
+  {
+    id: 'last-update-date-oldest',
+    label: 'Last Update Date (Oldest First)',
+    value: 'last-update-date-asc'
+  },
   {
     id: 'delivery-date-newest',
     label: 'Delivery Date (Newest First)',
@@ -75,29 +85,14 @@ export const LOAD_TO_DOCK_SORT_OPTIONS: ISortOption[] = [
     value: 'delivery-date-asc'
   },
   {
-    id: 'delivery-id-asc',
-    label: 'Delivery ID (Ascending)',
-    value: 'delivery-id-asc'
+    id: 'ship-date-newest',
+    label: 'Ship Date (Newest First)',
+    value: 'ship-date-desc'
   },
   {
-    id: 'delivery-id-desc',
-    label: 'Delivery ID (Descending)',
-    value: 'delivery-id-desc'
-  },
-  {
-    id: 'customer-name-asc',
-    label: 'Customer Name (A-Z)',
-    value: 'customer-name-asc'
-  },
-  {
-    id: 'customer-name-desc',
-    label: 'Customer Name (Z-A)',
-    value: 'customer-name-desc'
-  },
-  {
-    id: 'dock-asc',
-    label: 'Dock (A-Z)',
-    value: 'dock-asc'
+    id: 'ship-date-oldest',
+    label: 'Ship Date (Oldest First)',
+    value: 'ship-date-asc'
   },
   {
     id: 'items-count-asc',
@@ -111,75 +106,8 @@ export const LOAD_TO_DOCK_SORT_OPTIONS: ISortOption[] = [
   }
 ];
 
-// Load to Dock specific filter options
-export const LOAD_TO_DOCK_FILTER_OPTIONS: IFilterOption[] = [
-  {
-    id: 'status-pending',
-    label: 'Status: Pending',
-    value: 'pending',
-    type: 'status'
-  },
-  {
-    id: 'status-in-progress',
-    label: 'Status: In Progress',
-    value: 'in-progress',
-    type: 'status'
-  },
-  {
-    id: 'status-completed',
-    label: 'Status: Completed',
-    value: 'completed',
-    type: 'status'
-  },
-  {
-    id: 'dock-specific',
-    label: 'Dock: DOCK-01',
-    value: 'dock-01',
-    type: 'text'
-  },
-  {
-    id: 'dock-specific-2',
-    label: 'Dock: DOCK-02',
-    value: 'dock-02',
-    type: 'text'
-  },
-  {
-    id: 'customer-specific',
-    label: 'Customer: A. C. Networks',
-    value: 'ac-networks',
-    type: 'text'
-  },
-  {
-    id: 'date-range-today',
-    label: 'Date: Today',
-    value: 'today',
-    type: 'date'
-  },
-  {
-    id: 'date-range-week',
-    label: 'Date: This Week',
-    value: 'this-week',
-    type: 'date'
-  },
-  {
-    id: 'date-range-month',
-    label: 'Date: This Month',
-    value: 'this-month',
-    type: 'date'
-  },
-  {
-    id: 'has-items',
-    label: 'Has Items',
-    value: 'has-items',
-    type: 'boolean'
-  },
-  {
-    id: 'no-items',
-    label: 'No Items',
-    value: 'no-items',
-    type: 'boolean'
-  }
-];
+// Load to Dock specific filter options - Empty array (no filters for Load to Dock)
+export const LOAD_TO_DOCK_FILTER_OPTIONS: IFilterOption[] = [];
 
 // Helper function to get sort options based on screen type
 export const getSortOptions = (screenType: 'load-to-dock' | 'common' = 'common'): ISortOption[] => {

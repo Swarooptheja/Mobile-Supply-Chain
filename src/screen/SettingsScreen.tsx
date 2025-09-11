@@ -9,8 +9,7 @@ import {
   Text,
   TouchableOpacity,
   View,
-  Animated,
-  Platform
+  Animated
 } from 'react-native';
 import { VectorIcon, AppHeader, HeaderButton } from '../components';
 import { useAuth } from '../context/AuthContext';
@@ -29,8 +28,6 @@ const SettingsScreen: React.FC = () => {
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   
   const { width: screenWidth } = Dimensions.get('window');
-  const isSmallMobile = screenWidth <= 375;
-  const isMobile = screenWidth > 375 && screenWidth <= 768;
   const isTablet = screenWidth > 768 && screenWidth <= 1024;
   const isDesktop = screenWidth > 1024;
   const isLargeDesktop = screenWidth > 1440;
@@ -58,7 +55,7 @@ const SettingsScreen: React.FC = () => {
         useNativeDriver: true,
       }),
     ]).start();
-  }, []);
+  }, [fadeAnim, slideAnim]);
 
   const handleLogout = useCallback((): void => {
     Alert.alert(
@@ -194,7 +191,9 @@ const SettingsScreen: React.FC = () => {
       <ScrollView 
         style={styles.scrollContainer} 
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: Platform.OS === 'ios' ? 20 : 0 }}
+        contentContainerStyle={styles.scrollContentContainer}
+        bounces={true}
+        alwaysBounceVertical={false}
       >
         <Animated.View
           style={{

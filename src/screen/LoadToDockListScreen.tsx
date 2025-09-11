@@ -1,32 +1,29 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
-  SafeAreaView,
-  StatusBar,
-  View,
   Alert,
   Dimensions,
+  SafeAreaView,
+  StatusBar,
   StyleSheet,
+  View,
 } from 'react-native';
-import { HeaderButton } from '../components';
+import { BarcodeInputField, HeaderButton, ScanButton, SearchBar } from '../components';
 import { AppHeader } from '../components/AppHeader';
-import { SearchBar, BarcodeInputField } from '../components';
+import BarcodeScanner from '../components/BarcodeScanner';
 import InfiniteScrollList from '../components/InfiniteScrollList';
 import LoadToDockItem from '../components/LoadToDockItem';
-import BarcodeScanner from '../components/BarcodeScanner';
+import { RefreshProgressIndicator } from '../components/RefreshProgressIndicator';
 import SortAndFilter from '../components/SortAndFilter';
-import { ScanButton } from '../components';
-import { ILoadToDockItem } from '../types/loadToDock.interface';
-import { loadToDockService } from '../services/loadToDockService';
-import { useLoadToDockSearch } from '../hooks/useLoadToDockSearch';
-import { useSortAndFilter } from '../hooks/useSortAndFilter';
+import { getSortOptions } from '../constants/sortFilterOptions';
 import { useAttractiveNotification } from '../context/AttractiveNotificationContext';
 import { useTheme } from '../context/ThemeContext';
-import { getSortOptions, getFilterOptions } from '../constants/sortFilterOptions';
-import { useResponsive } from '../hooks/useResponsive';
-import { BUSINESS_CONFIG } from '../config';
-import { createLoadToDockListStyles } from '../styles/LoadToDockListScreen.styles';
 import { useLoadToDockRefresh } from '../hooks/useLoadToDockRefresh';
-import { RefreshProgressIndicator } from '../components/RefreshProgressIndicator';
+import { useLoadToDockSearch } from '../hooks/useLoadToDockSearch';
+import { useResponsive } from '../hooks/useResponsive';
+import { useSortAndFilter } from '../hooks/useSortAndFilter';
+import { loadToDockService } from '../services/loadToDockService';
+import { createLoadToDockListStyles } from '../styles/LoadToDockListScreen.styles';
+import { ILoadToDockItem } from '../types/loadToDock.interface';
 
 interface LoadToDockListScreenProps {
   navigation: any;
@@ -41,6 +38,14 @@ const LoadToDockListScreen: React.FC<LoadToDockListScreenProps> = ({ navigation 
   const { headerButtonSpacing } = useResponsive();
   const theme = useTheme();
   
+  // Sort and filter hook
+  const {
+    sortAndFilterState,
+    filteredAndSortedData,
+    updateSortAndFilter,
+    hasActiveFilters
+  } = useSortAndFilter([]);
+  
   // Use optimized search hook
   const {
     searchQuery,
@@ -53,7 +58,9 @@ const LoadToDockListScreen: React.FC<LoadToDockListScreenProps> = ({ navigation 
     loadMore,
     refresh,
     reset
-  } = useLoadToDockSearch();
+  } = useLoadToDockSearch({
+    sortBy: sortAndFilterState.sortBy
+  });
   
   // Add the new refresh hook
   const {
@@ -76,14 +83,6 @@ const LoadToDockListScreen: React.FC<LoadToDockListScreenProps> = ({ navigation 
     createLoadToDockListStyles(theme, deviceInfo.isTablet, deviceInfo.isDesktop),
     [theme, deviceInfo.isTablet, deviceInfo.isDesktop]
   );
-
-  // Sort and filter hook
-  const {
-    sortAndFilterState,
-    filteredAndSortedData,
-    updateSortAndFilter,
-    hasActiveFilters,
-  } = useSortAndFilter([]);
 
   const handleToggleSearch = useCallback(() => {
     setIsSearchEnabled(prev => !prev);
@@ -179,11 +178,11 @@ const LoadToDockListScreen: React.FC<LoadToDockListScreenProps> = ({ navigation 
     }
   }, [updateSortAndFilter]);
 
-  // Get the data to display (either filtered/sorted or original) - memoized
-  const displayData = useMemo(() => 
-    hasActiveFilters ? filteredAndSortedData : loadToDockItems,
-    [hasActiveFilters, filteredAndSortedData, loadToDockItems]
-  );
+  // Get the data to display (sorting is handled at SQL level)
+  const displayData = useMemo(() => {
+    // Always use the data from the search hook (which includes SQL-level sorting)
+    return loadToDockItems;
+  }, [loadToDockItems]);
 
   const handleBackToDashboard = useCallback(() => {
     navigation.navigate('Dashboard');
@@ -298,16 +297,16 @@ const LoadToDockListScreen: React.FC<LoadToDockListScreenProps> = ({ navigation 
         />
       </View>
 
-      {/* Sort & Filter Modal */}
+      {/* Sort Modal */}
       <SortAndFilter
         visible={showSortFilterModal}
         onClose={() => setShowSortFilterModal(false)}
         onApply={handleSortAndFilter}
         sortOptions={getSortOptions('load-to-dock')}
-        filterOptions={getFilterOptions('load-to-dock')}
+        filterOptions={[]}
         currentSort={sortAndFilterState.sortBy}
-        currentFilters={sortAndFilterState.filters}
-        title="Sort & Filter Load to Dock"
+        currentFilters={[]}
+        title="Sort Load to Dock"
       />
 
       {/* Barcode Scanner */}
