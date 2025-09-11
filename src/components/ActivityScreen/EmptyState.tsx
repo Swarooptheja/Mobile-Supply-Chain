@@ -2,8 +2,10 @@ import React from 'react';
 import { View, Text } from 'react-native';
 import { VectorIcon } from '../VectorIcon';
 import { createEmptyStateStyles } from '../../styles/ActivityScreen.styles';
+import { useTranslation } from '../../hooks/useTranslation';
 
 export const EmptyState: React.FC = () => {
+  const { t } = useTranslation();
   const styles = createEmptyStateStyles();
   
   return (
@@ -16,9 +18,9 @@ export const EmptyState: React.FC = () => {
           color="#94A3B8"
         />
       </View>
-      <Text style={styles.emptyStateTitle}>No APIs to Process</Text>
+      <Text style={styles.emptyStateTitle}>{t('activity.noApisToProcess')}</Text>
       <Text style={styles.emptyStateMessage}>
-        No APIs found for the selected responsibilities. Please check your configuration or contact your administrator.
+        {t('activity.noApisFoundMessage')}
       </Text>
       <View style={styles.emptyStateTip}>
         <VectorIcon
@@ -28,7 +30,7 @@ export const EmptyState: React.FC = () => {
           color="#94A3B8"
         />
         <Text style={styles.tipText}>
-          Make sure you have the correct responsibilities assigned to your account
+          {t('activity.responsibilitiesTip')}
         </Text>
       </View>
     </View>

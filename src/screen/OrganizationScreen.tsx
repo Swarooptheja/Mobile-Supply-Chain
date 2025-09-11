@@ -6,6 +6,7 @@ import { TableNames } from '../constants/tables';
 import { useAttractiveNotification } from '../context/AttractiveNotificationContext';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from '../hooks/useTranslation';
 import { useDynamicTables, useOrganizations, useOrganizationSelection } from '../hooks';
 import { getInventoryOrganizationsApi, getInventoryOrganizationsMetadataApi } from '../services/api';
 import { createOrganizationScreenStyles } from '../styles/OrganizationScreen.styles';
@@ -18,6 +19,7 @@ import AuthGuard from '../components/AuthGuard';
 const OrganizationScreen: React.FC = () => {
   const { defaultOrgId } = useAuth();
   const theme = useTheme();
+  const { t } = useTranslation();
   const { createTableFromApiResponse } = useDynamicTables();
   const { showError, showSuccess } = useAttractiveNotification();
   
@@ -45,17 +47,17 @@ const OrganizationScreen: React.FC = () => {
         );
         
         if (!result.success) {
-          showError('Error', result.error || 'Failed to update local database');
-          throw new Error(result.error || 'Failed to update local database');
+          showError(t('common.error'), result.error || t('organization.refreshFailed'));
+          throw new Error(result.error || t('organization.refreshFailed'));
         }
-        showSuccess('Success', 'Organizations refreshed successfully');
+        showSuccess(t('common.success'), t('organization.organizationsRefreshed'));
       } else {
-        showError('Error', 'No organization data received from API');
-        throw new Error('No organization data received from API');
+        showError(t('common.error'), t('organization.refreshFailed'));
+        throw new Error(t('organization.refreshFailed'));
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to refresh organizations';
-      showError('Error', errorMessage);
+      const errorMessage = error instanceof Error ? error.message : t('organization.refreshFailed');
+      showError(t('common.error'), errorMessage);
       throw error; // Re-throw to let the hook handle it
     }
   };
@@ -85,8 +87,10 @@ const OrganizationScreen: React.FC = () => {
   
   const searchResultsCount = useMemo(() => {
     if (!searchText || !organizations || !organizations.length) return null;
-    return `${organizations.length} organization${organizations.length !== 1 ? 's' : ''} found`;
-  }, [searchText, organizations]);
+    const count = organizations.length;
+    const plural = count !== 1 ? 's' : '';
+    return t('organization.organizationsFound', { count, plural });
+  }, [searchText, organizations, t]);
 
   const isInitialLoad = useMemo(() => loading && (!organizations || organizations.length === 0), [loading, organizations]);
 
@@ -103,7 +107,7 @@ const OrganizationScreen: React.FC = () => {
   return (
     <AuthGuard allowBack={false}>
       <View style={styles.container}>
-        <AppHeader title="Select Organization" />
+        <AppHeader title={t('organization.title')} />
 
       <View style={[
         styles.content,
@@ -115,7 +119,7 @@ const OrganizationScreen: React.FC = () => {
           <SearchBar
             value={searchText}
             onChangeText={handleSearch}
-            placeholder="Search organizations..."
+            placeholder={t('organization.searchPlaceholder')}
           />
           {searchResultsCount && (
             <Text style={styles.searchResultsCount}>
@@ -156,11 +160,11 @@ const OrganizationScreen: React.FC = () => {
           }
           refreshConfig={{
             onRefresh: handleRefresh,
-            successMessage: 'Organizations refreshed successfully',
-            errorMessage: 'Failed to refresh organizations',
+            successMessage: t('organization.organizationsRefreshed'),
+            errorMessage: t('organization.refreshFailed'),
           }}
           showRefreshIndicator={true}
-          refreshIndicatorText="Refreshing organizations..."
+          refreshIndicatorText={t('organization.refreshingOrganizations')}
         />
       </View>
 
@@ -171,11 +175,11 @@ const OrganizationScreen: React.FC = () => {
         isDesktop && styles.desktopFooter
       ]}>
         <Button
-          title="Confirm Organization"
+          title={t('organization.confirmOrganization')}
           onPress={handleConfirmSelection}
           disabled={!selectedId || isProcessing}
           fullWidth
-          accessibilityLabel={selectedId ? "Confirm organization selection" : "Select an organization first"}
+          accessibilityLabel={selectedId ? t('organization.confirmOrganizationSelection') : t('organization.selectOrganizationFirst')}
           size="lg"
           variant="solid"
           colorScheme="primary"

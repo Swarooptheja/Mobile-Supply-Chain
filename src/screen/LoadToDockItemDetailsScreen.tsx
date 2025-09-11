@@ -21,6 +21,7 @@ import {
 import { LoadToDockItemDetailsScreenProps } from '../types/loadToDock.interface';
 import { useAttractiveNotification } from '../context/AttractiveNotificationContext';
 import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from '../hooks/useTranslation';
 import { useMediaCapture } from '../hooks/useMediaCapture';
 import { useMediaModals } from '../hooks/useMediaModals';
 import { createLoadToDockItemDetailsScreenStyles } from '../styles/LoadToDockItemDetailsScreen.styles';
@@ -30,6 +31,7 @@ const LoadToDockItemDetailsScreen: React.FC<LoadToDockItemDetailsScreenProps> = 
   const { itemDetail, existingMedia, onMediaSaved } = route.params;
   const { showError, showSuccess } = useAttractiveNotification();
   const theme = useTheme();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const styles = createLoadToDockItemDetailsScreenStyles(theme);
   
@@ -59,11 +61,11 @@ const LoadToDockItemDetailsScreen: React.FC<LoadToDockItemDetailsScreenProps> = 
   const handleSave = useCallback(async () => {
     try {
       if (!canSave) {
-        Alert.alert('Cannot Save', 'Please capture both photos AND video to proceed');
+        Alert.alert(t('loadToDock.cannotSave'), t('loadToDock.captureBothMedia'));
         return;
       }
 
-      showSuccess('Success', 'Media captured and saved successfully!');
+      showSuccess(t('common.success'), t('loadToDock.mediaCapturedSuccess'));
       
       // Call the callback with media data before navigating back
       if (onMediaSaved) {
@@ -81,9 +83,9 @@ const LoadToDockItemDetailsScreen: React.FC<LoadToDockItemDetailsScreenProps> = 
       navigation.goBack();
     } catch (error) {
       console.error('Error saving media:', error);
-      showError('Error', 'Failed to save media');
+      showError(t('common.error'), t('loadToDock.failedToSaveMedia'));
     }
-  }, [canSave, itemDetail.DeliveryLineId, itemDetail.ItemNumber, capturedMedia, photoMedia.length, videoMedia.length, navigation, showSuccess, showError, onMediaSaved]);
+  }, [canSave, itemDetail.DeliveryLineId, itemDetail.ItemNumber, capturedMedia, photoMedia.length, videoMedia.length, navigation, showSuccess, showError, onMediaSaved, t]);
 
   const handleBackToItems = useCallback(() => {
     navigation.goBack();
@@ -123,7 +125,7 @@ const LoadToDockItemDetailsScreen: React.FC<LoadToDockItemDetailsScreenProps> = 
       
       {/* Header */}
       <AppHeader 
-        title={`Pick Slip #${itemDetail.ItemNumber}`}
+        title={t('loadToDock.itemNumber', { itemNumber: itemDetail.ItemNumber })}
         leftElement={
           <HeaderButton
             icon="back"
@@ -175,7 +177,7 @@ const LoadToDockItemDetailsScreen: React.FC<LoadToDockItemDetailsScreenProps> = 
         onClose={closePhotoModal}
         onCameraPress={handlePhotoCameraPress}
         onGalleryPress={handlePhotoGalleryPress}
-        title="Upload Photos"
+        title={t('loadToDock.uploadPhotos')}
         mediaType="photo"
       />
 
@@ -185,7 +187,7 @@ const LoadToDockItemDetailsScreen: React.FC<LoadToDockItemDetailsScreenProps> = 
         onClose={closeVideoModal}
         onCameraPress={handleVideoCameraPress}
         onGalleryPress={handleVideoGalleryPress}
-        title="Upload Videos"
+        title={t('loadToDock.uploadVideos')}
         mediaType="video"
       />
 
@@ -195,7 +197,7 @@ const LoadToDockItemDetailsScreen: React.FC<LoadToDockItemDetailsScreenProps> = 
         { paddingBottom: Math.max(40, insets.bottom + 20) } // Ensures button is always visible above navigation
       ]}>
         <Button
-          title="Save & Continue"
+          title={t('loadToDock.saveAndContinue')}
           onPress={handleSave}
           disabled={!canSave}
           size="lg"

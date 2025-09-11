@@ -7,6 +7,7 @@ import {
   Modal,
   ScrollView
 } from 'react-native';
+import { useTranslation } from '../hooks/useTranslation';
 
 export interface ISortOption {
   id: string;
@@ -42,6 +43,7 @@ const SortAndFilter: React.FC<ISortAndFilterProps> = ({
   currentFilters = [],
   title = 'Sort & Filter'
 }) => {
+  const { t } = useTranslation();
   const [selectedSort, setSelectedSort] = useState<string | null>(currentSort);
   const [selectedFilters, setSelectedFilters] = useState<string[]>(currentFilters);
 
@@ -95,7 +97,7 @@ const SortAndFilter: React.FC<ISortAndFilterProps> = ({
           <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
             {/* Sort Section */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Sort By</Text>
+              <Text style={styles.sectionTitle}>{t('sortFilter.sortBy')}</Text>
               {sortOptions.map((option) => (
                 <TouchableOpacity
                   key={option.id}
@@ -121,7 +123,7 @@ const SortAndFilter: React.FC<ISortAndFilterProps> = ({
             
             {/* Filter Section */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Filter By</Text>
+              <Text style={styles.sectionTitle}>{t('sortFilter.filterBy')}</Text>
               {filterOptions.map((option) => (
                 <TouchableOpacity
                   key={option.id}
@@ -153,7 +155,7 @@ const SortAndFilter: React.FC<ISortAndFilterProps> = ({
               onPress={handleReset}
               activeOpacity={0.7}
             >
-              <Text style={styles.resetButtonText}>Reset</Text>
+              <Text style={styles.resetButtonText}>{t('ui.reset')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[
@@ -164,7 +166,7 @@ const SortAndFilter: React.FC<ISortAndFilterProps> = ({
               disabled={isApplyDisabled}
               activeOpacity={0.7}
             >
-              <Text style={styles.applyButtonText}>Apply</Text>
+              <Text style={styles.applyButtonText}>{t('ui.apply')}</Text>
             </TouchableOpacity>
           </View>
         </View>

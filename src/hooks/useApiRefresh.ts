@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useOrganization } from '../context/OrganizationContext';
 import { useUserResponsibilities } from './useUserResponsibilities';
 import { useAttractiveNotification } from '../context/AttractiveNotificationContext';
+import { useTranslation } from './useTranslation';
 import { 
   ApiRefreshService, 
   IRefreshResult, 
@@ -56,6 +57,7 @@ export const useApiRefresh = (options: UseApiRefreshOptions = {}): UseApiRefresh
   const { selectedOrgId } = useOrganization();
   const { responsibilities } = useUserResponsibilities();
   const { showSuccess, showError, showWarning } = useAttractiveNotification();
+  const { t } = useTranslation();
   
   const abortControllerRef = useRef<AbortController | null>(null);
   const refreshStartTimeRef = useRef<number>(0);
@@ -95,33 +97,41 @@ export const useApiRefresh = (options: UseApiRefreshOptions = {}): UseApiRefresh
     if (summary.failedApis === 0) {
       showNotification(
         'success',
-        'Refresh Complete',
-        `Successfully refreshed ${summary.successfulApis} APIs. ${summary.totalInserted} records updated in ${Math.round(duration / 1000)}s.`
+        t('notifications.refreshComplete'),
+        t('notifications.refreshCompleteSuccess', { 
+          apis: summary.successfulApis, 
+          records: summary.totalInserted, 
+          seconds: Math.round(duration / 1000) 
+        })
       );
       setRetryCount(0); // Reset retry count on success
     } else if (summary.successfulApis > 0) {
       showNotification(
         'warning',
-        'Refresh Partially Complete',
-        `${summary.successfulApis}/${summary.totalApis} APIs succeeded. ${summary.totalInserted} records updated.`
+        t('notifications.refreshPartiallyComplete'),
+        t('notifications.refreshPartiallyCompleteMessage', { 
+          successful: summary.successfulApis, 
+          total: summary.totalApis, 
+          records: summary.totalInserted 
+        })
       );
     } else {
       showNotification(
         'error',
-        'Refresh Failed',
-        'All APIs failed. Please check your connection and try again.'
+        t('notifications.refreshFailed'),
+        t('notifications.refreshFailedAllApis')
       );
     }
   }, [showNotification, retryCount]);
 
   const refreshData = useCallback(async (specificResponsibilities?: string[]) => {
     if (isRefreshing) {
-      showNotification('warning', 'Refresh Already Running', 'A refresh operation is already in progress');
+      showNotification('warning', t('notifications.refreshAlreadyRunning'), t('notifications.refreshAlreadyRunningMessage'));
       return;
     }
     
     if (!defaultOrgId) {
-      showNotification('error', 'Refresh Failed', 'Organization ID not available');
+      showNotification('error', t('notifications.refreshFailed'), t('notifications.organizationIdNotAvailable'));
       return;
     }
     
@@ -137,7 +147,7 @@ export const useApiRefresh = (options: UseApiRefreshOptions = {}): UseApiRefresh
       const responsibilitiesToRefresh = specificResponsibilities || responsibilities;
       
       if (!responsibilitiesToRefresh.length) {
-        showNotification('warning', 'No Responsibilities', 'No responsibilities available for refresh');
+        showNotification('warning', t('notifications.noResponsibilities'), t('notifications.noResponsibilitiesMessage'));
         return;
       }
       
@@ -167,10 +177,10 @@ export const useApiRefresh = (options: UseApiRefreshOptions = {}): UseApiRefresh
       console.error('Error during refresh:', error);
       
       if (error instanceof Error && error.name === 'AbortError') {
-        showNotification('warning', 'Refresh Cancelled', 'Data refresh was cancelled');
+        showNotification('warning', t('notifications.refreshCancelled'), t('notifications.refreshCancelledMessage'));
       } else {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-        showNotification('error', 'Refresh Failed', errorMessage);
+        const errorMessage = error instanceof Error ? error.message : t('notifications.unknownErrorOccurred');
+        showNotification('error', t('notifications.refreshFailed'), errorMessage);
         
         // Auto retry logic
         if (autoRetry && retryCount < maxRetries) {
@@ -200,17 +210,17 @@ export const useApiRefresh = (options: UseApiRefreshOptions = {}): UseApiRefresh
 
   const refreshSpecificApis = useCallback(async (apiNames: string[]) => {
     if (isRefreshing) {
-      showNotification('warning', 'Refresh Already Running', 'A refresh operation is already in progress');
+      showNotification('warning', t('notifications.refreshAlreadyRunning'), t('notifications.refreshAlreadyRunningMessage'));
       return;
     }
     
     if (!defaultOrgId) {
-      showNotification('error', 'Refresh Failed', 'Organization ID not available');
+      showNotification('error', t('notifications.refreshFailed'), t('notifications.organizationIdNotAvailable'));
       return;
     }
     
     if (!apiNames.length) {
-      showNotification('warning', 'No APIs Selected', 'No APIs specified for refresh');
+      showNotification('warning', t('notifications.noApisSelected'), t('notifications.noApisSelectedMessage'));
       return;
     }
     

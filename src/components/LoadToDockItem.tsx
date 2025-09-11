@@ -7,6 +7,7 @@ import {
 } from 'react-native';
 import { ILoadToDockItem } from '../types/loadToDock.interface';
 import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from '../hooks/useTranslation';
 import { createLoadToDockItemStyles } from '../styles/LoadToDockItem.styles';
 
 interface LoadToDockItemProps {
@@ -17,6 +18,7 @@ interface LoadToDockItemProps {
 
 const LoadToDockItem: React.FC<LoadToDockItemProps> = memo(({ item, index: _index, onPress }) => {
   const theme = useTheme();
+  const { t } = useTranslation();
   const { width: screenWidth } = Dimensions.get('window');
   const isTablet = screenWidth > 768 && screenWidth <= 1024;
   const isDesktop = screenWidth > 1024;
@@ -44,7 +46,7 @@ const LoadToDockItem: React.FC<LoadToDockItemProps> = memo(({ item, index: _inde
         <View style={styles.topRightContainer}>
           <View style={styles.itemCountBadge}>
             <Text style={styles.itemCountText}>
-              {item.itemCount || 0} Items
+              {item.itemCount || 0} {t('loadToDock.itemsToLoad')}
             </Text>
           </View>
         </View>

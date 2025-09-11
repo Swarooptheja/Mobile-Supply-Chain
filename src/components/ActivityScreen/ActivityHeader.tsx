@@ -4,6 +4,7 @@ import { AppHeader } from '../AppHeader';
 import { Button } from '../Button';
 import { VectorIcon } from '../VectorIcon';
 import { getButtonColor } from '../../styles/global.styles';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface ActivityHeaderProps {
   onLogout: () => void;
@@ -15,6 +16,8 @@ interface ActivityHeaderProps {
  * This component reduces inline JSX complexity in the main screen
  */
 export const ActivityHeader: React.FC<ActivityHeaderProps> = React.memo(({ onLogout }) => {
+  const { t } = useTranslation();
+  
   // Memoize the logout handler to prevent unnecessary re-renders
   const handleLogout = useCallback(() => {
     onLogout();
@@ -22,7 +25,7 @@ export const ActivityHeader: React.FC<ActivityHeaderProps> = React.memo(({ onLog
 
   return (
     <AppHeader 
-      title="Sync Activity" 
+      title={t('activity.title')} 
       leftElement={
         <View style={{ alignItems: 'center' }}>
           <VectorIcon
@@ -36,7 +39,7 @@ export const ActivityHeader: React.FC<ActivityHeaderProps> = React.memo(({ onLog
       rightElement={
         <View style={{ alignItems: 'center' }}>
           <Button
-            title="Logout"
+            title={t('activity.logout')}
             onPress={handleLogout}
             colorScheme="primary"
             size="sm"
@@ -49,7 +52,7 @@ export const ActivityHeader: React.FC<ActivityHeaderProps> = React.memo(({ onLog
                 color="#FFFFFF"
               />
             }
-            accessibilityLabel="Logout button"
+            accessibilityLabel={t('activity.logoutButton')}
           />
         </View>
       }

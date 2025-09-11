@@ -14,6 +14,7 @@ import { AppHeader } from '../components/AppHeader';
 import { TransactionStatus } from '../components/StatusFilter';
 import { useAttractiveNotification } from '../context/AttractiveNotificationContext';
 import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from '../hooks/useTranslation';
 import { useTransactionBanner } from '../hooks/useTransactionBanner';
 import { useTransactionHistory } from '../hooks/useTransactionHistory';
 import { useTransactionSync } from '../hooks/useTransactionSync';
@@ -29,6 +30,7 @@ const TransactionHistoryScreen: React.FC<TransactionHistoryScreenProps> = ({ nav
   
   const { showError } = useAttractiveNotification();
   const theme = useTheme();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
 
   // Device size detection for responsive design
@@ -80,18 +82,18 @@ const TransactionHistoryScreen: React.FC<TransactionHistoryScreenProps> = ({ nav
   // Handle errors from the hook
   useEffect(() => {
     if (error) {
-      showError('Error', error);
+      showError(t('common.error'), error);
       clearError();
     }
-  }, [error, showError, clearError]);
+  }, [error, showError, clearError, t]);
 
   // Handle sync errors
   useEffect(() => {
     if (syncError) {
-      showError('Sync Error', syncError);
+      showError(t('ui.sync') + ' ' + t('common.error'), syncError);
       clearSyncError();
     }
-  }, [syncError, showError, clearSyncError]);
+  }, [syncError, showError, clearSyncError, t]);
 
   // Memoized handlers for performance
   const handleRefresh = useCallback(async () => {
@@ -122,22 +124,22 @@ const TransactionHistoryScreen: React.FC<TransactionHistoryScreenProps> = ({ nav
   // Memoized empty state
   const renderEmptyState = useMemo(() => (
     <View style={styles.emptyContainer}>
-      <Text style={styles.emptyTitle}>No Transactions Found</Text>
+      <Text style={styles.emptyTitle}>{t('transactionHistory.noTransactionsFound')}</Text>
       <Text style={styles.emptySubtitle}>
         {selectedStatus === 'all' 
-          ? 'No transactions have been recorded yet.'
-          : `No ${selectedStatus} transactions found.`
+          ? t('transactionHistory.noTransactionsRecorded')
+          : t('transactionHistory.noStatusTransactions', { status: selectedStatus })
         }
       </Text>
     </View>
-  ), [selectedStatus, styles]);
+  ), [selectedStatus, styles, t]);
 
   // Memoized loading state
   const renderLoadingState = useMemo(() => (
     <View style={styles.loadingContainer}>
-      <Text style={styles.loadingText}>Loading transactions...</Text>
+      <Text style={styles.loadingText}>{t('transactionHistory.loadingTransactions')}</Text>
     </View>
-  ), [styles]);
+  ), [styles, t]);
 
   // Memoized transaction list
   const renderTransactionList = useMemo(() => {
@@ -193,7 +195,7 @@ const TransactionHistoryScreen: React.FC<TransactionHistoryScreenProps> = ({ nav
       
       {/* Header */}
       <AppHeader 
-        title="Transaction History" 
+        title={t('transactionHistory.title')} 
         leftElement={
           <HeaderButton
             icon="back"
@@ -217,7 +219,7 @@ const TransactionHistoryScreen: React.FC<TransactionHistoryScreenProps> = ({ nav
         <SearchBar
           value={searchTerm}
           onChangeText={handleSearch}
-          placeholder="Search transactions..."
+          placeholder={t('transactionHistory.searchTransactions')}
         />
       </View>
 

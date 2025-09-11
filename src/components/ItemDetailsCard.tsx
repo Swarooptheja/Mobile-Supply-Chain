@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from '../hooks/useTranslation';
 import { createItemDetailsCardStyles } from '../styles/ItemDetailsCard.styles';
 
 export interface IItemDetailsCardProps {
@@ -27,6 +28,7 @@ const ItemDetailsCard: React.FC<IItemDetailsCardProps> = ({
   style
 }) => {
   const theme = useTheme();
+  const { t } = useTranslation();
   const styles = createItemDetailsCardStyles(theme);
 
   return (
@@ -43,16 +45,16 @@ const ItemDetailsCard: React.FC<IItemDetailsCardProps> = ({
       <View style={styles.quantitySection}>
         {/* Left Column - Requested */}
         <View style={styles.quantityRow}>
-          <Text style={styles.quantityLabel}>Requested:</Text>
+          <Text style={styles.quantityLabel}>{t('loadToDock.requested')}:</Text>
           <Text style={styles.quantityValue}>{qtyRequested} {itemUom}</Text>
         </View>
         
         {/* Right Column - Loaded */}
         <View style={styles.quantityRow}>
-          <Text style={styles.quantityLabel}>Loaded:</Text>
+          <Text style={styles.quantityLabel}>{t('loadToDock.loaded')}:</Text>
           <View style={styles.loadedQuantityRow}>
             <Text style={styles.quantityInput}>{qtyPicked}</Text>
-            <Text style={styles.quantityLabel}> of {qtyRequested} {itemUom}</Text>
+            <Text style={styles.quantityLabel}> {t('ui.of')} {qtyRequested} {itemUom}</Text>
           </View>
         </View>
       </View>

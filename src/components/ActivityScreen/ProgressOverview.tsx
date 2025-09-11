@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text } from 'react-native';
 import { VectorIcon } from '../VectorIcon';
 import { createProgressOverviewStyles } from '../../styles/ActivityScreen.styles';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface ProgressOverviewProps {
   overallProgress: { percentage: number };
@@ -10,6 +11,7 @@ interface ProgressOverviewProps {
 export const ProgressOverview: React.FC<ProgressOverviewProps> = ({
   overallProgress
 }) => {
+  const { t } = useTranslation();
   const styles = createProgressOverviewStyles();
   
   // Safe values with fallbacks to prevent null rendering errors
@@ -30,13 +32,13 @@ export const ProgressOverview: React.FC<ProgressOverviewProps> = ({
             color="#3B82F6"
           />
         </View>
-        <Text style={styles.progressTitle}>Data Sync Status</Text>
+        <Text style={styles.progressTitle}>{t('activity.dataSyncStatus')}</Text>
       </View>
       
       {/* Progress section */}
       <View style={styles.progressSection}>
         <View style={styles.progressHeaderRow}>
-          <Text style={styles.progressLabel}>Progress</Text>
+          <Text style={styles.progressLabel}>{t('activity.progress')}</Text>
           <Text style={styles.progressPercentage}>
             {safePercentage}%
           </Text>

@@ -17,6 +17,7 @@ import SortAndFilter from '../components/SortAndFilter';
 import { getSortOptions } from '../constants/sortFilterOptions';
 import { useAttractiveNotification } from '../context/AttractiveNotificationContext';
 import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from '../hooks/useTranslation';
 import { useLoadToDockRefresh } from '../hooks/useLoadToDockRefresh';
 import { useLoadToDockSearch } from '../hooks/useLoadToDockSearch';
 import { useResponsive } from '../hooks/useResponsive';
@@ -37,6 +38,7 @@ const LoadToDockListScreen: React.FC<LoadToDockListScreenProps> = ({ navigation 
   const { showError } = useAttractiveNotification();
   const { headerButtonSpacing } = useResponsive();
   const theme = useTheme();
+  const { t } = useTranslation();
   
   // Sort and filter hook
   const {
@@ -96,7 +98,7 @@ const LoadToDockListScreen: React.FC<LoadToDockListScreenProps> = ({ navigation 
     try {
       setShowBarcodeScanner(true);
     } catch (error) {
-      Alert.alert('Error', 'Failed to open barcode scanner');
+      Alert.alert(t('common.error'), t('loadToDock.scannerError'));
     }
   };
 
@@ -112,12 +114,12 @@ const LoadToDockListScreen: React.FC<LoadToDockListScreenProps> = ({ navigation 
         navigation.navigate('LoadToDockItems', { deliveryItem: matchedItem });
       } else {
         // No match found, show error and clear input
-        showError('No Match Found', `No delivery items found for barcode: ${barcode}`);
+        showError(t('loadToDock.noMatchFound'), t('loadToDock.noDeliveryItemsFound', { barcode }));
         setBarcodeInput('');
       }
     } catch (error) {
       // Error occurred, show error and clear input
-      showError('Error', 'Failed to search for barcode in database');
+      showError(t('common.error'), t('loadToDock.failedToSearch'));
       setBarcodeInput('');
     }
   }, [navigation, showError]);
@@ -155,7 +157,7 @@ const LoadToDockListScreen: React.FC<LoadToDockListScreenProps> = ({ navigation 
       await refreshShipConfirmData();
       
     } catch (error) {
-      Alert.alert('Error', 'Failed to refresh data');
+      Alert.alert(t('common.error'), t('loadToDock.failedToUpload'));
     }
   };
 
@@ -164,7 +166,7 @@ const LoadToDockListScreen: React.FC<LoadToDockListScreenProps> = ({ navigation 
       // Navigate to Load to Dock Items Page
       navigation.navigate('LoadToDockItems', { deliveryItem: item });
     } catch (error) {
-      Alert.alert('Error', 'Failed to navigate to items page');
+      Alert.alert(t('common.error'), t('loadToDock.failedToUpload'));
     }
   }, [navigation]);
 
@@ -174,7 +176,7 @@ const LoadToDockListScreen: React.FC<LoadToDockListScreenProps> = ({ navigation 
       // TODO: Apply sorting and filtering to the current data
       // The hook will handle the data transformation
     } catch (error) {
-      Alert.alert('Error', 'Failed to apply sort and filter');
+      Alert.alert(t('common.error'), t('loadToDock.failedToUpload'));
     }
   }, [updateSortAndFilter]);
 
@@ -224,7 +226,7 @@ const LoadToDockListScreen: React.FC<LoadToDockListScreenProps> = ({ navigation 
       
       {/* Header */}
       <AppHeader 
-        title="Deliveries"
+        title={t('loadToDock.deliveries')}
         leftElement={
           <HeaderButton
             icon="back"
@@ -249,9 +251,9 @@ const LoadToDockListScreen: React.FC<LoadToDockListScreenProps> = ({ navigation 
             onChangeText={handleBarcodeInputChange}
             onBarcodeScanned={handleBarcodeInputScanned}
             onScanComplete={handleScanComplete}
-            placeholder="Scan or enter barcode"
+            placeholder={t('loadToDock.scanOrEnterBarcode')}
             autoFocus={true}
-            label="Barcode Scanner"
+            label={t('loadToDock.barcodeScanner')}
           />
           <HeaderButton
             icon={"search"}
@@ -267,14 +269,14 @@ const LoadToDockListScreen: React.FC<LoadToDockListScreenProps> = ({ navigation 
       {/* Search Bar Section - Only shown when search is enabled */}
       {isSearchEnabled && (
         <View style={styles.searchSection}>
-          <View style={styles.searchBarContainer}>
-            <SearchBar
-              placeholder="Search deliveries"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              autoFocus={true}
-            />
-          </View>
+        <View style={styles.searchBarContainer}>
+          <SearchBar
+            placeholder={t('loadToDock.searchDeliveries')}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoFocus={true}
+          />
+        </View>
           <ScanButton onPress={handleScanDeliveryId} />
         </View>
       )}
@@ -306,7 +308,7 @@ const LoadToDockListScreen: React.FC<LoadToDockListScreenProps> = ({ navigation 
         filterOptions={[]}
         currentSort={sortAndFilterState.sortBy}
         currentFilters={[]}
-        title="Sort Load to Dock"
+        title={t('loadToDock.sortLoadToDock')}
       />
 
       {/* Barcode Scanner */}

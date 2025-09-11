@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TextInput, StyleSheet } from 'react-native';
+import { useTranslation } from '../hooks/useTranslation';
 
 interface VehicleInputSectionProps {
   vehicleNumber: string;
@@ -19,40 +20,44 @@ export const VehicleInputSection: React.FC<VehicleInputSectionProps> = ({
   onBlur,
   theme,
   style
-}) => (
-  <View style={[styles.container, style]}>
-    <View style={styles.labelContainer}>
-      <Text style={[styles.labelText, { color: theme.colors.textPrimary }]}>
-        Vehicle Number <Text style={styles.requiredAsterisk}>*</Text>
-      </Text>
+}) => {
+  const { t } = useTranslation();
+  
+  return (
+    <View style={[styles.container, style]}>
+      <View style={styles.labelContainer}>
+        <Text style={[styles.labelText, { color: theme.colors.textPrimary }]}>
+          {t('loadToDock.vehicleNumber')} <Text style={styles.requiredAsterisk}>*</Text>
+        </Text>
+      </View>
+      <TextInput
+        style={[
+          styles.input,
+          {
+            borderColor: isFocused ? theme.colors.primary : theme.colors.border,
+            backgroundColor: theme.colors.surface,
+            color: theme.colors.textPrimary,
+            // Add shadow styling to match SearchBar
+            shadowColor: theme.colors.shadow,
+            shadowOffset: {
+              width: 0,
+              height: 1,
+            },
+            shadowOpacity: 0.05,
+            shadowRadius: 3,
+            elevation: 1,
+          }
+        ]}
+        value={vehicleNumber}
+        onChangeText={onVehicleNumberChange}
+        onFocus={onFocus}
+        onBlur={onBlur}
+        placeholder={t('loadToDock.enterVehicleNumber')}
+        placeholderTextColor={theme.colors.textSecondary}
+      />
     </View>
-    <TextInput
-      style={[
-        styles.input,
-        {
-          borderColor: isFocused ? theme.colors.primary : theme.colors.border,
-          backgroundColor: theme.colors.surface,
-          color: theme.colors.textPrimary,
-          // Add shadow styling to match SearchBar
-          shadowColor: theme.colors.shadow,
-          shadowOffset: {
-            width: 0,
-            height: 1,
-          },
-          shadowOpacity: 0.05,
-          shadowRadius: 3,
-          elevation: 1,
-        }
-      ]}
-      value={vehicleNumber}
-      onChangeText={onVehicleNumberChange}
-      onFocus={onFocus}
-      onBlur={onBlur}
-      placeholder="Enter Vehicle Number"
-      placeholderTextColor={theme.colors.textSecondary}
-    />
-  </View>
-);
+  );
+};
 
 const styles = StyleSheet.create({
   container: {

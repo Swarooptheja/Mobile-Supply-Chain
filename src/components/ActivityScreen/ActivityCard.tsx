@@ -6,6 +6,7 @@ import { createActivityCardStyles } from '../../styles/ActivityScreen.styles';
 import { getCurrentApiConfig } from '../../config/api';
 import { useTheme } from '../../context/ThemeContext';
 import { getButtonColor } from '../../styles/global.styles';
+import { useTranslation } from '../../hooks/useTranslation';
 import { 
   getStatusColor, 
   getStatusIcon, 
@@ -29,6 +30,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = React.memo(({
   isRetrying
 }) => {
   const theme = useTheme();
+  const { t } = useTranslation();
   const styles = createActivityCardStyles(theme);
   
   // Memoize computed styles to prevent recalculation on every render
@@ -56,7 +58,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = React.memo(({
     const orgId = record.activities?.[0]?.orgId;
     
     if (!relativePath) {
-      return 'API endpoint not configured';
+      return t('activity.apiEndpointNotConfigured');
     }
     
     // If the URL already starts with http/https, return as is
@@ -79,16 +81,16 @@ export const ActivityCard: React.FC<ActivityCardProps> = React.memo(({
   }, [record.activities]);
 
   // Safe text values with fallbacks
-  const safeName = record.apiName || 'Unknown API';
+  const safeName = record.apiName || t('activity.unknownApi');
   const safeType = record.type || 'unknown';
   const safeStatus = record.status || 'unknown';
-  const safeError = record.error || 'Unknown error occurred';
+  const safeError = record.error || t('activity.unknownErrorOccurred');
   const safeInsertedRecords = record.insertedRecords || 0;
   const safeRetryCount = record.retryCount || 0;
   
   // Format timestamp with seconds for better accuracy
   const formatTimestamp = (timestamp: Date | null) => {
-    if (!timestamp) return 'Never';
+    if (!timestamp) return t('activity.never');
     return timestamp.toLocaleTimeString([], { 
       hour: '2-digit', 
       minute: '2-digit',
@@ -137,7 +139,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = React.memo(({
         activeOpacity={record.canExpand ? 0.7 : 1}
         accessible={true}
         accessibilityLabel={`${safeName} API card`}
-        accessibilityHint={record.canExpand ? `Tap to ${isExpanded ? 'collapse' : 'expand'} this card` : 'This card shows successful sync status'}
+        accessibilityHint={record.canExpand ? t('activity.tapToToggleCard', { action: isExpanded ? t('activity.collapse') : t('activity.expand') }) : t('activity.successfulSyncStatus')}
         accessibilityRole={record.canExpand ? "button" : "none"}
       >
         {/* Card content */}
@@ -163,14 +165,14 @@ export const ActivityCard: React.FC<ActivityCardProps> = React.memo(({
           {/* Right side info - only timestamp and status */}
           <View style={styles.cardRightSide}>
                           <Text style={styles.cardTimestamp}>
-                {formatTimestamp(record.lastSyncTime) || 'Never'}
+                {formatTimestamp(record.lastSyncTime) || t('activity.never')}
               </Text>
             <View style={styles.cardStatusRow}>
               <TouchableOpacity
                 style={cardStyles.statusIndicator}
                 accessible={true}
-                accessibilityLabel={`${safeStatus} status for ${safeName}`}
-                accessibilityHint={`API ${safeName} is in ${safeStatus} state`}
+                accessibilityLabel={t('activity.statusForApi', { status: safeStatus, api: safeName })}
+                accessibilityHint={t('activity.apiInState', { api: safeName, state: safeStatus })}
                 accessibilityRole="button"
               >
                 {isPending ? (
@@ -198,8 +200,8 @@ export const ActivityCard: React.FC<ActivityCardProps> = React.memo(({
                   style={styles.expandButton}
                   onPress={handleToggleExpansion}
                   accessible={true}
-                  accessibilityLabel={`${isExpanded ? 'Collapse' : 'Expand'} ${safeName} card`}
-                  accessibilityHint={`Tap to ${isExpanded ? 'hide' : 'show'} more details`}
+                  accessibilityLabel={t('activity.toggleCard', { action: isExpanded ? t('activity.collapse') : t('activity.expand'), api: safeName })}
+                  accessibilityHint={t('activity.tapToToggleDetails', { action: isExpanded ? t('activity.hide') : t('activity.show') })}
                   accessibilityRole="button"
                 >
                   <VectorIcon
@@ -218,7 +220,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = React.memo(({
         {record.canExpand && !isExpanded && (
           <View style={styles.collapsedSummary}>
             <Text style={styles.collapsedSummaryText}>
-              Tap to expand • {safeStatus === 'success' ? `${safeInsertedRecords} records inserted` : safeStatus}
+              {t('activity.tapToExpand')} • {safeStatus === 'success' ? t('activity.recordsInserted', { count: safeInsertedRecords }) : safeStatus}
             </Text>
           </View>
         )}
@@ -235,7 +237,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = React.memo(({
               />
             </Animated.View>
             <Text style={styles.pendingText}>
-              Processing... Please wait
+              {t('activity.processingPleaseWait')}
             </Text>
           </View>
         )}
@@ -244,7 +246,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = React.memo(({
         {!record.canExpand && safeStatus === 'success' && (
           <View style={styles.successMessage}>
             <Text style={styles.successMessageText}>
-              ✓ {safeInsertedRecords} records successfully inserted
+              ✓ {t('activity.recordsSuccessfullyInserted', { count: safeInsertedRecords })}
             </Text>
           </View>
         )}
@@ -262,7 +264,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = React.memo(({
           {safeStatus === 'success' && safeInsertedRecords > 0 && (
             <View style={styles.insertedRecordsSection}>
               <Text style={styles.insertedRecordsNumber}>{safeInsertedRecords}</Text>
-              <Text style={styles.insertedRecordsLabel}>Successfully Inserted</Text>
+              <Text style={styles.insertedRecordsLabel}>{t('activity.successfullyInserted')}</Text>
             </View>
           )}
 
@@ -277,30 +279,30 @@ export const ActivityCard: React.FC<ActivityCardProps> = React.memo(({
                   color="#DC2626"
                   style={styles.errorIcon}
                 />
-                <Text style={styles.errorTitle}>API Endpoint:</Text>
+                <Text style={styles.errorTitle}>{t('activity.apiEndpoint')}:</Text>
               </View>
               
               {/* Show full API URL instead of just relative path */}
               <Text style={styles.errorMessage}>
-                {fullApiUrl || 'API endpoint not available'}
+                {fullApiUrl || t('activity.apiEndpointNotAvailable')}
               </Text>
                 
 
               {/* Error metadata */}
               <View style={styles.errorMetadata}>
                 <View style={styles.errorMetaItem}>
-                  <Text style={styles.errorMetaLabel}>Status:</Text>
+                  <Text style={styles.errorMetaLabel}>{t('activity.status')}:</Text>
                   <Text style={styles.errorMetaValue}>{safeStatus}</Text>
                 </View>
                 <View style={styles.errorMetaItem}>
-                  <Text style={styles.errorMetaLabel}>Retry Count:</Text>
+                  <Text style={styles.errorMetaLabel}>{t('activity.retryCount')}:</Text>
                   <Text style={styles.errorMetaValue}>{safeRetryCount}</Text>
                 </View>
                 {record.lastRetryTime && (
                   <View style={styles.errorMetaItem}>
-                    <Text style={styles.errorMetaLabel}>Last Retry:</Text>
+                    <Text style={styles.errorMetaLabel}>{t('activity.lastRetry')}:</Text>
                     <Text style={styles.errorMetaValue}>
-                      {record.lastRetryTime?.toLocaleString() || 'N/A'}
+                      {record.lastRetryTime?.toLocaleString() || t('activity.notAvailable')}
                     </Text>
                   </View>
                 )}
@@ -312,12 +314,12 @@ export const ActivityCard: React.FC<ActivityCardProps> = React.memo(({
                 onPress={handleRetry}
                 disabled={isRetrying}
                 accessible={true}
-                accessibilityLabel={`Retry ${safeName} API`}
-                accessibilityHint={`Tap to retry the failed ${safeName} API`}
+                accessibilityLabel={t('activity.retryApi', { api: safeName })}
+                accessibilityHint={t('activity.tapToRetryApi', { api: safeName })}
                 accessibilityRole="button"
               >
                 <Text style={styles.retryButtonText}>
-                  {isRetrying ? 'Retrying...' : 'Retry'}
+                  {isRetrying ? t('activity.retrying') : t('ui.retry')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -326,21 +328,21 @@ export const ActivityCard: React.FC<ActivityCardProps> = React.memo(({
           {/* Additional relevant information */}
           <View style={styles.additionalInfoSection}>
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>API Type:</Text>
+              <Text style={styles.infoLabel}>{t('activity.apiType')}:</Text>
               <Text style={styles.infoValue}>{safeType.toUpperCase()}</Text>
             </View>
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Organization ID:</Text>
-              <Text style={styles.infoValue}>{record.activities?.[0]?.orgId || 'N/A'}</Text>
+              <Text style={styles.infoLabel}>{t('activity.organizationId')}:</Text>
+              <Text style={styles.infoValue}>{record.activities?.[0]?.orgId || t('activity.notAvailable')}</Text>
             </View>
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Total Activities:</Text>
+              <Text style={styles.infoLabel}>{t('activity.totalActivities')}:</Text>
               <Text style={styles.infoValue}>{record.activities?.length || 0}</Text>
             </View>
             {record.lastSyncTime && (
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Last Sync:</Text>
-                <Text style={styles.infoValue}>{formatTimestamp(record.lastSyncTime) || 'Never'}</Text>
+                <Text style={styles.infoLabel}>{t('activity.lastSync')}:</Text>
+                <Text style={styles.infoValue}>{formatTimestamp(record.lastSyncTime) || t('activity.never')}</Text>
               </View>
             )}
           </View>

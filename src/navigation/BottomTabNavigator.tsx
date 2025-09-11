@@ -2,6 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Platform, Dimensions } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from '../hooks/useTranslation';
 import DashboardScreen from '../screen/DashboardScreen';
 import TransactionHistoryScreen from '../screen/TransactionHistoryScreen';
 import SettingsScreen from '../screen/SettingsScreen';
@@ -46,6 +47,7 @@ const TabIcon: React.FC<{ routeName: string; color: string; size: number }> = ({
 
 const BottomTabNavigator: React.FC = () => {
   const theme = useTheme();
+  const { t } = useTranslation();
   const { width: screenWidth } = Dimensions.get('window');
   
   // Responsive sizing
@@ -108,21 +110,21 @@ const BottomTabNavigator: React.FC = () => {
         name="Home"
         component={DashboardScreen}
         options={{
-          tabBarLabel: 'Home',
+          tabBarLabel: t('dashboard.title'),
         }}
       />
       <Tab.Screen
         name="TransactionHistory"
         component={TransactionHistoryScreen}
         options={{
-          tabBarLabel: 'Transaction History',
+          tabBarLabel: t('transactionHistory.title'),
         }}
       />
       <Tab.Screen
         name="Settings"
         component={SettingsScreen}
         options={{
-          tabBarLabel: 'Settings',
+          tabBarLabel: t('settings.title'),
         }}
       />
     </Tab.Navigator>

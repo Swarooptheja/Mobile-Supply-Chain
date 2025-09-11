@@ -25,6 +25,7 @@ import { LOGIN_QUERIES } from '../constants/queries';
 import { useAttractiveNotification } from '../context/AttractiveNotificationContext';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from '../hooks/useTranslation';
 import { useLoadToDockItems } from '../hooks/useLoadToDockItems';
 import { useLoadToDockValidation } from '../hooks/useLoadToDockValidation';
 import { useNavigationHandlers } from '../hooks/useNavigationHandlers';
@@ -45,6 +46,7 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
   
   const { showError, showSuccess } = useAttractiveNotification();
   const theme = useTheme();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { defaultOrgId } = useAuth();
 
@@ -121,7 +123,7 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
       
       if (searchResults.length) {
         const scannedItem = searchResults[0];
-        showSuccess('Item Found', `Scanned: ${barcode}`);
+        showSuccess(t('loadToDock.itemFound'), t('loadToDock.scanned', { barcode }));
         
         // console.log('🎬 handleBarcodeScanned - Scanned item:', scannedItem.ItemNumber);
         // console.log('🎬 handleBarcodeScanned - Media data:', scannedItem.mediaData);
@@ -135,11 +137,11 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
           onMediaSaved: createMediaSavedCallback(scannedItem.ItemNumber)
         });
       } else {
-        showError('Item Not Found', `No item found with barcode: ${barcode}`);
+        showError(t('loadToDock.itemNotFound'), t('loadToDock.noItemWithBarcode', { barcode }));
       }
     } catch (error) {
       console.error('Error searching scanned item:', error);
-      showError('Scan Error', 'Failed to process scanned barcode');
+      showError(t('loadToDock.scanError'), t('loadToDock.failedToProcessBarcode'));
     }
   }, [scanItem, showSuccess, showError, navigation, deliveryItem, getItemMediaStatus, createMediaSavedCallback]);
 
@@ -162,7 +164,7 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
 
     try {
       if (!canLoadToDock) {
-        showError('Cannot Load to Dock', 'Please ensure all requirements are met');
+        showError(t('loadToDock.cannotSave'), t('loadToDock.captureBothMedia'));
         return;
       }
 
@@ -170,10 +172,10 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
       isTransactionInProgress.current = true;
 
       // Show uploading banner
-      showUploading('Preparing documents for upload...', { showProgress: true });
+      showUploading(t('loadToDock.preparingDocuments'), { showProgress: true });
 
       // Step 1: Validate and prepare data
-      updateProgress(10, 'Validating item requirements...');
+      updateProgress(10, t('loadToDock.validatingRequirements'));
 
       // Prepare request data with error handling
       let userData, responsibilityData;
@@ -207,7 +209,7 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
         });
 
         if (!validItems.length) {
-          throw new Error('No valid items found. Please ensure all items have media and quantity.');
+          throw new Error(t('loadToDock.noValidItems'));
         }
 
         // updateProgress(40, 'Creating transaction request...');
@@ -221,7 +223,7 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
           items: validItems
         };
 
-        updateProgress(50, 'Uploading to cloud storage...');
+        updateProgress(50, t('loadToDock.uploadingToCloud'));
 
         // Process the request
         const data = await loadToDockService.storeLoadToDockTransaction(request);
@@ -233,18 +235,18 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
         // const result = await loadToDockService.processLoadToDock();
         const result = await realTimeSyncTransactionService.syncTransaction(RESPONSIBILITIES.LOAD_TO_DOCK);
 
-        updateProgress(90, 'Finalizing upload...');
+        updateProgress(90, t('loadToDock.finalizingUpload'));
 
         if (result.success) {
-          updateProgress(100, 'Upload complete!');
+          updateProgress(100, t('loadToDock.uploadComplete'));
           
           if (result.offline) {
-            showOffline('Data saved locally and will sync when you\'re back online', {
+            showOffline(t('loadToDock.dataSavedLocally'), {
               autoHide: true,
               autoHideDelay: 4000
             });
           } else {
-            showBannerSuccess('Documents uploaded to cloud storage successfully!', {
+            showBannerSuccess(t('loadToDock.documentsUploadedSuccess'), {
               autoHide: true,
               autoHideDelay: 3000
             });
@@ -255,7 +257,7 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
             navigation.goBack();
           }, result.offline ? 4000 : 3000);
         } else {
-          throw new Error(result.error || 'Failed to upload documents to cloud storage');
+          throw new Error(result.error || t('loadToDock.failedToUpload'));
         }
 
       } catch (dbError) {
@@ -268,7 +270,7 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
       
       const errorMessage = error instanceof Error 
         ? error.message 
-        : 'Failed to upload documents to cloud storage';
+        : t('loadToDock.failedToUpload');
       
       showBannerError(errorMessage, {
         autoHide: false // Don't auto-hide error banners
@@ -338,7 +340,7 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
       
 
 <AppHeader 
-    title={`Pick Slip #${deliveryItem.deliveryId}`}
+    title={t('loadToDock.pickSlip', { deliveryId: deliveryItem.deliveryId })}
     leftElement={
       <HeaderButton
         icon="back"
@@ -402,12 +404,12 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
         >
           {isLoading ? (
             <View style={styles.loadingContainer}>
-              <Text style={styles.loadingText}>Loading...</Text>
+              <Text style={styles.loadingText}>{t('loadToDock.loading')}</Text>
             </View>
           ) : filteredItems.length === 0 ? (
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No items found</Text>
-              <Text style={styles.emptySubtext}>Try adjusting your search or scan a barcode</Text>
+              <Text style={styles.emptyText}>{t('loadToDock.noItemsFound')}</Text>
+              <Text style={styles.emptySubtext}>{t('loadToDock.tryAdjustingSearch')}</Text>
             </View>
           ) : (
             filteredItems.map((item, index) => renderItem(item, index))
@@ -421,7 +423,7 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
         { paddingBottom: Math.max(40, insets.bottom + 20) } // Ensures button is always visible above navigation
       ]}>
         <Button
-          title="Load To Dock"
+          title={t('loadToDock.loadToDockButton')}
           onPress={handleLoadToDock}
           disabled={!canLoadToDock}
           size="lg"
@@ -446,7 +448,7 @@ const LoadToDockItemsScreen: React.FC<LoadToDockItemsScreenProps> = ({ route, na
         frameColor="#1e3a8a"
         onError={(error) => {
           console.error('Scanner error:', error);
-          showError('Scanner Error', error);
+          showError(t('loadToDock.scannerError'), error);
         }}
       />
     </SafeAreaView>

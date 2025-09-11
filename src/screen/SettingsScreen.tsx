@@ -14,17 +14,19 @@ import {
 import { VectorIcon, AppHeader, HeaderButton } from '../components';
 import { useAuth } from '../context/AuthContext';
 import { useTheme, useThemeContext } from '../context/ThemeContext';
+import { useI18n } from '../context/I18nContext';
 import { createSettingsScreenStyles } from '../styles/SettingsScreen.styles';
 import { useNavigation } from '@react-navigation/native';
 import { useDatabaseOperations } from '../hooks/useDatabaseOperations';
+import { getAvailableLanguages, Language } from '../locales';
 
 const SettingsScreen: React.FC = () => {
   const { user, logout } = useAuth();
   const theme = useTheme();
   const { toggleTheme, themeMode } = useThemeContext();
+  const { language, setLanguage, t } = useI18n();
   const navigation = useNavigation();
   const { clearDatabaseWithSync, isClearing, isSyncing } = useDatabaseOperations();
-  const [selectedLanguage, setSelectedLanguage] = useState('English');
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   
   const { width: screenWidth } = Dimensions.get('window');
@@ -59,15 +61,15 @@ const SettingsScreen: React.FC = () => {
 
   const handleLogout = useCallback((): void => {
     Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
+      t('alerts.logoutTitle'),
+      t('alerts.logoutMessage'),
       [
         {
-          text: 'Cancel',
+          text: t('common.cancel'),
           style: 'cancel',
         },
         {
-          text: 'Logout',
+          text: t('settings.logout'),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -80,30 +82,30 @@ const SettingsScreen: React.FC = () => {
               });
             } catch (error) {
               console.error('Logout error:', error);
-              Alert.alert('Error', 'Failed to logout. Please try again.');
+              Alert.alert(t('common.error'), t('alerts.logoutError'));
             }
           },
         },
       ]
     );
-  }, [logout, navigation]);
+  }, [logout, navigation, t]);
 
   const handleLogoutAndClearDB = useCallback((): void => {
     if (isClearing || isSyncing) {
-      Alert.alert('Please wait', 'Database is being processed. Please wait...');
+      Alert.alert(t('alerts.pleaseWait'), t('alerts.databaseProcessing'));
       return;
     }
 
     Alert.alert(
-      'Logout & Clear Database',
-      'Are you sure you want to logout and clear all local data? This will sync any pending transactions first, then clear the database. This action cannot be undone.',
+      t('alerts.logoutAndClearTitle'),
+      t('alerts.logoutAndClearMessage'),
       [
         {
-          text: 'Cancel',
+          text: t('common.cancel'),
           style: 'cancel',
         },
         {
-          text: 'Logout & Clear',
+          text: t('settings.logoutAndClearData'),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -119,22 +121,27 @@ const SettingsScreen: React.FC = () => {
               });
             } catch (error) {
               console.error('Logout & Clear DB error:', error);
-              Alert.alert('Error', 'Failed to logout and clear data. Please try again.');
+              Alert.alert(t('common.error'), t('alerts.logoutAndClearError'));
             }
           },
         },
       ]
     );
-  }, [isClearing, isSyncing, clearDatabaseWithSync, logout, navigation]);
+  }, [isClearing, isSyncing, clearDatabaseWithSync, logout, navigation, t]);
 
   const handleLanguageChange = useCallback((): void => {
     setShowLanguageDropdown(true);
   }, []);
 
-  const handleLanguageSelect = useCallback((language: string) => {
-    setSelectedLanguage(language);
-    setShowLanguageDropdown(false);
-  }, []);
+  const handleLanguageSelect = useCallback(async (languageCode: Language) => {
+    try {
+      await setLanguage(languageCode);
+      setShowLanguageDropdown(false);
+    } catch (error) {
+      console.error('Error changing language:', error);
+      Alert.alert(t('common.error'), 'Failed to change language. Please try again.');
+    }
+  }, [setLanguage, t]);
 
   const handleInvOrgPress = useCallback((): void => {
     navigation.navigate('Organization' as never);
@@ -179,7 +186,7 @@ const SettingsScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
       {/* Header with back button */}
       <AppHeader
-        title="Settings"
+        title={t('settings.title')}
         leftElement={
           <HeaderButton
             icon="back"
@@ -221,7 +228,7 @@ const SettingsScreen: React.FC = () => {
             {/* Theme */}
             {renderSettingItem(
               'brightness-6',
-              'Theme',
+              t('settings.theme'),
               <Switch
                 value={themeMode === 'dark'}
                 onValueChange={toggleTheme}
@@ -230,18 +237,18 @@ const SettingsScreen: React.FC = () => {
                   true: theme.colors.primary 
                 }}
                 thumbColor={themeMode === 'dark' ? '#ffffff' : '#f4f3f4'}
-                accessibilityLabel="Toggle dark mode"
+                accessibilityLabel={t('settings.toggleTheme')}
               />,
               undefined,
               true,
               false,
-              'Toggle theme between light and dark mode'
+              t('settings.toggleTheme')
             )}
 
             {/* Inventory Org */}
             {renderSettingItem(
               'business',
-              'Inventory Org',
+              t('settings.inventoryOrg'),
               <VectorIcon
                 name="chevron-right"
                 size={iconSize}
@@ -251,15 +258,15 @@ const SettingsScreen: React.FC = () => {
               handleInvOrgPress,
               true,
               false,
-              'Navigate to organization selection'
+              t('settings.navigateToOrganization')
             )}
 
             {/* Language */}
             {renderSettingItem(
               'language',
-              'Language',
+              t('settings.language'),
               <View style={styles.languageContainer}>
-                <Text style={styles.languageText}>{selectedLanguage}</Text>
+                <Text style={styles.languageText}>{t(`languages.${language}`)}</Text>
                 <VectorIcon
                   name="keyboard-arrow-down"
                   size={iconSize}
@@ -270,13 +277,13 @@ const SettingsScreen: React.FC = () => {
               handleLanguageChange,
               true,
               false,
-              'Select language preference'
+              t('settings.selectLanguagePreference')
             )}
 
             {/* About */}
             {renderSettingItem(
               'info',
-              'About',
+              t('settings.about'),
               <VectorIcon
                 name="chevron-right"
                 size={iconSize}
@@ -285,38 +292,38 @@ const SettingsScreen: React.FC = () => {
               />,
               () => {
                 // Handle about navigation
-                Alert.alert('About', 'App Version 1.0.0\nBuild 2024.01.15');
+                Alert.alert(t('alerts.aboutTitle'), t('alerts.aboutMessage'));
               },
               true,
               false,
-              'View app information and version'
+              t('settings.viewAppInfo')
             )}
 
             {/* Logout */}
             {renderSettingItem(
               'exit-to-app',
-              'Logout',
+              t('settings.logout'),
               undefined,
               handleLogout,
               true,
               true,
-              'Sign out of the application'
+              t('settings.signOut')
             )}
 
             {/* Logout + Clear Data */}
             {renderSettingItem(
               'exit-to-app',
-              'Logout + Clear Data',
+              t('settings.logoutAndClearData'),
               undefined,
               handleLogoutAndClearDB,
               false,
               true,
-              'Sign out and clear all local data'
+              t('settings.signOutAndClear')
             )}
           </View>
 
           {/* Version Info */}
-          <Text style={styles.versionText}>Version - MSCA2025A-V1.1.0</Text>
+          <Text style={styles.versionText}>{t('settings.version')}</Text>
         </Animated.View>
       </ScrollView>
 
@@ -333,29 +340,29 @@ const SettingsScreen: React.FC = () => {
           activeOpacity={1}
           onPress={() => setShowLanguageDropdown(false)}
           accessibilityRole="button"
-          accessibilityLabel="Close language selection"
+          accessibilityLabel={t('settings.closeLanguageSelection')}
         >
           <View style={styles.dropdownContainer}>
-            <Text style={styles.dropdownTitle}>Select Language</Text>
-            {['English', 'Spanish', 'French'].map((language) => (
+            <Text style={styles.dropdownTitle}>{t('settings.selectLanguage')}</Text>
+            {getAvailableLanguages().map(({ code, name }) => (
               <TouchableOpacity
-                key={language}
+                key={code}
                 style={[
                   styles.dropdownItem,
-                  selectedLanguage === language && styles.dropdownItemSelected
+                  language === code && styles.dropdownItemSelected
                 ]}
-                onPress={() => handleLanguageSelect(language)}
+                onPress={() => handleLanguageSelect(code)}
                 accessibilityRole="button"
-                accessibilityLabel={`Select ${language} language`}
-                accessibilityState={{ selected: selectedLanguage === language }}
+                accessibilityLabel={t('settings.selectLanguageOption', { language: name })}
+                accessibilityState={{ selected: language === code }}
               >
                 <Text style={[
                   styles.dropdownItemText,
-                  selectedLanguage === language && styles.dropdownItemTextSelected
+                  language === code && styles.dropdownItemTextSelected
                 ]}>
-                  {language}
+                  {name}
                 </Text>
-                {selectedLanguage === language && (
+                {language === code && (
                   <VectorIcon
                     name="check"
                     size={iconSize}

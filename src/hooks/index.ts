@@ -19,4 +19,5 @@ export { useTransactionSync } from './useTransactionSync';
 export { useDatabaseOperations } from './useDatabaseOperations';
 export { useApiRefresh } from './useApiRefresh';
 export { useLoadToDockRefresh } from './useLoadToDockRefresh';
+export { useTranslation } from './useTranslation';
 

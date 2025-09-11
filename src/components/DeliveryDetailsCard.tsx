@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from '../hooks/useTranslation';
 import { createDeliveryDetailsCardStyles } from '../styles/DeliveryDetailsCard.styles';
 
 interface DeliveryDetailsCardProps {
@@ -17,6 +18,7 @@ export const DeliveryDetailsCard: React.FC<DeliveryDetailsCardProps> = ({
   date
 }) => {
   const theme = useTheme();
+  const { t } = useTranslation();
   const styles = createDeliveryDetailsCardStyles(theme);
 
   return (
@@ -25,10 +27,10 @@ export const DeliveryDetailsCard: React.FC<DeliveryDetailsCardProps> = ({
         <View style={styles.leftDetails}>
           <Text style={styles.salesOrderNumber}>SO# {salesOrderNumber}</Text>
           <Text style={styles.customerName}>{customerName}</Text>
-          <Text style={styles.totalItems}>Total Items: {itemCount}</Text>
+          <Text style={styles.totalItems}>{t('loadToDock.itemsToLoad')}: {itemCount}</Text>
         </View>
         <View style={styles.dateSection}>
-          <Text style={styles.dateLabel}>DATE</Text>
+          <Text style={styles.dateLabel}>{t('ui.date')}</Text>
           <Text style={styles.dateValue}>{date}</Text>
         </View>
       </View>

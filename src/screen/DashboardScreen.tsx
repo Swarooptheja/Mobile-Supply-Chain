@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, SafeAreaView, ScrollView, TouchableOpacity } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from '../hooks/useTranslation';
 import { AppHeader } from '../components/AppHeader';
 import { VectorIcon } from '../components';
 import { createDashboardStyles } from '../styles/DashboardScreen.styles';
@@ -12,6 +13,7 @@ interface DashboardScreenProps {
 
 const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
   const theme = useTheme();
+  const { t } = useTranslation();
   
   const styles = createDashboardStyles(theme);
 
@@ -27,7 +29,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
     <AuthGuard allowBack={true}>
       <SafeAreaView style={styles.container}>
       <AppHeader 
-        title="Home"
+        title={t('dashboard.title')}
       />
       
       <ScrollView 
@@ -57,22 +59,22 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
                   <View style={styles.metricRow}>
                     <View style={styles.metricItem}>
                       <Text style={styles.metricValue}>12</Text>
-                      <Text style={styles.metricLabel}>Today</Text>
+                      <Text style={styles.metricLabel}>{t('dashboard.today')}</Text>
                     </View>
                     <View style={styles.metricItem}>
                       <Text style={styles.metricValue}>98%</Text>
-                      <Text style={styles.metricLabel}>On Time</Text>
+                      <Text style={styles.metricLabel}>{t('dashboard.onTime')}</Text>
                     </View>
                   </View>
                 </View>
               </View>
               
               <View style={styles.cardBottomSection}>
-                <Text style={styles.cardTitle}>Load to Dock</Text>
+                <Text style={styles.cardTitle}>{t('dashboard.loadToDock')}</Text>
                 <Text style={styles.cardDescription}>
-                  Manage dock operations and track shipments
+                  {t('dashboard.loadToDockDescription')}
                 </Text>
-                <Text style={styles.actionText}>Manage →</Text>
+                <Text style={styles.actionText}>{t('dashboard.manage')} →</Text>
               </View>
             </TouchableOpacity>
           </View>
@@ -97,22 +99,22 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
                   <View style={styles.metricRow}>
                     <View style={styles.metricItem}>
                       <Text style={styles.metricValue}>156</Text>
-                      <Text style={styles.metricLabel}>Today</Text>
+                      <Text style={styles.metricLabel}>{t('dashboard.today')}</Text>
                     </View>
                     <View style={styles.metricItem}>
                       <Text style={styles.metricValue}>03</Text>
-                      <Text style={styles.metricLabel}>Pending</Text>
+                      <Text style={styles.metricLabel}>{t('dashboard.pending')}</Text>
                     </View>
                   </View>
                 </View>
               </View>
               
               <View style={styles.cardBottomSection}>
-                <Text style={styles.cardTitle}>Transactions</Text>
+                <Text style={styles.cardTitle}>{t('dashboard.transactions')}</Text>
                 <Text style={styles.cardDescription}>
-                  View history and sync status
+                  {t('dashboard.transactionsDescription')}
                 </Text>
-                <Text style={styles.actionText}>View all →</Text>
+                <Text style={styles.actionText}>{t('dashboard.viewAll')} →</Text>
               </View>
             </TouchableOpacity>
           </View>

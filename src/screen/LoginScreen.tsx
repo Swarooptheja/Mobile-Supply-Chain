@@ -23,15 +23,16 @@ import AuthGuard from '../components/AuthGuard';
 import { ENV } from '../config/env';
 import { useAttractiveNotification } from '../context/AttractiveNotificationContext';
 import { useAuth } from '../context/AuthContext';
-import { useTheme, useThemeContext } from '../context/ThemeContext';
+import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from '../hooks/useTranslation';
 import { ILoginForm } from '../interfaces';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import { createLoginScreenStyles } from '../styles/LoginScreen.styles';
 
-// Validation schema
-const loginSchema = yup.object().shape({
-  username: yup.string().required('Username is required'),
-  password: yup.string().required('Password is required'),
+// Validation schema - will be created inside component to access translations
+const createLoginSchema = (t: (key: string) => string) => yup.object().shape({
+  username: yup.string().required(t('login.usernameRequired')),
+  password: yup.string().required(t('login.passwordRequired')),
 });
 
 const LoginScreen: React.FC = () => {
@@ -40,9 +41,12 @@ const LoginScreen: React.FC = () => {
   const { login } = useAuth();
   const { showError, showWarning } = useAttractiveNotification();
   const theme = useTheme();
-  const { toggleTheme, themeMode } = useThemeContext();
+  const { t } = useTranslation();
   const styles = createLoginScreenStyles(theme);
   const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'Login'>>();
+
+  // Create validation schema with translations
+  const loginSchema = createLoginSchema(t);
 
   const {
     handleSubmit,
@@ -64,7 +68,7 @@ const LoginScreen: React.FC = () => {
 
   const handleLogin = async (data: ILoginForm): Promise<void> => {
     if (!data.username?.trim() || !data.password?.trim()) {
-      showWarning('Validation Error', 'Please fill in all required fields');
+      showWarning(t('login.validationError'), t('login.fillRequiredFields'));
       return;
     }
 
@@ -82,9 +86,9 @@ const LoginScreen: React.FC = () => {
     } catch (error) {
       // Show attractive error notification
       if (error instanceof Error) {
-        showError('Login Failed', error.message);
+        showError(t('login.loginFailed'), error.message);
       } else {
-        showError('Login Failed', 'An unexpected error occurred. Please try again.');
+        showError(t('login.loginFailed'), t('login.unexpectedError'));
       }
       console.error('Login error in LoginScreen:', error);
     } finally {
@@ -125,11 +129,11 @@ const LoginScreen: React.FC = () => {
         >
           {/* White Card with Login Form */}
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Login</Text>
+            <Text style={styles.cardTitle}>{t('login.title')}</Text>
             
             {/* Username Input */}
             <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Username</Text>
+              <Text style={styles.inputLabel}>{t('login.username')}</Text>
               <View style={styles.inputField}>
                 <View style={styles.inputIcon}>
                   <VectorIcon 
@@ -141,7 +145,7 @@ const LoginScreen: React.FC = () => {
                 </View>
                 <TextInput
                   style={styles.input}
-                  placeholder="Enter username"
+                  placeholder={t('login.enterUsername')}
                   placeholderTextColor={theme.colors.textSecondary}
                   value={watchedValues.username || ''}
                   onChangeText={(text) => setValue('username', text)}
@@ -161,7 +165,7 @@ const LoginScreen: React.FC = () => {
 
             {/* Password Input */}
             <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Password</Text>
+              <Text style={styles.inputLabel}>{t('login.password')}</Text>
               <View style={styles.inputField}>
                 <View style={styles.inputIcon}>
                   <VectorIcon 
@@ -173,7 +177,7 @@ const LoginScreen: React.FC = () => {
                 </View>
                 <TextInput
                   style={styles.input}
-                  placeholder="Enter password"
+                  placeholder={t('login.enterPassword')}
                   placeholderTextColor={theme.colors.textSecondary}
                   value={watchedValues.password || ''}
                   onChangeText={(text) => setValue('password', text)}
@@ -211,7 +215,7 @@ const LoginScreen: React.FC = () => {
 
             {/* Login Button */}
             <Button
-              title="Login"
+              title={t('login.loginButton')}
               onPress={handleSubmit(handleLogin)}
               loading={isLoading}
               disabled={isLoading}

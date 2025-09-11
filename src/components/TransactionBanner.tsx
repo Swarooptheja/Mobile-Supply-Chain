@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from '../hooks/useTranslation';
 import { CommonIcon } from './VectorIcon';
 import { createTransactionBannerStyles, getStatusColors } from '../styles/TransactionBanner.styles';
 
@@ -35,6 +36,7 @@ export const TransactionBanner: React.FC<ITransactionBannerProps> = React.memo((
   testID = 'transaction-banner',
 }) => {
   const theme = useTheme();
+  const { t } = useTranslation();
   const translateY = useRef(new Animated.Value(-100)).current;
   const opacity = useRef(new Animated.Value(0)).current;
   const progressWidth = useRef(new Animated.Value(0)).current;
@@ -124,13 +126,13 @@ export const TransactionBanner: React.FC<ITransactionBannerProps> = React.memo((
   // Memoize title text
   const titleText = useMemo(() => {
     const titles = {
-      uploading: 'Uploading Documents',
-      success: 'Upload Complete',
-      error: 'Upload Failed',
-      offline: 'Saved Offline',
+      uploading: t('banner.uploadingDocuments'),
+      success: t('banner.uploadComplete'),
+      error: t('banner.uploadFailed'),
+      offline: t('banner.savedOffline'),
     };
-    return titles[status] || 'Processing';
-  }, [status]);
+    return titles[status] || t('banner.processing');
+  }, [status, t]);
 
   // Memoize progress text
   const progressText = useMemo(() => `${Math.round(Math.min(Math.max(progress, 0), 100))}%`, [progress]);
@@ -196,7 +198,7 @@ export const TransactionBanner: React.FC<ITransactionBannerProps> = React.memo((
               testID={`${testID}-retry-button`}
               activeOpacity={0.7}
             >
-              <Text style={styles.retryButtonText}>Retry</Text>
+              <Text style={styles.retryButtonText}>{t('ui.retry')}</Text>
             </TouchableOpacity>
           )}
           

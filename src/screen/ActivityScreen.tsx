@@ -21,6 +21,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useActivityManager } from '../hooks/useActivityManager';
 import { useActivityScreenState } from '../hooks/useActivityScreenState';
+import { useTranslation } from '../hooks/useTranslation';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import type { ConsolidatedApiRecord } from '../hooks/useActivityConsolidation';
 import { createActivityScreenStyles } from '../styles/ActivityScreen.styles';
@@ -51,6 +52,7 @@ const ActivityScreen: React.FC = () => {
   const { logout, defaultOrgId } = useAuth();
   const navigation = useNavigation<any>();
   const theme = useTheme();
+  const { t } = useTranslation();
   const styles = createActivityScreenStyles(theme);
   
   // Track if the initial process has been started
@@ -151,12 +153,12 @@ const ActivityScreen: React.FC = () => {
    */
   const handleLogout = () => {
     Alert.alert(
-      'Logout',
-      'Are you sure you want to logout? This will cancel any ongoing synchronization.',
+      t('activity.logout'),
+      t('activity.logoutConfirm'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         { 
-          text: 'Logout', 
+          text: t('activity.logout'), 
           style: 'destructive',
           onPress: () => {
             if (logout) {

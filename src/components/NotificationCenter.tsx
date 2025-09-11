@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, ScrollView } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from '../hooks/useTranslation';
 import { IActivity } from '../types/activity';
 import { createNotificationCenterStyles } from '../styles/NotificationCenter.styles';
 
@@ -23,6 +24,7 @@ interface INotification {
 
 const NotificationCenter: React.FC<NotificationCenterProps> = ({ activities }) => {
   const theme = useTheme();
+  const { t } = useTranslation();
   const styles = createNotificationCenterStyles(theme);
 
   const notifications = useMemo((): INotification[] => {
@@ -53,7 +55,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ activities }) =
           id: `${activity.id}_insertion_failure`,
           timestamp: activity.endTime || new Date(),
           apiName: activity.name || 'Unknown API',
-          errorReason: 'Partial data insertion failure',
+          errorReason: t('notifications.partialDataInsertionFailure'),
           affectedRecords: {
             total: activity.recordsTotal || 0,
             inserted: activity.recordsInserted || 0,
@@ -87,32 +89,34 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ activities }) =
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
+    if (diffMins < 1) return t('notifications.justNow');
+    if (diffMins < 60) return t('notifications.minutesAgo', { minutes: diffMins });
+    if (diffHours < 24) return t('notifications.hoursAgo', { hours: diffHours });
+    if (diffDays < 7) return t('notifications.daysAgo', { days: diffDays });
     return date.toLocaleDateString();
   };
 
   const formatRecordsSummary = (records: { total: number; inserted: number; failed: number }) => {
-    if (records.total === 0) return 'No records';
+    if (records.total === 0) return t('notifications.noRecords');
     
     if (records.failed === 0) {
-      return `${records.inserted} inserted`;
+      return t('notifications.recordsInserted', { count: records.inserted });
     }
     
-    return `${records.inserted} inserted / ${records.failed} failed`;
+    return t('notifications.recordsInsertedFailed', { inserted: records.inserted, failed: records.failed });
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>
-          {notifications.length} Issue{notifications.length !== 1 ? 's' : ''} Found
+          {t('notifications.issuesFound', { count: notifications.length, plural: notifications.length !== 1 ? 's' : '' })}
         </Text>
         <Text style={styles.headerSubtitle}>
-          {notifications.filter(n => n.type === 'error').length} API failures, {' '}
-          {notifications.filter(n => n.type === 'insertion_failure').length} insertion issues
+          {t('notifications.apiFailuresInsertionIssues', { 
+            apiFailures: notifications.filter(n => n.type === 'error').length,
+            insertionIssues: notifications.filter(n => n.type === 'insertion_failure').length
+          })}
         </Text>
       </View>
 
@@ -132,7 +136,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ activities }) =
               </Text>
               <View style={styles.notificationTitleContainer}>
                 <Text style={styles.notificationTitle}>
-                  {notification.apiName || 'Unknown API'}
+                  {notification.apiName || t('notifications.unknownApi')}
                 </Text>
                 <Text style={styles.notificationTimestamp}>
                   {formatTimestamp(notification.timestamp)}
@@ -141,11 +145,11 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ activities }) =
             </View>
 
             <Text style={styles.errorReason}>
-              {notification.errorReason || 'No error details available'}
+              {notification.errorReason || t('notifications.noErrorDetailsAvailable')}
             </Text>
 
             <View style={styles.recordsInfo}>
-              <Text style={styles.recordsLabel}>Affected Records:</Text>
+              <Text style={styles.recordsLabel}>{t('notifications.affectedRecords')}:</Text>
               <Text style={styles.recordsValue}>
                 {formatRecordsSummary(notification.affectedRecords)}
               </Text>
@@ -154,19 +158,19 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ activities }) =
             {notification.affectedRecords.total > 0 && (
               <View style={styles.recordsBreakdown}>
                 <View style={styles.recordStat}>
-                  <Text style={styles.recordStatLabel}>Total:</Text>
+                  <Text style={styles.recordStatLabel}>{t('notifications.total')}:</Text>
                   <Text style={styles.recordStatValue}>
                     {notification.affectedRecords.total}
                   </Text>
                 </View>
                 <View style={styles.recordStat}>
-                  <Text style={styles.recordStatLabel}>Inserted:</Text>
+                  <Text style={styles.recordStatLabel}>{t('notifications.inserted')}:</Text>
                   <Text style={styles.recordStatValue}>
                     {notification.affectedRecords.inserted}
                   </Text>
                 </View>
                 <View style={styles.recordStat}>
-                  <Text style={styles.recordStatLabel}>Failed:</Text>
+                  <Text style={styles.recordStatLabel}>{t('notifications.failed')}:</Text>
                   <Text style={[styles.recordStatValue, styles.failedValue]}>
                     {notification.affectedRecords.failed}
                   </Text>

@@ -2,6 +2,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { SearchBar } from './SearchBar';
 import { ScanButton } from './ScanButton';
+import { useTranslation } from '../hooks/useTranslation';
 
 interface SearchAndScanSectionProps {
   searchQuery: string;
@@ -15,26 +16,30 @@ export const SearchAndScanSection: React.FC<SearchAndScanSectionProps> = ({
   onSearchChange,
   onScanPress,
   style
-}) => (
-  <View style={[styles.container, style]}>
-    <View style={styles.searchBarWrapper}>
-      <SearchBar
-        placeholder="Search items"
-        value={searchQuery}
-        onChangeText={onSearchChange}
+}) => {
+  const { t } = useTranslation();
+  
+  return (
+    <View style={[styles.container, style]}>
+      <View style={styles.searchBarWrapper}>
+        <SearchBar
+          placeholder={t('loadToDock.searchAndScan')}
+          value={searchQuery}
+          onChangeText={onSearchChange}
+        />
+      </View>
+      <ScanButton
+        onPress={onScanPress}
+        size={56}
+        iconColor="#ffffff"
+        backgroundColor="#1e3a8a"
+        borderColor="#1e3a8a"
+        hintText={t('ui.scan')}
+        hintTextColor="#6b7280"
       />
     </View>
-    <ScanButton
-      onPress={onScanPress}
-      size={56}
-      iconColor="#ffffff"
-      backgroundColor="#1e3a8a"
-      borderColor="#1e3a8a"
-      hintText="Scan"
-      hintTextColor="#6b7280"
-    />
-  </View>
-);
+  );
+};
 
 const styles = StyleSheet.create({
   container: {

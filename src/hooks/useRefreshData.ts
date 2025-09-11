@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useAttractiveNotification } from '../context/AttractiveNotificationContext';
+import { useTranslation } from './useTranslation';
 
 export interface RefreshOptions {
   successMessage?: string;
@@ -12,6 +13,7 @@ export interface RefreshOptions {
 export const useRefreshData = (options: RefreshOptions = {}) => {
   const [refreshing, setRefreshing] = useState(false);
   const { showSuccess, showError } = useAttractiveNotification();
+  const { t } = useTranslation();
 
   const refreshData = useCallback(async (
     refreshFunction: () => Promise<void>,
@@ -26,8 +28,8 @@ export const useRefreshData = (options: RefreshOptions = {}) => {
       
       if (finalOptions.showToast !== false) {
         showSuccess(
-          'Success', 
-          finalOptions.successMessage || 'Data refreshed successfully'
+          t('ui.success'), 
+          finalOptions.successMessage || t('notifications.dataRefreshedSuccessfully')
         );
       }
       
@@ -37,10 +39,10 @@ export const useRefreshData = (options: RefreshOptions = {}) => {
       
       const errorMessage = error instanceof Error 
         ? error.message 
-        : (finalOptions.errorMessage || 'Refresh failed');
+        : (finalOptions.errorMessage || t('notifications.refreshFailed'));
       
       if (finalOptions.showToast !== false) {
-        showError('Refresh Failed', errorMessage);
+        showError(t('notifications.refreshFailed'), errorMessage);
       }
       
       finalOptions.onError?.(error instanceof Error ? error : new Error(errorMessage));
@@ -58,9 +60,10 @@ export const useRefreshData = (options: RefreshOptions = {}) => {
 
 // Specialized hook for organization refresh
 export const useOrganizationRefresh = () => {
+  const { t } = useTranslation();
   const { refreshData, refreshing } = useRefreshData({
-    successMessage: 'Organizations refreshed successfully',
-    errorMessage: 'Failed to refresh organizations',
+    successMessage: t('notifications.organizationsRefreshedSuccessfully'),
+    errorMessage: t('notifications.failedToRefreshOrganizations'),
   });
 
   return {
@@ -71,9 +74,10 @@ export const useOrganizationRefresh = () => {
 
 // Specialized hook for dashboard refresh
 export const useDashboardRefresh = () => {
+  const { t } = useTranslation();
   const { refreshData, refreshing } = useRefreshData({
-    successMessage: 'Dashboard data refreshed successfully',
-    errorMessage: 'Failed to refresh dashboard data',
+    successMessage: t('notifications.dashboardDataRefreshedSuccessfully'),
+    errorMessage: t('notifications.failedToRefreshDashboardData'),
   });
 
   return {

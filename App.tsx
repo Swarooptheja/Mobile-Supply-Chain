@@ -8,7 +8,7 @@
 import React, { useState } from 'react';
 import { StatusBar, useColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { AuthProvider, ThemeProvider, OrganizationProvider } from './src/context';
+import { AuthProvider, ThemeProvider, OrganizationProvider, I18nProvider } from './src/context';
 import { AttractiveNotificationProvider } from './src/context/AttractiveNotificationContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import SimpleDatabaseInitializer from './src/components/SimpleDatabaseInitializer';
@@ -25,17 +25,19 @@ function App() {
   return (
     <SafeAreaProvider>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <ThemeProvider>
-        <AttractiveNotificationProvider>
-          <SimpleDatabaseInitializer onInitializationComplete={handleDatabaseInitialization}>
-            <AuthProvider>
-              <OrganizationProvider>
-                <AppNavigator />
-              </OrganizationProvider>
-            </AuthProvider>
-          </SimpleDatabaseInitializer>
-        </AttractiveNotificationProvider>
-      </ThemeProvider>
+      <I18nProvider>
+        <ThemeProvider>
+          <AttractiveNotificationProvider>
+            <SimpleDatabaseInitializer onInitializationComplete={handleDatabaseInitialization}>
+              <AuthProvider>
+                <OrganizationProvider>
+                  <AppNavigator />
+                </OrganizationProvider>
+              </AuthProvider>
+            </SimpleDatabaseInitializer>
+          </AttractiveNotificationProvider>
+        </ThemeProvider>
+      </I18nProvider>
     </SafeAreaProvider>
   );
 }

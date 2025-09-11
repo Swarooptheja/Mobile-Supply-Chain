@@ -4,6 +4,7 @@ import { VectorIcon } from '../VectorIcon';
 import { Button } from '../Button';
 import { createActionButtonsStyles } from '../../styles/ActivityScreen.styles';
 import { getButtonColor } from '../../styles/global.styles';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface ActionButtonsProps {
   showRetryButton: boolean;
@@ -18,6 +19,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
   onRetryFailed,
   isProcessing
 }) => {
+  const { t } = useTranslation();
   
   // Show retry button when there are failures
   if (!showRetryButton) {
@@ -27,7 +29,10 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
   return (
     <View>
       <Button
-        title={`Retry ${failedCount || 0} Failed API${(failedCount || 0) !== 1 ? 's' : ''}`}
+        title={t('activity.retryFailedApis', { 
+          count: failedCount || 0, 
+          plural: (failedCount || 0) !== 1 ? 's' : '' 
+        })}
         onPress={onRetryFailed}
         disabled={isProcessing}
         variant="solid"

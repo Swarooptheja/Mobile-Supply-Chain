@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { CommonIcon } from './index';
 import { ILoadToDockItemDetail } from '../types/loadToDock.interface';
+import { useTranslation } from '../hooks/useTranslation';
 
 interface LoadToDockItemCardProps {
   item: ILoadToDockItemDetail;
@@ -78,6 +79,8 @@ const LoadToDockItemCard: React.FC<LoadToDockItemCardProps> = memo(({
   onQuantityChange,
   onQuantityError,
 }) => {
+  const { t } = useTranslation();
+  
   // Determine media status from mediaData or fallback to old properties
   const hasPhotos = item.mediaData ? item.mediaData.hasPhotos : (item.hasPhotos || false);
   const hasVideo = item.mediaData ? item.mediaData.hasVideo : (item.hasVideo || false);
@@ -98,11 +101,11 @@ const LoadToDockItemCard: React.FC<LoadToDockItemCardProps> = memo(({
   const handleQuantityChange = useCallback((text: string) => {
     const newQuantity = parseInt(text, 10) || 0;
     if (newQuantity > Number(item.QtyRequested)) {
-      onQuantityError('Error', 'Loaded quantity cannot exceed requested quantity');
+      onQuantityError(t('common.error'), t('loadToDock.quantityExceeded'));
       return;
     }
     onQuantityChange(item.DeliveryLineId, newQuantity);
-  }, [item.DeliveryLineId, item.QtyRequested, onQuantityChange, onQuantityError]);
+  }, [item.DeliveryLineId, item.QtyRequested, onQuantityChange, onQuantityError, t]);
 
   const handlePress = useCallback(() => {
     onItemPress(item);
@@ -128,13 +131,13 @@ const LoadToDockItemCard: React.FC<LoadToDockItemCardProps> = memo(({
         <View style={styles.figmaQuantityRow}>
           {/* Left column - Requested */}
           <View style={styles.quantityColumn}>
-            <Text style={styles.figmaQuantityLabel}>Requested:</Text>
+            <Text style={styles.figmaQuantityLabel}>{t('loadToDock.requested')}:</Text>
             <Text style={styles.figmaQuantityValue}>{item.QtyRequested} {item.ItemUom}</Text>
           </View>
           
           {/* Right column - Loaded */}
           <View style={styles.quantityColumn}>
-            <Text style={styles.figmaQuantityLabel}>Loaded:</Text>
+            <Text style={styles.figmaQuantityLabel}>{t('loadToDock.loaded')}:</Text>
             <View style={styles.loadedQuantityContainer}>
               <TextInput
                 style={styles.referenceQuantityInput}
@@ -143,7 +146,7 @@ const LoadToDockItemCard: React.FC<LoadToDockItemCardProps> = memo(({
                 keyboardType="numeric"
                 placeholder="0"
               />
-              <Text style={styles.quantityOfText}> of {item.QtyRequested} {item.ItemUom}</Text>
+              <Text style={styles.quantityOfText}> {t('ui.of')} {item.QtyRequested} {item.ItemUom}</Text>
             </View>
           </View>
         </View>
@@ -164,7 +167,7 @@ const LoadToDockItemCard: React.FC<LoadToDockItemCardProps> = memo(({
             styles.referenceActionButtonText,
             hasPhotos ? styles.completedButtonText : styles.pendingButtonText
           ]}>
-            Photos {hasPhotos ? 'uploaded' : 'pending'}
+            {t('loadToDock.photos')} {hasPhotos ? t('loadToDock.uploaded') : t('loadToDock.pending')}
           </Text>
         </TouchableOpacity>
         
@@ -181,7 +184,7 @@ const LoadToDockItemCard: React.FC<LoadToDockItemCardProps> = memo(({
             styles.referenceActionButtonText,
             hasVideo ? styles.completedButtonText : styles.pendingButtonText
           ]}>
-            Videos {hasVideo ? 'uploaded' : 'pending'}
+            {t('loadToDock.videos')} {hasVideo ? t('loadToDock.uploaded') : t('loadToDock.pending')}
           </Text>
         </TouchableOpacity>
       </View>
